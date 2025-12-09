@@ -1,0 +1,28 @@
+PATH
+  remote: ../ast-merge
+  specs:
+    ast-merge (1.0.0)
+      version_gem (~> 1.1, >= 1.1.9)
+
+PATH
+  remote: .
+  specs:
+    toml-merge (0.1.0)
+
+GEM
+  remote: https://gem.coop/
+  specs:
+    kettle-dev (1.1.60)
+    version_gem (1.1.9)
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  ast-merge!
+  kettle-dev (~> 1.1.60)
+  toml-merge!
+
+BUNDLED WITH
+   2.7.2
