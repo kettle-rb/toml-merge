@@ -1,0 +1,221 @@
+# frozen_string_literal: true
+
+module Toml
+  module Merge
+    # Analyzes TOML file structure, extracting statements for merging.
+    # This is the main analysis class that prepares TOML content for merging.
+    #
+    # @example Basic usage
+    #   analysis = FileAnalysis.new(toml_source)
+    #   analysis.valid? # => true
+    #   analysis.statements # => [NodeWrapper, ...]
+    class FileAnalysis
+      include Ast::Merge::FileAnalyzable
+
+      # Common paths where tree-sitter-toml library might be installed
+      # Searched in order until one is found
+      PARSER_SEARCH_PATHS = [
+        "/usr/lib/libtree-sitter-toml.so",
+        "/usr/lib64/libtree-sitter-toml.so",
+        "/usr/lib64/libtree-sitter-toml.so.14",
+        "/usr/local/lib/libtree-sitter-toml.so",
+        "/opt/homebrew/lib/libtree-sitter-toml.dylib",
+        "/usr/local/lib/libtree-sitter-toml.dylib",
+      ].freeze
+
+      # @return [TreeSitter::Tree, nil] Parsed AST
+      attr_reader :ast
+
+      # @return [Array] Parse errors if any
+      attr_reader :errors
+
+      # Find the parser library path
+      # @return [String, nil] Path to the parser library or nil if not found
+      def self.find_parser_path
+        # Check environment variable first
+        env_path = ENV["TREE_SITTER_TOML_PATH"]
+        return env_path if env_path && File.exist?(env_path)
+
+        # Search common paths
+        PARSER_SEARCH_PATHS.find { |path| File.exist?(path) }
+      end
+
+      # Initialize file analysis
+      #
+      # @param source [String] TOML source code to analyze
+      # @param signature_generator [Proc, nil] Custom signature generator
+      # @param parser_path [String, nil] Path to tree-sitter-toml parser library
+      def initialize(source, signature_generator: nil, parser_path: nil)
+        @source = source
+        @lines = source.lines.map(&:chomp)
+        @signature_generator = signature_generator
+        @parser_path = parser_path || self.class.find_parser_path
+        @errors = []
+
+        # Parse the TOML
+        DebugLogger.time("FileAnalysis#parse_toml") { parse_toml }
+
+        @statements = integrate_nodes
+
+        DebugLogger.debug("FileAnalysis initialized", {
+          signature_generator: signature_generator ? "custom" : "default",
+          statements_count: @statements.size,
+          valid: valid?,
+        })
+      end
+
+      # Check if parse was successful
+      # @return [Boolean]
+      def valid?
+        @errors.empty? && !@ast.nil?
+      end
+
+      # Generate signature for a node
+      # @param node [NodeWrapper] Node to generate signature for
+      # @return [Array, nil]
+      def generate_signature(node)
+        result = if @signature_generator
+          custom_result = @signature_generator.call(node)
+          if fallthrough_node?(custom_result)
+            # Fall through to default computation
+            compute_node_signature(custom_result)
+          else
+            custom_result
+          end
+        else
+          compute_node_signature(node)
+        end
+
+        DebugLogger.debug("Generated signature", {
+          node_type: node.class.name.split("::").last,
+          signature: result,
+          generator: @signature_generator ? "custom" : "default",
+        }) if result
+
+        result
+      end
+
+      # Override to detect tree-sitter nodes for signature generator fallthrough
+      # @param value [Object] The value to check
+      # @return [Boolean] true if this is a fallthrough node
+      def fallthrough_node?(value)
+        value.is_a?(NodeWrapper)
+      end
+
+      # Get normalized line content (stripped)
+      # @param line_num [Integer] 1-based line number
+      # @return [String, nil]
+      def normalized_line(line_num)
+        return if line_num < 1 || line_num > @lines.length
+
+        @lines[line_num - 1].strip
+      end
+
+      # Get the root node of the parse tree
+      # @return [NodeWrapper, nil]
+      def root_node
+        return unless valid?
+
+        NodeWrapper.new(@ast.root_node, lines: @lines, source: @source)
+      end
+
+      # Get all top-level tables (sections) in the TOML document
+      # @return [Array<NodeWrapper>]
+      def tables
+        return [] unless valid?
+
+        result = []
+        @ast.root_node.each do |child|
+          child_type = child.type.to_s
+          next unless %w[table array_of_tables].include?(child_type)
+
+          result << NodeWrapper.new(child, lines: @lines, source: @source)
+        end
+        result
+      end
+
+      # Get all top-level key-value pairs (not in tables)
+      # @return [Array<NodeWrapper>]
+      def root_pairs
+        return [] unless valid?
+
+        result = []
+        @ast.root_node.each do |child|
+          next unless child.type.to_s == "pair"
+
+          result << NodeWrapper.new(child, lines: @lines, source: @source)
+        end
+        result
+      end
+
+      private
+
+      def parse_toml
+        unless @parser_path && File.exist?(@parser_path)
+          searched = @parser_path || PARSER_SEARCH_PATHS.join(", ")
+          @errors << "Tree-sitter toml parser not found. Searched: #{searched}. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+          @ast = nil
+          return
+        end
+
+        begin
+          language = TreeSitter::Language.load("toml", @parser_path)
+          parser = TreeSitter::Parser.new
+          parser.language = language
+          @ast = parser.parse_string(nil, @source)
+
+          # Check for parse errors in the tree
+          if @ast&.root_node&.has_error?
+            collect_parse_errors(@ast.root_node)
+          end
+        rescue StandardError => e
+          @errors << e
+          @ast = nil
+        end
+      end
+
+      def collect_parse_errors(node)
+        # Collect ERROR and MISSING nodes from the tree
+        if node.type.to_s == "ERROR" || node.missing?
+          @errors << {
+            type: node.type.to_s,
+            start_point: node.start_point,
+            end_point: node.end_point,
+            text: node.to_s,
+          }
+        end
+
+        node.each { |child| collect_parse_errors(child) }
+      end
+
+      def integrate_nodes
+        return [] unless valid?
+
+        result = []
+        root = @ast.root_node
+        return result unless root
+
+        # Return all root-level nodes (document children)
+        # For TOML, this includes tables, array_of_tables, and top-level pairs
+        root.each do |child|
+          # Skip comments (handled separately)
+          next if child.type.to_s == "comment"
+
+          wrapper = NodeWrapper.new(child, lines: @lines, source: @source)
+          next unless wrapper.start_line && wrapper.end_line
+
+          result << wrapper
+        end
+
+        # Sort by start line
+        result.sort_by { |node| node.start_line || 0 }
+      end
+
+      def compute_node_signature(node)
+        return nil unless node.is_a?(NodeWrapper)
+
+        node.signature
+      end
+    end
+  end
+end

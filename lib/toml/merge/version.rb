@@ -2,6 +2,11 @@
 
 module Toml
   module Merge
-    VERSION = "0.1.0"
+    # Version information for Toml::Merge
+    module Version
+      # Current version of the toml-merge gem
+      VERSION = "1.0.0"
+    end
+    VERSION = Version::VERSION # traditional location
   end
 end

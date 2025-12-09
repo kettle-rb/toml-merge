@@ -1,0 +1,16 @@
+# Simple TOML Template
+title = "TOML Template"
+
+[server]
+host = "localhost"
+port = 8080
+timeout = 30
+
+[database]
+name = "app_db"
+host = "localhost"
+port = 5432
+
+[logging]
+level = "info"
+format = "json"

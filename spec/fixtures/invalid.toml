@@ -1,0 +1,5 @@
+# Invalid TOML - Missing closing bracket
+title = "Bad TOML"
+
+[server
+host = "localhost"

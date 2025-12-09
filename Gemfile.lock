@@ -19,7 +19,10 @@ PATH
 PATH
   remote: .
   specs:
-    toml-merge (0.1.0)
+    toml-merge (1.0.0)
+      ast-merge (~> 1.0)
+      ruby_tree_sitter (~> 1.10)
+      version_gem (~> 1.1, >= 1.1.9)
 
 GEM
   remote: https://gem.coop/
@@ -88,7 +91,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     json (2.17.1)
-    kettle-dev (1.1.60)
+    kettle-dev (1.2.4)
     kettle-soup-cover (1.0.10)
       simplecov (~> 0.22)
       simplecov-cobertura (~> 3.0)
@@ -120,6 +123,7 @@ GEM
     mutex_m (0.3.0)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
+    oppen (0.9.8)
     ostruct (0.6.3)
     parallel (1.27.0)
     parser (3.3.10.0)
@@ -241,6 +245,10 @@ GEM
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-progressbar (1.13.0)
     ruby_engine (2.0.3)
+    ruby_tree_sitter (1.12.0)
+      oppen (~> 0.9.8)
+      sorbet-runtime
+      zeitwerk
     ruby_version (1.0.3)
     silent_stream (1.0.12)
       logger (~> 1.2)
@@ -261,6 +269,7 @@ GEM
     simplecov-rcov (0.3.7)
       simplecov (>= 0.4.1)
     simplecov_json_formatter (0.1.4)
+    sorbet-runtime (0.6.12829)
     standard (1.52.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
@@ -329,7 +338,7 @@ DEPENDENCIES
   gem_bench (~> 2.0, >= 2.0.5)
   gitmoji-regex (~> 1.0, >= 1.0.3)
   irb (~> 1.15, >= 1.15.2)
-  kettle-dev (~> 1.1.60)
+  kettle-dev (~> 1.1)
   kettle-soup-cover (~> 1.0, >= 1.0.10)
   kettle-test (~> 1.0, >= 1.0.6)
   kramdown (~> 2.5, >= 2.5.1)
