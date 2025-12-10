@@ -28,9 +28,9 @@ RSpec.describe Toml::Merge::SmartMerger do
       expect(merger).to be_a(described_class)
     end
 
-    it "accepts optional signature_match_preference" do
-      merger = described_class.new(template_content, dest_content, signature_match_preference: :template)
-      expect(merger.options[:signature_match_preference]).to eq(:template)
+    it "accepts optional preference" do
+      merger = described_class.new(template_content, dest_content, preference: :template)
+      expect(merger.options[:preference]).to eq(:template)
     end
 
     it "accepts optional add_template_only_nodes" do
@@ -72,13 +72,13 @@ RSpec.describe Toml::Merge::SmartMerger do
   describe "#merge" do
     subject(:result) { described_class.new(template_content, dest_content).merge }
 
-    it "returns a MergeResult" do
-      expect(result).to be_a(Toml::Merge::MergeResult)
+    it "returns a String" do
+      expect(result).to be_a(String)
     end
 
     it "produces valid TOML output" do
-      expect(result.content).to be_a(String)
-      expect(result.content).not_to be_empty
+      expect(result).to be_a(String)
+      expect(result).not_to be_empty
     end
   end
 

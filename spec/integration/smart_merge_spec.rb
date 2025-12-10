@@ -13,20 +13,20 @@ RSpec.describe "TOML Smart Merge Integration" do
 
     it "produces valid merged output" do
       result = merger.merge
-      expect(result.content).to be_a(String)
-      expect(result.content).not_to be_empty
+      expect(result).to be_a(String)
+      expect(result).not_to be_empty
     end
 
     it "preserves destination-only sections" do
       result = merger.merge
       # The destination has a [cache] section not in template
-      expect(result.content).to include("cache")
+      expect(result).to include("cache")
     end
 
     it "preserves destination values for matching keys" do
       result = merger.merge
       # Destination has host = "production.example.com"
-      expect(result.content).to include("production.example.com")
+      expect(result).to include("production.example.com")
     end
 
     context "with add_template_only_nodes enabled" do
@@ -41,7 +41,7 @@ RSpec.describe "TOML Smart Merge Integration" do
       it "includes template-only sections" do
         result = merger.merge
         # Template has [logging] section not in destination
-        expect(result.content).to include("logging")
+        expect(result).to include("logging")
       end
     end
   end

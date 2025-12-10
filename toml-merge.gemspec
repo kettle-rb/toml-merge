@@ -102,7 +102,7 @@ Gem::Specification.new do |spec|
 
   # Core dependencies for TOML parsing and merging
   spec.add_dependency("ast-merge", "~> 1.0")                            # ruby >= 2.7.0
-  spec.add_dependency("ruby_tree_sitter", "~> 1.10")                    # ruby >= 3.0.0
+  spec.add_dependency("ruby_tree_sitter", "~> 2.0")                     # ruby >= 3.0.0
 
   # NOTE: It is preferable to list development dependencies in the gemspec due to increased
   #       visibility and discoverability.

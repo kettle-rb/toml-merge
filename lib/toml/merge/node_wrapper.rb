@@ -12,6 +12,20 @@ module Toml
     #   wrapper = NodeWrapper.new(tree.root_node, lines: source.lines, source: source)
     #   wrapper.signature # => [:table, "section"]
     class NodeWrapper
+      # Wrap a tree-sitter node, returning nil for nil input.
+      #
+      # @param node [TreeSitter::Node, nil] Tree-sitter node to wrap
+      # @param lines [Array<String>] Source lines for content extraction
+      # @param source [String, nil] Original source string
+      # @param leading_comments [Array<Hash>] Comments before this node
+      # @param inline_comment [Hash, nil] Inline comment on the node's line
+      # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
+      def self.wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
+        return nil if node.nil?
+
+        new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
+      end
+
       # @return [TreeSitter::Node] The wrapped tree-sitter node
       attr_reader :node
 

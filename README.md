@@ -242,7 +242,7 @@ merger = Toml::Merge::SmartMerger.new(
   # Which version to prefer when nodes match
   # :destination (default) - keep destination values
   # :template - use template values
-  signature_match_preference: :destination,
+  preference: :destination,
 
   # Whether to add template-only nodes to the result
   # false (default) - only include keys that exist in destination

@@ -119,6 +119,12 @@ module Toml
         NodeWrapper.new(@ast.root_node, lines: @lines, source: @source)
       end
 
+      # Get a hash mapping signatures to nodes
+      # @return [Hash<Array, NodeWrapper>]
+      def signature_map
+        @signature_map ||= build_signature_map
+      end
+
       # Get all top-level tables (sections) in the TOML document
       # @return [Array<NodeWrapper>]
       def tables
@@ -153,9 +159,10 @@ module Toml
       def parse_toml
         unless @parser_path && File.exist?(@parser_path)
           searched = @parser_path || PARSER_SEARCH_PATHS.join(", ")
-          @errors << "Tree-sitter toml parser not found. Searched: #{searched}. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+          error_msg = "Tree-sitter toml parser not found. Searched: #{searched}. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+          @errors << error_msg
           @ast = nil
-          return
+          raise StandardError, error_msg
         end
 
         begin
@@ -167,10 +174,13 @@ module Toml
           # Check for parse errors in the tree
           if @ast&.root_node&.has_error?
             collect_parse_errors(@ast.root_node)
+            # Raise to allow SmartMergerBase to wrap with appropriate error type
+            raise StandardError, "TOML parse error: #{@errors.first}"
           end
         rescue StandardError => e
-          @errors << e
+          @errors << e unless @errors.include?(e)
           @ast = nil
+          raise
         end
       end
 
@@ -215,6 +225,15 @@ module Toml
         return nil unless node.is_a?(NodeWrapper)
 
         node.signature
+      end
+
+      def build_signature_map
+        map = {}
+        statements.each do |node|
+          sig = generate_signature(node)
+          map[sig] = node if sig
+        end
+        map
       end
     end
   end

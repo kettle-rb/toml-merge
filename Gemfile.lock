@@ -11,7 +11,7 @@ GIT
       yard
 
 PATH
-  remote: ../ast-merge
+  remote: ../..
   specs:
     ast-merge (1.0.0)
       version_gem (~> 1.1, >= 1.1.9)
@@ -21,7 +21,7 @@ PATH
   specs:
     toml-merge (1.0.0)
       ast-merge (~> 1.0)
-      ruby_tree_sitter (~> 1.10)
+      ruby_tree_sitter (~> 2.0)
       version_gem (~> 1.1, >= 1.1.9)
 
 GEM
@@ -123,7 +123,7 @@ GEM
     mutex_m (0.3.0)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
-    oppen (0.9.8)
+    oppen (1.0.0)
     ostruct (0.6.3)
     parallel (1.27.0)
     parser (3.3.10.0)
@@ -245,8 +245,8 @@ GEM
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-progressbar (1.13.0)
     ruby_engine (2.0.3)
-    ruby_tree_sitter (1.12.0)
-      oppen (~> 0.9.8)
+    ruby_tree_sitter (2.0.0-x86_64-linux-gnu)
+      oppen (~> 1.0)
       sorbet-runtime
       zeitwerk
     ruby_version (1.0.3)

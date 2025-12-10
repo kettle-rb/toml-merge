@@ -12,7 +12,7 @@ module Toml
     #
     # @example With options
     #   merger = SmartMerger.new(template, dest,
-    #     signature_match_preference: :template,
+    #     preference: :template,
     #     add_template_only_nodes: true)
     #   result = merger.merge
     #
@@ -27,7 +27,7 @@ module Toml
       #
       # @param template_content [String] Template TOML content
       # @param dest_content [String] Destination TOML content
-      # @param signature_match_preference [Symbol] :destination or :template
+      # @param preference [Symbol] :destination or :template
       # @param add_template_only_nodes [Boolean] Whether to add nodes only found in template
       # @param match_refiner [#call, nil] Match refiner for fuzzy matching
       # @param regions [Array<Hash>, nil] Region configurations for nested merging
@@ -35,7 +35,7 @@ module Toml
       def initialize(
         template_content,
         dest_content,
-        signature_match_preference: :destination,
+        preference: :destination,
         add_template_only_nodes: false,
         match_refiner: nil,
         regions: nil,
@@ -44,7 +44,7 @@ module Toml
         super(
           template_content,
           dest_content,
-          signature_match_preference: signature_match_preference,
+          preference: preference,
           add_template_only_nodes: add_template_only_nodes,
           match_refiner: match_refiner,
           regions: regions,
@@ -57,7 +57,7 @@ module Toml
       # @return [Hash] The merge options
       def options
         {
-          signature_match_preference: @signature_match_preference,
+          preference: @preference,
           add_template_only_nodes: @add_template_only_nodes,
           match_refiner: @match_refiner,
         }
@@ -104,7 +104,7 @@ module Toml
         ConflictResolver.new(
           @template_analysis,
           @dest_analysis,
-          signature_match_preference: @signature_match_preference,
+          preference: @preference,
           add_template_only_nodes: @add_template_only_nodes,
           match_refiner: @match_refiner,
         )

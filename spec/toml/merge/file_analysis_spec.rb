@@ -40,18 +40,10 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
 
     context "with invalid TOML" do
-      subject(:analysis) { described_class.new(invalid_toml) }
-
-      it "creates analysis object" do
-        expect(analysis).to be_a(described_class)
-      end
-
-      it "is invalid" do
-        expect(analysis.valid?).to be false
-      end
-
-      it "has errors" do
-        expect(analysis.errors).not_to be_empty
+      it "raises StandardError" do
+        expect {
+          described_class.new(invalid_toml)
+        }.to raise_error(StandardError, /TOML parse error/)
       end
     end
   end

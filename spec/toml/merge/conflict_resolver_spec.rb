@@ -29,7 +29,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
       resolver = described_class.new(
         template_analysis,
         dest_analysis,
-        signature_match_preference: :destination,
+        preference: :destination,
         add_template_only_nodes: false,
       )
 
@@ -46,7 +46,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
       resolver = described_class.new(
         template_analysis,
         dest_analysis,
-        signature_match_preference: :destination,
+        preference: :destination,
         add_template_only_nodes: false,
       )
 
