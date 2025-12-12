@@ -9,9 +9,6 @@
     [23, 7, 237, "Style/ClassMethodsDefinitions: Use `class << self` to define a class method.", 2237022938],
     [293, 9, 57, "Style/UnlessLogicalOperators: Do not use mixed logical operators in an `unless`.", 865689294]
   ],
-  "spec/integration/smart_merge_spec.rb:3689243985": [
-    [3, 16, 30, "RSpec/DescribeClass: The first argument to describe should be the class or module being tested.", 3061307648]
-  ],
   "spec/toml/merge/node_wrapper_spec.rb:4250602538": [
     [31, 5, 198, "RSpec/RepeatedExample: Don't repeat examples within an example group. Repeated on line(s) 37, 43.", 4187560887],
     [37, 5, 196, "RSpec/RepeatedExample: Don't repeat examples within an example group. Repeated on line(s) 31, 43.", 1810521672],
