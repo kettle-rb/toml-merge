@@ -77,9 +77,17 @@ tree-sitter AST nodes and comparing structural elements. It supports:
 | [bash-merge](https://github.com/kettle-rb/bash-merge) | Shell | tree-sitter-bash |
 | [rbs-merge](https://github.com/kettle-rb/rbs-merge) | RBS Types | RBS |
 | [dotenv-merge](https://github.com/kettle-rb/dotenv-merge) | Dotenv | internal ([dotenv](https://github.com/bkeepers/dotenv)) |
+| **toml-merge** | TOML | tree-sitter-toml |
+| [markdown-merge](https://github.com/kettle-rb/markdown-merge) | Markdown | _base classes_ |
 | [markly-merge](https://github.com/kettle-rb/markly-merge) | Markdown | Markly (cmark-gfm) |
 | [commonmarker-merge](https://github.com/kettle-rb/commonmarker-merge) | Markdown | Commonmarker (Comrak) |
-| **toml-merge** | TOML | tree-sitter-toml |
+
+**Example implementations** for the gem templating use case:
+
+| Gem | Purpose |
+|-----|---------|
+| [kettle-dev](https://github.com/kettle-rb/kettle-dev) | Gem templating tool |
+| [kettle-jem](https://github.com/kettle-rb/kettle-jem) | Gem template library |
 
 ### Configuration
 

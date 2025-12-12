@@ -1,6 +1,241 @@
 module Toml
   module Merge
     VERSION: String
-    # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
+    # Base error class for Toml::Merge
+    class Error < Ast::Merge::Error
+    end
+
+    # Raised when a TOML file has parsing errors
+    class ParseError < Ast::Merge::ParseError
+      def initialize: (?String? message, ?content: String?, ?errors: Array[untyped]) -> void
+    end
+
+    # Raised when the template file has syntax errors
+    class TemplateParseError < ParseError
+    end
+
+    # Raised when the destination file has syntax errors
+    class DestinationParseError < ParseError
+    end
+
+    # Debug logging utility for Toml::Merge
+    module DebugLogger
+      extend Ast::Merge::DebugLogger
+
+      def self.env_var_name: () -> String
+      def self.env_var_name=: (String name) -> String
+      def self.log_prefix: () -> String
+      def self.log_prefix=: (String prefix) -> String
+      def self.enabled?: () -> bool
+      def self.debug: (*untyped args) -> void
+      def self.info: (*untyped args) -> void
+      def self.warning: (*untyped args) -> void
+      def self.time: [T] (String label) { () -> T } -> T
+      def self.log_node: (untyped node, ?label: String) -> void
+    end
+
+    # Wraps tree-sitter nodes with comment associations, line information, and signatures
+    class NodeWrapper
+      attr_reader node: untyped
+      attr_reader leading_comments: Array[Hash[Symbol, untyped]]
+      attr_reader source: String
+      attr_reader inline_comment: Hash[Symbol, untyped]?
+      attr_reader start_line: Integer
+      attr_reader end_line: Integer
+      attr_reader lines: Array[String]
+
+      def self.wrap: (
+        untyped? node,
+        Array[String] lines,
+        ?source: String?,
+        ?leading_comments: Array[Hash[Symbol, untyped]],
+        ?inline_comment: Hash[Symbol, untyped]?
+      ) -> NodeWrapper?
+
+      def initialize: (
+        untyped node,
+        lines: Array[String],
+        ?source: String?,
+        ?leading_comments: Array[Hash[Symbol, untyped]],
+        ?inline_comment: Hash[Symbol, untyped]?
+      ) -> void
+
+      def signature: () -> Array[untyped]?
+      def type: () -> Symbol
+      def type?: (Symbol | String type_name) -> bool
+      def table?: () -> bool
+      def array_of_tables?: () -> bool
+      def pair?: () -> bool
+      def comment?: () -> bool
+      def key: () -> String?
+      def value: () -> String?
+      def text: () -> String
+      def text_with_comments: () -> String
+      def children: () -> Array[NodeWrapper]
+      def child_pairs: () -> Array[NodeWrapper]
+      def has_children?: () -> bool
+      def container?: () -> bool
+      def table_name: () -> String?
+      def table_header: () -> String?
+      def content_lines: () -> Array[String]
+      def inspect: () -> String
+      def to_s: () -> String
+
+      private
+
+      def compute_signature: (untyped node) -> Array[untyped]?
+      def extract_key: (untyped node) -> String?
+      def extract_value: (untyped node) -> String?
+      def find_child_by_type: (untyped node, String type_name) -> untyped?
+      def collect_children: (untyped node) -> Array[NodeWrapper]
+    end
+
+    # Analyzes TOML file structure, extracting statements for merging
+    class FileAnalysis
+      include Ast::Merge::FileAnalyzable
+
+      PARSER_SEARCH_PATHS: Array[String]
+
+      attr_reader ast: untyped?
+      attr_reader errors: Array[untyped]
+
+      def self.find_parser_path: () -> String?
+
+      def initialize: (
+        String source,
+        ?signature_generator: (^(untyped) -> (Array[untyped] | untyped | nil))?,
+        ?parser_path: String?
+      ) -> void
+
+      def valid?: () -> bool
+      def fallthrough_node?: (untyped value) -> bool
+      def root_node: () -> NodeWrapper?
+      def signature_map: () -> Hash[Array[untyped], NodeWrapper]
+      def tables: () -> Array[NodeWrapper]
+      def top_level_pairs: () -> Array[NodeWrapper]
+      def find_by_signature: (Array[untyped] signature) -> NodeWrapper?
+      def line_at: (Integer line_num) -> String?
+      def normalized_line: (Integer line_num) -> String?
+
+      private
+
+      def parse_toml: () -> void
+      def integrate_nodes: () -> Array[NodeWrapper]
+      def build_signature_map: () -> Hash[Array[untyped], NodeWrapper]
+      def extract_comments: () -> Array[Hash[Symbol, untyped]]
+    end
+
+    # Tracks the result of a merge operation
+    class MergeResult < Ast::Merge::MergeResultBase
+      DECISION_KEPT_TEMPLATE: Symbol
+      DECISION_KEPT_DEST: Symbol
+      DECISION_MERGED: Symbol
+      DECISION_ADDED: Symbol
+
+      attr_reader statistics: Hash[Symbol, Integer]
+
+      def initialize: () -> void
+
+      def add_line: (
+        String line,
+        decision: Symbol,
+        source: Symbol,
+        ?original_line: Integer?
+      ) -> void
+
+      def add_lines: (
+        Array[String] lines,
+        decision: Symbol,
+        source: Symbol,
+        ?start_line: Integer?
+      ) -> void
+
+      def add_blank_line: (?decision: Symbol, ?source: Symbol) -> void
+
+      def add_node: (
+        NodeWrapper node,
+        decision: Symbol,
+        source: Symbol,
+        analysis: FileAnalysis
+      ) -> void
+
+      def to_toml: () -> String
+      def output: () -> String
+      def line_count: () -> Integer
+      def inspect: () -> String
+
+      private
+
+      def track_statistics: (Symbol decision, Symbol source) -> void
+    end
+
+    # Resolves conflicts between template and destination TOML content
+    class ConflictResolver < Ast::Merge::ConflictResolverBase
+      def initialize: (
+        FileAnalysis template_analysis,
+        FileAnalysis dest_analysis,
+        ?preference: Symbol,
+        ?add_template_only_nodes: bool,
+        ?match_refiner: (^(Array[untyped], Array[untyped], Hash[Symbol, untyped]) -> Array[untyped])?
+      ) -> void
+
+      private
+
+      def resolve_batch: (MergeResult result) -> void
+
+      def merge_node_lists: (
+        Array[NodeWrapper] template_nodes,
+        Array[NodeWrapper] dest_nodes,
+        FileAnalysis template_analysis,
+        FileAnalysis dest_analysis,
+        MergeResult result
+      ) -> void
+
+      def build_signature_map: (Array[NodeWrapper] nodes, FileAnalysis analysis) -> Hash[Array[untyped], Array[Hash[Symbol, untyped]]]
+      def build_refined_matches: (Array[NodeWrapper] template_nodes, Array[NodeWrapper] dest_nodes, Hash[untyped, untyped] template_by_sig, Hash[untyped, untyped] dest_by_sig) -> Hash[NodeWrapper, NodeWrapper]
+      def merge_matched_nodes: (NodeWrapper template_node, NodeWrapper dest_node, FileAnalysis template_analysis, FileAnalysis dest_analysis, MergeResult result) -> void
+      def add_node_to_result: (NodeWrapper node, MergeResult result, Symbol source, Symbol decision, FileAnalysis analysis) -> void
+      def freeze_node?: (untyped node) -> bool
+    end
+
+    # Match refiner for TOML tables that didn't match by exact signature
+    class TableMatchRefiner < Ast::Merge::MatchRefinerBase
+      def initialize: (?threshold: Float, **untyped options) -> void
+
+      def call: (
+        Array[NodeWrapper] template_nodes,
+        Array[NodeWrapper] dest_nodes,
+        ?Hash[Symbol, untyped] context
+      ) -> Array[Hash[Symbol, untyped]]
+
+      private
+
+      def extract_tables: (Array[NodeWrapper] nodes) -> Array[NodeWrapper]
+      def compute_similarity: (NodeWrapper t_table, NodeWrapper d_table) -> Float
+    end
+
+    # High-level merger for TOML content
+    class SmartMerger < Ast::Merge::SmartMergerBase
+      def initialize: (
+        String template_content,
+        String dest_content,
+        ?preference: Symbol,
+        ?add_template_only_nodes: bool,
+        ?match_refiner: (^(Array[untyped], Array[untyped], Hash[Symbol, untyped]) -> Array[untyped])?,
+        ?regions: Array[Hash[Symbol, untyped]]?,
+        ?region_placeholder: String?
+      ) -> void
+
+      def options: () -> Hash[Symbol, untyped]
+
+      private
+
+      def analysis_class: () -> Class
+      def default_freeze_token: () -> String
+      def resolver_class: () -> Class
+      def result_class: () -> Class
+      def perform_merge: () -> MergeResult
+    end
   end
 end
