@@ -21,7 +21,7 @@ module Toml
       # @param inline_comment [Hash, nil] Inline comment on the node's line
       # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
       def self.wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
-        return nil if node.nil?
+        return if node.nil?
 
         new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
       end
@@ -290,7 +290,7 @@ module Toml
       # Get the opening line for a table (the line with [table_name])
       # @return [String, nil]
       def opening_line
-        return nil unless (table? || array_of_tables?) && @start_line
+        return unless (table? || array_of_tables?) && @start_line
 
         @lines[@start_line - 1]
       end
@@ -299,7 +299,7 @@ module Toml
       # For tables, this is the last line of content before the next table or EOF
       # @return [String, nil]
       def closing_line
-        return nil unless container? && @end_line
+        return unless container? && @end_line
 
         @lines[@end_line - 1]
       end

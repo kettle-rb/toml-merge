@@ -1,0 +1,26 @@
+{
+  "lib/toml/merge/debug_logger.rb:2339818939": [
+    [25, 7, 310, "Style/ClassMethodsDefinitions: Use `class << self` to define a class method.", 3502695005]
+  ],
+  "lib/toml/merge/file_analysis.rb:3973885872": [
+    [34, 7, 280, "Style/ClassMethodsDefinitions: Use `class << self` to define a class method.", 3461802934]
+  ],
+  "lib/toml/merge/node_wrapper.rb:759868800": [
+    [23, 7, 237, "Style/ClassMethodsDefinitions: Use `class << self` to define a class method.", 2237022938],
+    [293, 9, 57, "Style/UnlessLogicalOperators: Do not use mixed logical operators in an `unless`.", 865689294]
+  ],
+  "spec/integration/smart_merge_spec.rb:3689243985": [
+    [3, 16, 30, "RSpec/DescribeClass: The first argument to describe should be the class or module being tested.", 3061307648]
+  ],
+  "spec/toml/merge/node_wrapper_spec.rb:4250602538": [
+    [31, 5, 198, "RSpec/RepeatedExample: Don't repeat examples within an example group. Repeated on line(s) 37, 43.", 4187560887],
+    [37, 5, 196, "RSpec/RepeatedExample: Don't repeat examples within an example group. Repeated on line(s) 31, 43.", 1810521672],
+    [43, 5, 213, "RSpec/RepeatedExample: Don't repeat examples within an example group. Repeated on line(s) 31, 37.", 3548484096]
+  ],
+  "spec/toml/merge/smart_merger_spec.rb:2464095472": [
+    [38, 59, 2, "RSpec/BeEq: Prefer `be` over `eq`.", 5860785]
+  ],
+  "spec/toml/version_spec.rb:1695975153": [
+    [3, 1, 35, "RSpec/SpecFilePathFormat: Spec path should end with `toml/merge/version*_spec.rb`.", 2604485545]
+  ]
+}

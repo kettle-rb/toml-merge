@@ -190,8 +190,8 @@ module Toml
         return 1.0 if total_t == 1 && total_d == 1
 
         # Normalize positions to [0, 1]
-        t_pos = total_t > 1 ? t_idx.to_f / (total_t - 1) : 0.5
-        d_pos = total_d > 1 ? d_idx.to_f / (total_d - 1) : 0.5
+        t_pos = (total_t > 1) ? t_idx.to_f / (total_t - 1) : 0.5
+        d_pos = (total_d > 1) ? d_idx.to_f / (total_d - 1) : 0.5
 
         1.0 - (t_pos - d_pos).abs
       end
@@ -216,7 +216,7 @@ module Toml
 
         (1..m).each do |i|
           (1..n).each do |j|
-            cost = str1[i - 1] == str2[j - 1] ? 0 : 1
+            cost = (str1[i - 1] == str2[j - 1]) ? 0 : 1
             d[i][j] = [
               d[i - 1][j] + 1,      # deletion
               d[i][j - 1] + 1,      # insertion

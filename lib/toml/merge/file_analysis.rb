@@ -188,7 +188,7 @@ module Toml
       end
 
       def compute_node_signature(node)
-        return nil unless node.is_a?(NodeWrapper)
+        return unless node.is_a?(NodeWrapper)
 
         node.signature
       end

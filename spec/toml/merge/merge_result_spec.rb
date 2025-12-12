@@ -37,9 +37,9 @@ RSpec.describe Toml::Merge::MergeResult do
 
   describe "#content" do
     it "returns the accumulated TOML content" do
-      result.add_line('[server]', decision: :kept_destination, source: :destination)
+      result.add_line("[server]", decision: :kept_destination, source: :destination)
       result.add_line('host = "localhost"', decision: :kept_destination, source: :destination)
-      result.add_line('port = 8080', decision: :kept_destination, source: :destination)
+      result.add_line("port = 8080", decision: :kept_destination, source: :destination)
 
       expect(result.content).to eq("[server]\nhost = \"localhost\"\nport = 8080\n")
     end

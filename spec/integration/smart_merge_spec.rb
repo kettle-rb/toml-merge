@@ -4,12 +4,12 @@ RSpec.describe "TOML Smart Merge Integration" do
   let(:fixtures_path) { File.expand_path("../fixtures", __dir__) }
 
   describe "merging template and destination files" do
+    subject(:merger) { Toml::Merge::SmartMerger.new(template, destination) }
+
     let(:template_path) { File.join(fixtures_path, "template.toml") }
     let(:destination_path) { File.join(fixtures_path, "destination.toml") }
     let(:template) { File.read(template_path) }
     let(:destination) { File.read(destination_path) }
-
-    subject(:merger) { Toml::Merge::SmartMerger.new(template, destination) }
 
     it "produces valid merged output" do
       result = merger.merge
