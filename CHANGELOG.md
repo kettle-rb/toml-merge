@@ -20,6 +20,8 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+- Initial release
+
 ### Changed
 
 ### Deprecated
@@ -30,6 +32,6 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Security
 
-## [0.1.0] - 2025-12-09
-
-- Initial release
+[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/kettle-rb/toml-merge/compare/772a5f5802ce518f2e2c83a561eb583ed634bac4...v1.0.0
+[1.0.0t]: https://github.com/kettle-rb/toml-merge/tags/v1.0.0
