@@ -81,11 +81,6 @@ Gem::Specification.new do |spec|
   # Listed files are the relative paths from bindir above.
   spec.executables = []
 
-  # Parser and AST infrastructure
-  spec.add_dependency("ruby_tree_sitter", "~> 2.0")                     # ruby >= 3.0.0
-  # NOTE: tree-sitter-toml parser must be installed separately via your package manager
-  #       e.g., `apt install libtree-sitter-toml-dev` or built from source
-
   # Shared merge infrastructure
   spec.add_dependency("ast-merge", "~> 1.0")                            # ruby >= 3.2.0
 

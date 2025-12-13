@@ -1,0 +1,11 @@
+# NOTE: tree-sitter-toml parser must be installed separately via your package manager
+#       e.g., `apt install libtree-sitter-toml-dev` or built from source
+
+platform :jruby do
+  gem "ffi"
+  gem "tree_sitter"
+end
+
+platform :mri do
+  gem "ruby_tree_sitter"
+end

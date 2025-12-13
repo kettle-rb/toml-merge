@@ -1,7 +1,13 @@
 # frozen_string_literal: true
 
 # External gems
-require "tree_sitter"
+begin
+  require "tree_sitter"
+rescue LoadError
+  # JRuby and TruffleRuby use tree_sitter_ffi
+  require "tree_sitter_ffi"
+end
+
 require "version_gem"
 require "set"
 
