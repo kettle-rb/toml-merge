@@ -29,9 +29,20 @@ RSpec.describe Toml::Merge::MergeResult do
   end
 
   describe "#add_node" do
-    # This requires a real NodeWrapper, so we test the interface
-    it "responds to add_node" do
-      expect(result).to respond_to(:add_node)
+    it "adds lines from a node range using analysis and tracks stats" do
+      analysis = instance_double("FileAnalysis")
+      allow(analysis).to receive(:line_at).with(1).and_return("[a]")
+      allow(analysis).to receive(:line_at).with(2).and_return("b = 1")
+      allow(analysis).to receive(:line_at).with(3).and_return(nil)
+
+      node = instance_double("Toml::Merge::NodeWrapper", start_line: 1, end_line: 2)
+
+      expect {
+        result.add_node(node, decision: described_class::DECISION_KEPT_DEST, source: :destination, analysis: analysis)
+      }.to change { result.line_count }.by(2)
+
+      expect(result.content).to eq("[a]\nb = 1\n")
+      expect(result.statistics[:dest_lines]).to eq(2)
     end
   end
 
@@ -50,6 +61,12 @@ RSpec.describe Toml::Merge::MergeResult do
       result.add_line("test = 1", decision: :kept_template, source: :template)
       expect(result.to_toml).to eq(result.content)
     end
+
+    it "ensures a trailing newline only when non-empty" do
+      expect(result.to_toml).to eq("")
+      result.add_line("x = 1", decision: :kept_template, source: :template)
+      expect(result.to_toml.end_with?("\n")).to be true
+    end
   end
 
   describe "#statistics" do
@@ -61,6 +78,16 @@ RSpec.describe Toml::Merge::MergeResult do
       stats = result.statistics
       expect(stats[:template_lines]).to eq(2)
       expect(stats[:dest_lines]).to eq(1)
+    end
+  end
+
+  describe "#add_blank_line" do
+    it "adds a blank line with default decision/source" do
+      expect { result.add_blank_line }.to change { result.line_count }.by(1)
+      # A single blank line is tracked internally but renders as empty content
+      expect(result.content).to eq("")
+      # merged_lines should increment by default branch
+      expect(result.statistics[:merged_lines]).to eq(1)
     end
   end
 end

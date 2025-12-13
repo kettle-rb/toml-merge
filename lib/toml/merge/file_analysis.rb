@@ -17,7 +17,6 @@ module Toml
       PARSER_SEARCH_PATHS = [
         "/usr/lib/libtree-sitter-toml.so",
         "/usr/lib64/libtree-sitter-toml.so",
-        "/usr/lib64/libtree-sitter-toml.so.14",
         "/usr/local/lib/libtree-sitter-toml.so",
         "/opt/homebrew/lib/libtree-sitter-toml.dylib",
         "/usr/local/lib/libtree-sitter-toml.dylib",
