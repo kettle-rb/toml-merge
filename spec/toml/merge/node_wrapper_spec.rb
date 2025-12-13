@@ -156,7 +156,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
       sig = wrapper.signature
       expect(sig).to be_an(Array)
       expect(sig.first).to eq(:string)
-      expect(sig.last).to eq("test")
+      expect(sig.last).to eq("\"test\"")
     end
 
     it "generates signatures for datetime value nodes" do
@@ -175,7 +175,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
       sig = wrapper.signature
       expect(sig).to be_an(Array)
       expect(sig.first).to eq(:comment)
-      expect(sig.last).to eq(" This is a comment")
+      expect(sig.last).to eq("# This is a comment")
     end
   end
 

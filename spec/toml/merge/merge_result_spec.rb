@@ -28,21 +28,47 @@ RSpec.describe Toml::Merge::MergeResult do
     end
   end
 
-  describe "#add_node" do
-    it "adds lines from a node range using analysis and tracks stats" do
-      analysis = instance_double("FileAnalysis")
-      allow(analysis).to receive(:line_at).with(1).and_return("[a]")
-      allow(analysis).to receive(:line_at).with(2).and_return("b = 1")
-      allow(analysis).to receive(:line_at).with(3).and_return(nil)
+  describe "#add_lines" do
+    it "adds multiple lines with start_line tracking" do
+      lines = ["line 1", "line 2", "line 3"]
+      result.add_lines(lines, decision: :kept_template, source: :template, start_line: 10)
 
-      node = instance_double("Toml::Merge::NodeWrapper", start_line: 1, end_line: 2)
+      expect(result.line_count).to eq(3)
+      expect(result.content).to eq("line 1\nline 2\nline 3\n")
+    end
+
+    it "handles nil start_line" do
+      lines = ["line 1", "line 2"]
+      result.add_lines(lines, decision: :kept_destination, source: :destination, start_line: nil)
+
+      expect(result.line_count).to eq(2)
+      # Should not crash and should track statistics
+      expect(result.statistics[:dest_lines]).to eq(2)
+    end
+  end
+
+  describe "#add_node" do
+    it "skips nodes without start_line or end_line" do
+      analysis = instance_double("FileAnalysis")
+      node = instance_double("Toml::Merge::NodeWrapper", start_line: nil, end_line: 5)
 
       expect {
         result.add_node(node, decision: described_class::DECISION_KEPT_DEST, source: :destination, analysis: analysis)
-      }.to change { result.line_count }.by(2)
+      }.not_to change { result.line_count }
+    end
 
-      expect(result.content).to eq("[a]\nb = 1\n")
-      expect(result.statistics[:dest_lines]).to eq(2)
+    it "skips nil lines from analysis" do
+      analysis = instance_double("FileAnalysis")
+      allow(analysis).to receive(:line_at).with(1).and_return("line 1")
+      allow(analysis).to receive(:line_at).with(2).and_return(nil) # nil line
+      allow(analysis).to receive(:line_at).with(3).and_return("line 3")
+
+      node = instance_double("Toml::Merge::NodeWrapper", start_line: 1, end_line: 3)
+
+      result.add_node(node, decision: described_class::DECISION_KEPT_DEST, source: :destination, analysis: analysis)
+
+      expect(result.line_count).to eq(2) # only non-nil lines added
+      expect(result.content).to eq("line 1\nline 3\n")
     end
   end
 

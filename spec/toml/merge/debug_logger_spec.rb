@@ -66,10 +66,9 @@ RSpec.describe Toml::Merge::DebugLogger do
 
       it "falls back to extract_node_info for other objects" do
         other = Object.new
-        # Stub extract_node_info to ensure deterministic output without requiring base implementation
-        allow(described_class).to receive(:extract_node_info).and_return({foo: "bar"})
+        # Don't stub extract_node_info to ensure the else branch is actually executed
         expect { described_class.log_node(other, label: "Other") }
-          .to output(/foo.*bar/).to_stderr
+          .to output(/\[Toml::Merge\].*Other/).to_stderr
       end
     end
   end

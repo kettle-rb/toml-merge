@@ -18,6 +18,64 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     end
   end
 
+  describe "#extract_table_name" do
+    subject(:refiner) { described_class.new }
+
+    before do
+      skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
+    end
+
+    it "extracts name from table node" do
+      toml = "[server]\nport = 8080"
+      node = parse_toml(toml, node_type: "table")
+      expect(refiner.send(:extract_table_name, node)).to eq("server")
+    end
+
+    it "extracts name from pair node" do
+      toml = "port = 8080"
+      node = parse_toml(toml, node_type: "pair")
+      expect(refiner.send(:extract_table_name, node)).to eq("port")
+    end
+
+    it "extracts name from signature when table_name/key_name not available" do
+      # Mock a node without table_name/key_name but with signature
+      mock_node = double
+      allow(mock_node).to receive(:respond_to?).with(:table_name).and_return(false)
+      allow(mock_node).to receive(:respond_to?).with(:key_name).and_return(false)
+      allow(mock_node).to receive(:respond_to?).with(:signature).and_return(true)
+      allow(mock_node).to receive(:signature).and_return([:table, "mock_table"])
+
+      expect(refiner.send(:extract_table_name, mock_node)).to eq("mock_table")
+    end
+
+    it "returns empty string for nodes without name" do
+      mock_node = double
+      allow(mock_node).to receive(:respond_to?).and_return(false)
+
+      expect(refiner.send(:extract_table_name, mock_node)).to eq("")
+    end
+  end
+
+  describe "#compute_position_similarity" do
+    subject(:refiner) { described_class.new }
+
+    it "returns 1.0 when both lists have one item" do
+      expect(refiner.send(:compute_position_similarity, 0, 0, 1, 1)).to eq(1.0)
+    end
+
+    it "computes similarity for multiple items" do
+      # Test various positions
+      expect(refiner.send(:compute_position_similarity, 0, 0, 3, 3)).to eq(1.0) # same position
+      expect(refiner.send(:compute_position_similarity, 0, 2, 3, 3)).to eq(0.0) # opposite positions
+      expect(refiner.send(:compute_position_similarity, 1, 1, 3, 3)).to eq(1.0) # middle positions
+    end
+
+    it "handles different list sizes" do
+      expect(refiner.send(:compute_position_similarity, 0, 0, 2, 3)).to be_between(0, 1)
+      expect(refiner.send(:compute_position_similarity, 1, 2, 2, 4)).to be_between(0, 1)
+    end
+  end
+
   describe "#call" do
     subject(:refiner) { described_class.new(threshold: 0.5) }
 

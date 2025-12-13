@@ -80,6 +80,21 @@ RSpec.describe Toml::Merge::SmartMerger do
       expect(result).to be_a(String)
       expect(result).not_to be_empty
     end
+
+    context "with debug logging enabled" do
+      around do |example|
+        original_env = ENV["TOML_MERGE_DEBUG"]
+        ENV["TOML_MERGE_DEBUG"] = "1"
+        example.run
+        ENV["TOML_MERGE_DEBUG"] = original_env
+      end
+
+      it "logs debug information during merge" do
+        expect {
+          described_class.new(template_content, dest_content).merge
+        }.not_to raise_error
+      end
+    end
   end
 
   describe "#merge_with_debug" do
