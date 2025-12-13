@@ -51,8 +51,9 @@ jobs:
     env:
       # $BUNDLE_GEMFILE must be set at job level, so it is set for all steps
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}.gemfile
-      # Set LD_LIBRARY_PATH globally for the job to ensure the dynamic linker finds the library
-      LD_LIBRARY_PATH: "/usr/lib/x86_64-linux-gnu:/usr/lib"
+      # Tree-sitter library paths for JRuby/TruffleRuby compatibility
+      LD_LIBRARY_PATH: "/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib"
+      TREE_SITTER_RUNTIME_LIB: "/usr/lib/x86_64-linux-gnu/libtree-sitter.so.0"
       TREE_SITTER_TOML_PATH: "/usr/local/lib/libtree-sitter-toml.so"
     strategy:
       matrix:
@@ -69,21 +70,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install tree-sitter system library
-        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libtree-sitter-dev
-
-      - name: Install tree-sitter-toml
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gcc g++ make
-          cd /tmp
-          wget https://github.com/tree-sitter/tree-sitter-toml/archive/refs/heads/master.zip
-          unzip master.zip
-          cd tree-sitter-toml-master
-          gcc -fPIC -I./src -c src/parser.c
-          gcc -shared -o libtree-sitter-toml.so parser.o
-          sudo cp libtree-sitter-toml.so /usr/local/lib/
-          sudo ldconfig
+      - name: Install tree-sitter dependencies (Ubuntu)
+        run: .github/scripts/ubuntu/setup-tree-sitter.sh --sudo
 
       - name: Setup Ruby & RubyGems
         uses: ruby/setup-ruby@v1
