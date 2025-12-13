@@ -79,8 +79,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install tree-sitter system library (Java Only)
-        if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
+      - name: Install tree-sitter system library
         run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libtree-sitter-dev
 
       - name: Install tree-sitter-toml
