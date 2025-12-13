@@ -48,7 +48,7 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       expect(refiner.send(:extract_table_name, mock_node)).to eq("mock_table")
     end
 
-    it "returns empty string for nodes without name" do
+    it "returns empty string for nodes without name or signature" do
       mock_node = double
       allow(mock_node).to receive(:respond_to?).and_return(false)
 

@@ -23,14 +23,14 @@ RSpec.describe Toml::Merge::FileAnalysis do
 
   describe ".find_parser_path" do
     it "returns path from environment variable when set and file exists" do
-      allow(ENV).to receive(:[]).with("TREE_SITTER_TOML_PATH").and_return("/fake/path/libtree-sitter-toml.so")
+      stub_env("TREE_SITTER_TOML_PATH" => "/fake/path/libtree-sitter-toml.so")
       allow(File).to receive(:exist?).with("/fake/path/libtree-sitter-toml.so").and_return(true)
 
       expect(described_class.find_parser_path).to eq("/fake/path/libtree-sitter-toml.so")
     end
 
     it "searches common paths when env var not set" do
-      allow(ENV).to receive(:[]).with("TREE_SITTER_TOML_PATH").and_return(nil)
+      stub_env("TREE_SITTER_TOML_PATH" => nil)
       allow(File).to receive(:exist?).and_return(false)
       allow(File).to receive(:exist?).with("/usr/lib/libtree-sitter-toml.so").and_return(true)
 
@@ -38,7 +38,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
 
     it "returns nil when no parser found" do
-      allow(ENV).to receive(:[]).with("TREE_SITTER_TOML_PATH").and_return(nil)
+      stub_env("TREE_SITTER_TOML_PATH" => nil)
       allow(File).to receive(:exist?).and_return(false)
 
       expect(described_class.find_parser_path).to be_nil
@@ -108,18 +108,13 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
-  describe "#signature_map" do
+  describe "#statements" do
     subject(:analysis) { described_class.new(valid_toml) }
 
-    it "returns a hash mapping signatures to nodes" do
-      expect(analysis.signature_map).to be_a(Hash)
-    end
-
-    it "contains entries for tables" do
-      # Should have entries for server and database tables
-      signatures = analysis.signature_map.keys
-      expect(signatures.any? { |s| s.include?("server") }).to be true
-      expect(signatures.any? { |s| s.include?("database") }).to be true
+    it "returns statement nodes excluding comments" do
+      statements = analysis.statements
+      expect(statements).to be_an(Array)
+      expect(statements.all? { |s| s.type != :comment }).to be true
     end
   end
 

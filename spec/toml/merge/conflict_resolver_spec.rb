@@ -129,6 +129,31 @@ RSpec.describe Toml::Merge::ConflictResolver do
       expect(result.content).not_to be_empty
     end
 
+    it "merges array nodes" do
+      template_with_array = <<~TOML
+        items = [1, 2, 3]
+      TOML
+
+      dest_with_array = <<~TOML
+        items = [4, 5, 6]
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_with_array)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_with_array)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: false,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+    end
+
     it "merges inline table nodes" do
       template_with_inline = <<~TOML
         config = { a = 1, b = 2 }
@@ -152,6 +177,39 @@ RSpec.describe Toml::Merge::ConflictResolver do
       resolver.resolve(result)
 
       expect(result.content).not_to be_empty
+    end
+
+    it "handles matching node signatures" do
+      # Create TOML where both have the same table name
+      template_toml = <<~TOML
+        [server]
+        host = "template.example.com"
+        port = 8080
+      TOML
+
+      dest_toml = <<~TOML
+        [server]
+        host = "dest.example.com"
+        ssl = true
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: true,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).to include("[server]")
+      expect(result.content).to include("host = \"dest.example.com\"") # destination preferred
+      expect(result.content).to include("port = 8080") # from template
+      expect(result.content).to include("ssl = true") # from destination
     end
   end
 end

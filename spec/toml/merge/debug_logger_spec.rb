@@ -4,7 +4,7 @@ RSpec.describe Toml::Merge::DebugLogger do
   describe ".debug" do
     context "when TOML_MERGE_DEBUG is not set" do
       before do
-        allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return(nil)
+        stub_env("TOML_MERGE_DEBUG" => nil)
       end
 
       it "does not output anything" do
@@ -14,7 +14,7 @@ RSpec.describe Toml::Merge::DebugLogger do
 
     context "when TOML_MERGE_DEBUG is set" do
       before do
-        allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return("1")
+        stub_env("TOML_MERGE_DEBUG" => "1")
       end
 
       it "outputs debug information to stderr" do
@@ -31,12 +31,12 @@ RSpec.describe Toml::Merge::DebugLogger do
 
   describe ".enabled?" do
     it "returns false when TOML_MERGE_DEBUG is not set" do
-      allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return(nil)
+      stub_env("TOML_MERGE_DEBUG" => nil)
       expect(described_class.enabled?).to be false
     end
 
     it "returns true when TOML_MERGE_DEBUG is set" do
-      allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return("1")
+      stub_env("TOML_MERGE_DEBUG" => "1")
       expect(described_class.enabled?).to be true
     end
   end
@@ -44,7 +44,7 @@ RSpec.describe Toml::Merge::DebugLogger do
   describe ".log_node" do
     context "when disabled" do
       before do
-        allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return(nil)
+        stub_env("TOML_MERGE_DEBUG" => nil)
       end
 
       it "does nothing (no output)" do
@@ -55,11 +55,12 @@ RSpec.describe Toml::Merge::DebugLogger do
 
     context "when enabled" do
       before do
-        allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return("1")
+        stub_env("TOML_MERGE_DEBUG" => "1")
       end
 
       it "prints info for NodeWrapper instances" do
-        node = instance_double(Toml::Merge::NodeWrapper, type: :pair, start_line: 3, end_line: 5)
+        toml = "port = 8080"
+        node = parse_toml(toml, node_type: "pair")
         expect { described_class.log_node(node, label: "Wrapper") }
           .to output(/\[Toml::Merge\].*Wrapper/).to_stderr
       end
@@ -75,14 +76,14 @@ RSpec.describe Toml::Merge::DebugLogger do
 
   describe ".time" do
     it "yields and returns the block result without output when disabled" do
-      allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return(nil)
+      stub_env("TOML_MERGE_DEBUG" => nil)
       val = nil
       expect { val = described_class.time("block") { 42 } }.not_to output.to_stderr
       expect(val).to eq(42)
     end
 
     it "yields and prints timing when enabled" do
-      allow(ENV).to receive(:[]).with("TOML_MERGE_DEBUG").and_return("1")
+      stub_env("TOML_MERGE_DEBUG" => "1")
       expect { described_class.time("block") { :ok } }.to output(/block/).to_stderr
     end
   end

@@ -340,11 +340,11 @@ RSpec.describe Toml::Merge::NodeWrapper do
       expect(pair.opening_line).to be_nil
     end
 
-    it "returns nil for closing_line when called on non-container nodes" do
+    it "returns empty array for mergeable_children on leaf nodes" do
       toml = "port = 8080"
       pair = parse_toml(toml, node_type: "pair")
       expect(pair).not_to be_nil
-      expect(pair.closing_line).to be_nil
+      expect(pair.mergeable_children).to eq([])
     end
   end
 
