@@ -54,5 +54,104 @@ RSpec.describe Toml::Merge::ConflictResolver do
 
       expect(result.content).not_to be_empty
     end
+
+    it "handles preference :template" do
+      template_analysis = Toml::Merge::FileAnalysis.new(template_content)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_content)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :template,
+        add_template_only_nodes: false,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+    end
+
+    it "handles add_template_only_nodes: true" do
+      template_content_with_extra = <<~TOML
+        [server]
+        host = "localhost"
+        port = 8080
+
+        [database]
+        url = "sqlite://db.sqlite"
+      TOML
+
+      dest_content_minimal = <<~TOML
+        [server]
+        host = "production.example.com"
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_content_with_extra)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_content_minimal)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: true,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+      expect(result.content).to include("[database]")
+    end
+
+    it "merges array nodes" do
+      template_with_array = <<~TOML
+        items = [1, 2, 3]
+      TOML
+
+      dest_with_array = <<~TOML
+        items = [4, 5, 6]
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_with_array)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_with_array)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: false,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+    end
+
+    it "merges inline table nodes" do
+      template_with_inline = <<~TOML
+        config = { a = 1, b = 2 }
+      TOML
+
+      dest_with_inline = <<~TOML
+        config = { a = 10, c = 3 }
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_with_inline)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_with_inline)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: false,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+    end
   end
 end
