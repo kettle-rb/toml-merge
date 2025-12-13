@@ -138,8 +138,14 @@ module Toml
       # @param node [Object] Table node
       # @return [String] Table name
       def extract_table_name(node)
-        return node.key_name if node.respond_to?(:key_name)
-        return node.signature if node.respond_to?(:signature)
+        return node.table_name if node.respond_to?(:table_name) && node.table_name
+        return node.key_name if node.respond_to?(:key_name) && node.key_name
+
+        # Fallback: extract from signature if available
+        if node.respond_to?(:signature)
+          sig = node.signature
+          return sig[1] if sig.is_a?(Array) && sig.size > 1
+        end
 
         ""
       end

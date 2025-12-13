@@ -24,7 +24,11 @@ end
 # this library
 require "toml/merge"
 
+# Support files
+Dir[File.join(__dir__, "support", "**", "*.rb")].each { |f| require f }
+
 RSpec.configure do |config|
+  config.include TomlParsingHelper
   config.before do
     # Speed up polling loops
     allow(described_class).to receive(:sleep) unless described_class.nil?

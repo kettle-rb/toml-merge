@@ -97,7 +97,8 @@ module Toml
       # Check if this is a TOML array of tables
       # @return [Boolean]
       def array_of_tables?
-        @node.type.to_s == "array_of_tables"
+        type_str = @node.type.to_s
+        type_str == "array_of_tables" || type_str == "table_array_element"
       end
 
       # Check if this is a TOML inline table
@@ -346,7 +347,7 @@ module Toml
           # Tables identified by their header name
           name = table_name
           [:table, name]
-        when "array_of_tables"
+        when "array_of_tables", "table_array_element"
           # Array of tables identified by their header name
           name = table_name
           [:array_of_tables, name]

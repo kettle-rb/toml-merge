@@ -35,16 +35,47 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     # These document the expected behavior
 
     context "with similar table names" do
+      before do
+        skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
+      end
+
       it "matches tables with similar names" do
-        pending "Requires tree-sitter TOML parser for real NodeWrapper objects"
-        raise "Not implemented"
+        template_toml = "[server]\nport = 8080"
+        dest_toml = "[servers]\nport = 9090"
+
+        template_node = parse_toml(template_toml, node_type: "table")
+        dest_node = parse_toml(dest_toml, node_type: "table")
+
+        expect(template_node).not_to be_nil
+        expect(dest_node).not_to be_nil
+
+        matches = refiner.call([template_node], [dest_node])
+        expect(matches).not_to be_empty
+        expect(matches.first.template_node).to eq(template_node)
+        expect(matches.first.dest_node).to eq(dest_node)
       end
     end
 
     context "with different table names" do
+      before do
+        skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
+      end
+
       it "does not match tables below threshold" do
-        pending "Requires tree-sitter TOML parser for real NodeWrapper objects"
-        raise "Not implemented"
+        # Use very different table names to ensure they don't match
+        # "database" and "application" share some positional similarity,
+        # so we use completely different names
+        template_toml = "[xyz]\nhost = 'localhost'"
+        dest_toml = "[abc]\ntimeout = 30"
+
+        template_node = parse_toml(template_toml, node_type: "table")
+        dest_node = parse_toml(dest_toml, node_type: "table")
+
+        expect(template_node).not_to be_nil
+        expect(dest_node).not_to be_nil
+
+        matches = refiner.call([template_node], [dest_node])
+        expect(matches).to be_empty, "Expected 'xyz' and 'abc' to not match (too dissimilar)"
       end
     end
   end
@@ -52,11 +83,24 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
   describe "Levenshtein distance" do
     subject(:refiner) { described_class.new }
 
+    before do
+      skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
+    end
+
     # We test the private method indirectly through similarity scoring
     it "considers 'server' and 'servers' as similar" do
-      # This would be tested via actual table matching
-      pending "Requires tree-sitter TOML parser"
-      raise "Not implemented"
+      # This tests that 'server' and 'servers' are similar enough to match
+      template_toml = "[server]\nport = 8080"
+      dest_toml = "[servers]\nport = 9090"
+
+      template_node = parse_toml(template_toml, node_type: "table")
+      dest_node = parse_toml(dest_toml, node_type: "table")
+
+      expect(template_node).not_to be_nil
+      expect(dest_node).not_to be_nil
+
+      matches = refiner.call([template_node], [dest_node])
+      expect(matches).not_to be_empty, "Expected 'server' and 'servers' to match via Levenshtein distance"
     end
   end
 end

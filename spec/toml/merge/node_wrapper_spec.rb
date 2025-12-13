@@ -25,25 +25,44 @@ RSpec.describe Toml::Merge::NodeWrapper do
   end
 
   describe "signature computation" do
-    # These tests would require actual tree-sitter parsing
-    # They serve as documentation for expected behavior
+    before do
+      skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
+    end
 
     it "generates signatures for table nodes" do
-      # A table like [server] should have signature "table:server"
-      pending "Requires tree-sitter TOML parser"
-      raise "Not implemented"
+      # A table like [server] should have signature [:table, "server"]
+      toml = "[server]\nport = 8080"
+      wrapper = parse_toml(toml, node_type: "table")
+
+      expect(wrapper).not_to be_nil
+      expect(wrapper.signature).to eq([:table, "server"])
     end
 
     it "generates signatures for pair nodes" do
-      # A pair like port = 8080 should have signature "pair:port"
-      pending "Requires tree-sitter TOML parser"
-      raise "Not implemented"
+      # A pair like port = 8080 should have signature [:pair, "port"]
+      toml = "port = 8080"
+      wrapper = parse_toml(toml, node_type: "pair")
+
+      expect(wrapper).not_to be_nil
+      expect(wrapper.signature).to eq([:pair, "port"])
     end
 
     it "generates signatures for array of tables" do
-      # An array like [[servers]] should have signature "table_array:servers"
-      pending "Requires tree-sitter TOML parser"
-      raise "Not implemented"
+      # An array like [[servers]] should have signature [:array_of_tables, "servers"]
+      toml = "[[servers]]\nname = \"web\""
+
+      # Try different possible node types for array of tables
+      wrapper = parse_toml(toml, node_type: "table_array_element") ||
+                parse_toml(toml, node_type: "array_of_tables") ||
+                parse_toml(toml, node_type: "table_array")
+
+      expect(wrapper).not_to be_nil, "Could not find array of tables node - check tree-sitter-toml grammar"
+
+      # The signature should identify it as an array of tables with the name
+      sig = wrapper.signature
+      expect(sig).to be_an(Array)
+      expect(sig.first).to eq(:array_of_tables).or eq(:table_array_element).or eq(:table_array)
+      expect(sig.last).to eq("servers")
     end
   end
 end
