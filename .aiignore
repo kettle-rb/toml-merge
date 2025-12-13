@@ -7,7 +7,6 @@
 *.tmp
 
 # or folders
-.devcontainer/
 .qlty/
 .yardoc/
 dist/
