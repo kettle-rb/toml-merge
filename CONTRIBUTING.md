@@ -115,6 +115,27 @@ To run all tests
 bundle exec rake test
 ```
 
+### Coverage-focused workflow (recommended when improving tests)
+
+When you are working specifically on test coverage, use this two-step command to both run the suite with coverage enabled and immediately inspect uncovered lines and branches:
+
+```console
+bin/rake coverage && bin/kettle-soup-cover -d
+```
+
+Notes:
+- For focused or single-file runs during development, disable hard coverage thresholds to avoid failing the run on partial coverage:
+
+  ```console
+  K_SOUP_COV_MIN_HARD=false bin/rspec spec/toml/merge/node_wrapper_spec.rb
+  ```
+
+  Then, before finalizing your work, run the full coverage workflow again:
+
+  ```console
+  bin/rake coverage && bin/kettle-soup-cover -d
+  ```
+
 ### Spec organization (required)
 
 - One spec file per class/module. For each class or module under `lib/`, keep all of its unit tests in a single spec file under `spec/` that mirrors the path and file name exactly: `lib/toml/merge/my_class.rb` -> `spec/toml/merge/my_class_spec.rb`.

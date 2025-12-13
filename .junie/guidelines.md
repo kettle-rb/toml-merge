@@ -63,6 +63,9 @@ This document captures project-specific knowledge to streamline setup, testing, 
     - bin/rspec
     - or: bundle exec rspec
     - or: bundle exec rake spec
+  - Coverage-focused workflow (recommended when improving tests):
+    - Run the suite with coverage and immediately inspect uncovered lines/branches:
+      - `bin/rake coverage && bin/kettle-soup-cover -d`
   - Progress format (less verbose):
     - bundle exec rspec --format progress
   - Focused runs
