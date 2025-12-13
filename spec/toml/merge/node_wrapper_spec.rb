@@ -53,8 +53,8 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
       # Try different possible node types for array of tables
       wrapper = parse_toml(toml, node_type: "table_array_element") ||
-                parse_toml(toml, node_type: "array_of_tables") ||
-                parse_toml(toml, node_type: "table_array")
+        parse_toml(toml, node_type: "array_of_tables") ||
+        parse_toml(toml, node_type: "table_array")
 
       expect(wrapper).not_to be_nil, "Could not find array of tables node - check tree-sitter-toml grammar"
 
@@ -63,6 +63,83 @@ RSpec.describe Toml::Merge::NodeWrapper do
       expect(sig).to be_an(Array)
       expect(sig.first).to eq(:array_of_tables).or eq(:table_array_element).or eq(:table_array)
       expect(sig.last).to eq("servers")
+    end
+  end
+
+  describe "predicates and accessors with real parser" do
+    before do
+      skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
+    end
+
+    it "extracts table_name and pairs from a table" do
+      toml = <<~TOML
+        # config
+        [server]
+        host = "localhost"
+        port = 8080
+      TOML
+      table = parse_toml(toml, node_type: "table")
+      expect(table).not_to be_nil
+      expect(table.table?).to be true
+      expect(table.table_name).to eq("server")
+
+      # pairs from table
+      ps = table.pairs
+      expect(ps.map(&:pair?)).to all(be true)
+      keys = ps.map(&:key_name)
+      expect(keys).to contain_exactly("host", "port")
+
+      # value_node for a pair
+      host_pair = ps.find { |p| p.key_name == "host" }
+      expect(host_pair.value_node.string?).to be true
+    end
+
+    it "detects array_of_tables and exposes mergeable_children" do
+      toml = <<~TOML
+        [[servers]]
+        name = "web"
+        [[servers]]
+        name = "db"
+      TOML
+      aot = parse_toml(toml, node_type: "table_array_element") ||
+        parse_toml(toml, node_type: "array_of_tables") ||
+        parse_toml(toml, node_type: "table_array")
+      expect(aot).not_to be_nil
+      expect(aot.array_of_tables?).to be true
+      expect(aot.container?).to be true
+      expect(aot.leaf?).to be false
+      # mergeable_children returns child nodes to consider during merge
+      children = aot.mergeable_children
+      expect(children).to be_a(Array)
+      expect(children).to all(be_a(described_class))
+    end
+
+    it "handles inline_table keys and pairs" do
+      toml = "config = { a = 1, b = 2 }"
+      pair = parse_toml(toml, node_type: "pair")
+      expect(pair).not_to be_nil
+      expect(pair.pair?).to be true
+      expect(pair.key_name).to eq("config")
+
+      value = pair.value_node
+      expect(value.inline_table?).to be true
+      ps = value.pairs
+      expect(ps.map(&:key_name)).to contain_exactly("a", "b")
+    end
+
+    it "exposes opening_line/closing_line/text/content ranges" do
+      toml = <<~TOML
+        [block]
+        a = 1
+        b = 2
+      TOML
+      table = parse_toml(toml, node_type: "table")
+      expect(table.opening_line).to eq("[block]")
+      # For table headers, closing_line may be the header line or nil (parser dependent)
+      expect([nil, "[block]"]).to include(table.closing_line)
+      # text/content should include the source slice
+      expect(table.text).to be_a(String)
+      expect(table.content).to include("[block]")
     end
   end
 end

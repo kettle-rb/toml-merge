@@ -8,21 +8,21 @@ module TomlParsingHelper
   # @return [Toml::Merge::NodeWrapper, nil] Wrapped node
   def parse_toml(source, node_type: nil)
     parser_path = Toml::Merge::FileAnalysis.find_parser_path
-    return nil unless parser_path
+    return unless parser_path
 
     language = TreeSitter::Language.load("toml", parser_path)
     parser = TreeSitter::Parser.new
     parser.language = language
     tree = parser.parse_string(nil, source)
 
-    return nil if tree.nil? || tree.root_node.nil?
+    return if tree.nil? || tree.root_node.nil?
 
     lines = source.lines.map(&:chomp)
 
     if node_type
       # Find the first child of the specified type
       node = find_node_by_type(tree.root_node, node_type)
-      return nil unless node
+      return unless node
 
       Toml::Merge::NodeWrapper.new(node, lines: lines, source: source)
     else
