@@ -32,7 +32,7 @@ $SUDO apt-get install -y \
 
 echo "Building and installing tree-sitter-toml..."
 cd /tmp
-wget -q https://github.com/tree-sitter/tree-sitter-toml/archive/refs/heads/master.zip
+wget -q https://github.com/tree-sitter-grammars/tree-sitter-toml/archive/refs/heads/master.zip
 unzip -q master.zip
 cd tree-sitter-toml-master
 
