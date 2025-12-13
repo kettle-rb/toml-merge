@@ -38,6 +38,7 @@ jobs:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}.gemfile
       # Set LD_LIBRARY_PATH globally for the job to ensure the dynamic linker finds the library
       LD_LIBRARY_PATH: "/usr/lib/x86_64-linux-gnu:/usr/lib"
+      TREE_SITTER_TOML: "/usr/local/lib/libtree-sitter-toml.so"
     strategy:
       fail-fast: true
       matrix:
@@ -81,6 +82,18 @@ jobs:
       - name: Install tree-sitter system library (Java Only)
         if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
         run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libtree-sitter-dev
+
+      - name: Install tree-sitter-toml
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gcc g++ make
+          wget https://github.com/tree-sitter/tree-sitter-toml/archive/refs/heads/master.zip
+          unzip master.zip
+          cd tree-sitter-toml-master
+          gcc -fPIC -I./src -c src/parser.c
+          gcc -shared -o libtree-sitter-toml.so parser.o
+          sudo cp libtree-sitter-toml.so /usr/local/lib/
+          sudo ldconfig
 
       - name: Setup Ruby & RubyGems
         if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
