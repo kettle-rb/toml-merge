@@ -58,6 +58,10 @@ jobs:
     name: Default rake task w/ main Gemfile.lock ${{ matrix.name_extra || '' }}
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental }}
+    env:
+      # Set LD_LIBRARY_PATH globally for the job to ensure the dynamic linker finds the library
+      LD_LIBRARY_PATH: "/usr/lib/x86_64-linux-gnu:/usr/lib"
+      TREE_SITTER_TOML_PATH: "/usr/local/lib/libtree-sitter-toml.so"
     strategy:
       fail-fast: false
       matrix:

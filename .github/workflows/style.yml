@@ -28,8 +28,12 @@ jobs:
     name: Style on ${{ matrix.ruby }}@current
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental || endsWith(matrix.ruby, 'head') }}
-    env: # $BUNDLE_GEMFILE must be set at job level, so it is set for all steps
+    env:
+      # $BUNDLE_GEMFILE must be set at job level, so it is set for all steps
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}.gemfile
+      # Set LD_LIBRARY_PATH globally for the job to ensure the dynamic linker finds the library
+      LD_LIBRARY_PATH: "/usr/lib/x86_64-linux-gnu:/usr/lib"
+      TREE_SITTER_TOML_PATH: "/usr/local/lib/libtree-sitter-toml.so"
     strategy:
       fail-fast: false
       matrix:
