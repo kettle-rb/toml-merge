@@ -251,11 +251,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
       expect(result.content).to include("host = \"production\"")
     end
 
-  describe "private helpers" do
-      let(:template_analysis) { instance_double(Toml::Merge::FileAnalysis) }
-      let(:dest_analysis) { instance_double(Toml::Merge::FileAnalysis) }
-      let(:result) { Toml::Merge::MergeResult.new }
-
+    describe "private helpers" do
       subject(:resolver) do
         described_class.new(
           template_analysis,
@@ -265,6 +261,10 @@ RSpec.describe Toml::Merge::ConflictResolver do
           match_refiner: nil,
         )
       end
+
+      let(:template_analysis) { instance_double(Toml::Merge::FileAnalysis) }
+      let(:dest_analysis) { instance_double(Toml::Merge::FileAnalysis) }
+      let(:result) { Toml::Merge::MergeResult.new }
 
       describe "#add_node_to_result" do
         it "logs unknown node types instead of raising" do
@@ -295,7 +295,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         end
 
         it "returns empty hash when either unmatched side is empty" do
-          match_refiner = instance_double("SomeRefiner")
+          match_refiner = instance_double(Toml::Merge::TableMatchRefiner)
           resolver_with_refiner = described_class.new(
             template_analysis,
             dest_analysis,
@@ -328,7 +328,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           template_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
           dest_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
 
-          allow(resolver).to receive(:add_node_to_result)
+          allow(dest_analysis).to receive(:node_text).with(dest_node).and_return("host = \"production\"")
 
           resolver.send(
             :merge_matched_nodes,
@@ -339,13 +339,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
             result,
           )
 
-          expect(resolver).to have_received(:add_node_to_result).with(
-            dest_node,
-            result,
-            :destination,
-            Toml::Merge::MergeResult::DECISION_KEPT_DEST,
-            dest_analysis,
-          )
+          expect(result.content).to include("host = \"production\"")
         end
 
         it "keeps template leaf when preference is :template" do
@@ -359,7 +353,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           template_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
           dest_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
 
-          allow(resolver_template).to receive(:add_node_to_result)
+          allow(template_analysis).to receive(:node_text).with(template_node).and_return("host = \"template\"")
 
           resolver_template.send(
             :merge_matched_nodes,
@@ -370,13 +364,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
             result,
           )
 
-          expect(resolver_template).to have_received(:add_node_to_result).with(
-            template_node,
-            result,
-            :template,
-            Toml::Merge::MergeResult::DECISION_KEPT_TEMPLATE,
-            template_analysis,
-          )
+          expect(result.content).to include("host = \"template\"")
         end
       end
     end

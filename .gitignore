@@ -2,6 +2,12 @@
 /pkg/
 /tmp/
 *.gem
+vendor/*-dev/
+vendor/*-merge/
+vendor/*-jem/
+vendor/*-cover/
+vendor/*-ruby*_*/
+vendor/*-lts/
 
 # Bundler
 /vendor/bundle/

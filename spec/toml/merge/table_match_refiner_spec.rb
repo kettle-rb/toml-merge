@@ -148,15 +148,15 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       end
 
       it "treats table_array_element as table-like" do
-        node = instance_double("Node", type: "table_array_element")
+        node = instance_double(Object, type: "table_array_element")
         expect(refiner.send(:table_node?, node)).to be(true)
       end
     end
 
     describe "#compute_name_similarity" do
       it "returns 1.0 when names match" do
-        t = instance_double("T", table_name: "server")
-        d = instance_double("D", table_name: "server")
+        t = instance_double(Object, table_name: "server")
+        d = instance_double(Object, table_name: "server")
         allow(t).to receive(:respond_to?).with(:table_name).and_return(true)
         allow(d).to receive(:respond_to?).with(:table_name).and_return(true)
 
@@ -191,7 +191,7 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       end
 
       it "returns 0.0 when one side is empty" do
-        pair = instance_double("Pair", pair?: true, key_name: "host")
+        pair = instance_double(Object, pair?: true, key_name: "host")
         table_with_key = double
         empty_table = double
 
