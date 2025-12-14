@@ -329,10 +329,10 @@ RSpec.describe Toml::Merge::ConflictResolver do
           # to ensure is_a? checks pass and the full add_node flow works
           template_toml = "host = \"staging\""
           dest_toml = "host = \"production\""
-          
+
           template_analysis_real = Toml::Merge::FileAnalysis.new(template_toml)
           dest_analysis_real = Toml::Merge::FileAnalysis.new(dest_toml)
-          
+
           template_node = template_analysis_real.statements.first
           dest_node = dest_analysis_real.statements.first
 
@@ -358,10 +358,10 @@ RSpec.describe Toml::Merge::ConflictResolver do
         it "keeps template leaf when preference is :template" do
           template_toml = "host = \"template\""
           dest_toml = "host = \"dest\""
-          
+
           template_analysis_real = Toml::Merge::FileAnalysis.new(template_toml)
           dest_analysis_real = Toml::Merge::FileAnalysis.new(dest_toml)
-          
+
           template_node = template_analysis_real.statements.first
           dest_node = dest_analysis_real.statements.first
 
