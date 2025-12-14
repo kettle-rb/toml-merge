@@ -211,5 +211,69 @@ RSpec.describe Toml::Merge::ConflictResolver do
       expect(result.content).to include("port = 8080") # from template
       expect(result.content).to include("ssl = true") # from destination
     end
+
+    it "merges tables with similar names using refined matching" do
+      template_content = <<~TOML
+        [server]
+        host = "localhost"
+        port = 8080
+      TOML
+
+      dest_content = <<~TOML
+        [servers]
+        host = "production.example.com"
+        port = 443
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_content)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_content)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: false,
+        match_refiner: Toml::Merge::TableMatchRefiner.new,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+      expect(result.content).to include("[servers]")
+      expect(result.content).to include("host = \"production.example.com\"")
+      expect(result.content).to include("port = 443")
+    end
+
+    it "preserves freeze blocks from destination" do
+      template_content = <<~TOML
+        [server]
+        host = "localhost"
+      TOML
+
+      dest_content = <<~TOML
+        # freeze
+        [server]
+        host = "production"
+      TOML
+
+      template_analysis = Toml::Merge::FileAnalysis.new(template_content)
+      dest_analysis = Toml::Merge::FileAnalysis.new(dest_content)
+      result = Toml::Merge::MergeResult.new
+
+      resolver = described_class.new(
+        template_analysis,
+        dest_analysis,
+        preference: :destination,
+        add_template_only_nodes: false,
+      )
+
+      resolver.resolve(result)
+
+      expect(result.content).not_to be_empty
+      # With a freeze decision, we should still emit the destination node's lines.
+      expect(result.content).to include("[server]")
+      expect(result.content).to include("host = \"production\"")
+    end
   end
 end
