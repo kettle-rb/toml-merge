@@ -138,6 +138,86 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     end
   end
 
+  describe "matching internals" do
+    subject(:refiner) { described_class.new(threshold: 0.5) }
+
+    describe "#table_node?" do
+      it "returns false when node does not respond to type" do
+        node = Object.new
+        expect(refiner.send(:table_node?, node)).to be(false)
+      end
+
+      it "treats table_array_element as table-like" do
+        node = instance_double("Node", type: "table_array_element")
+        expect(refiner.send(:table_node?, node)).to be(true)
+      end
+    end
+
+    describe "#compute_name_similarity" do
+      it "returns 1.0 when names match" do
+        t = instance_double("T", table_name: "server")
+        d = instance_double("D", table_name: "server")
+        allow(t).to receive(:respond_to?).with(:table_name).and_return(true)
+        allow(d).to receive(:respond_to?).with(:table_name).and_return(true)
+
+        expect(refiner.send(:compute_name_similarity, t, d)).to eq(1.0)
+      end
+
+      it "returns 0.0 when either name is empty" do
+        t = double
+        d = double
+
+        # Drive the branch through the real extract_table_name logic:
+        # - template has an explicit empty table_name
+        # - destination has a non-empty table_name
+        allow(t).to receive(:respond_to?).with(:table_name).and_return(true)
+        allow(t).to receive(:table_name).and_return("")
+        allow(d).to receive(:respond_to?).with(:table_name).and_return(true)
+        allow(d).to receive(:table_name).and_return("server")
+
+        expect(refiner.send(:compute_name_similarity, t, d)).to eq(0.0)
+      end
+    end
+
+    describe "#compute_key_overlap" do
+      it "returns 1.0 when both sets are empty" do
+        t = double
+        d = double
+
+        allow(t).to receive(:respond_to?).with(:mergeable_children).and_return(false)
+        allow(d).to receive(:respond_to?).with(:mergeable_children).and_return(false)
+
+        expect(refiner.send(:compute_key_overlap, t, d)).to eq(1.0)
+      end
+
+      it "returns 0.0 when one side is empty" do
+        pair = instance_double("Pair", pair?: true, key_name: "host")
+        table_with_key = double
+        empty_table = double
+
+        allow(table_with_key).to receive(:respond_to?).with(:mergeable_children).and_return(true)
+        allow(table_with_key).to receive(:mergeable_children).and_return([pair])
+
+        allow(empty_table).to receive(:respond_to?).with(:mergeable_children).and_return(false)
+
+        expect(refiner.send(:compute_key_overlap, table_with_key, empty_table)).to eq(0.0)
+      end
+    end
+
+    describe "#compute_table_similarity" do
+      it "combines name/key/position using weights" do
+        refiner_with_weights = described_class.new(weights: {name_match: 0.0, key_overlap: 0.0, position: 1.0})
+
+        t = double
+        d = double
+
+        # position similarity: middle positions in equal lists => 1.0
+        score = refiner_with_weights.send(:compute_table_similarity, t, d, 1, 1, 3, 3)
+        expect(score).to eq(1.0)
+      end
+    end
+  end
+
   describe "Levenshtein distance" do
     subject(:refiner) { described_class.new }
 

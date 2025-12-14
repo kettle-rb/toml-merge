@@ -250,5 +250,135 @@ RSpec.describe Toml::Merge::ConflictResolver do
       expect(result.content).to include("[server]")
       expect(result.content).to include("host = \"production\"")
     end
+
+  describe "private helpers" do
+      let(:template_analysis) { instance_double(Toml::Merge::FileAnalysis) }
+      let(:dest_analysis) { instance_double(Toml::Merge::FileAnalysis) }
+      let(:result) { Toml::Merge::MergeResult.new }
+
+      subject(:resolver) do
+        described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :destination,
+          add_template_only_nodes: false,
+          match_refiner: nil,
+        )
+      end
+
+      describe "#add_node_to_result" do
+        it "logs unknown node types instead of raising" do
+          unknown = Object.new
+
+          allow(Toml::Merge::DebugLogger).to receive(:debug)
+
+          resolver.send(
+            :add_node_to_result,
+            unknown,
+            result,
+            :destination,
+            Toml::Merge::MergeResult::DECISION_KEPT_DEST,
+            dest_analysis,
+          )
+
+          expect(Toml::Merge::DebugLogger).to have_received(:debug).with(
+            "Unknown node type",
+            {node_type: "Object"},
+          )
+        end
+      end
+
+      describe "#build_refined_matches" do
+        it "returns empty hash when no match_refiner is configured" do
+          matches = resolver.send(:build_refined_matches, [], [], {}, {})
+          expect(matches).to eq({})
+        end
+
+        it "returns empty hash when either unmatched side is empty" do
+          match_refiner = instance_double("SomeRefiner")
+          resolver_with_refiner = described_class.new(
+            template_analysis,
+            dest_analysis,
+            preference: :destination,
+            add_template_only_nodes: false,
+            match_refiner: match_refiner,
+          )
+
+          t_node = instance_double(Toml::Merge::NodeWrapper)
+          d_node = instance_double(Toml::Merge::NodeWrapper)
+
+          # Force: template has an unmatched node; destination has none unmatched
+          allow(template_analysis).to receive(:generate_signature).with(t_node).and_return([:table, "a"])
+          allow(dest_analysis).to receive(:generate_signature).with(d_node).and_return([:table, "a"])
+
+          matches = resolver_with_refiner.send(
+            :build_refined_matches,
+            [t_node],
+            [d_node],
+            {[:table, "a"] => [{node: t_node}]},
+            {[:table, "a"] => [{node: d_node}]},
+          )
+
+          expect(matches).to eq({})
+        end
+      end
+
+      describe "#merge_matched_nodes" do
+        it "keeps destination leaf when preference is :destination" do
+          template_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
+          dest_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
+
+          allow(resolver).to receive(:add_node_to_result)
+
+          resolver.send(
+            :merge_matched_nodes,
+            template_node,
+            dest_node,
+            template_analysis,
+            dest_analysis,
+            result,
+          )
+
+          expect(resolver).to have_received(:add_node_to_result).with(
+            dest_node,
+            result,
+            :destination,
+            Toml::Merge::MergeResult::DECISION_KEPT_DEST,
+            dest_analysis,
+          )
+        end
+
+        it "keeps template leaf when preference is :template" do
+          resolver_template = described_class.new(
+            template_analysis,
+            dest_analysis,
+            preference: :template,
+            add_template_only_nodes: false,
+          )
+
+          template_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
+          dest_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
+
+          allow(resolver_template).to receive(:add_node_to_result)
+
+          resolver_template.send(
+            :merge_matched_nodes,
+            template_node,
+            dest_node,
+            template_analysis,
+            dest_analysis,
+            result,
+          )
+
+          expect(resolver_template).to have_received(:add_node_to_result).with(
+            template_node,
+            result,
+            :template,
+            Toml::Merge::MergeResult::DECISION_KEPT_TEMPLATE,
+            template_analysis,
+          )
+        end
+      end
+    end
   end
 end
