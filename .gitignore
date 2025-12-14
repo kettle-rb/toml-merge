@@ -8,6 +8,7 @@ vendor/*-jem/
 vendor/*-cover/
 vendor/*-ruby*_*/
 vendor/*-lts/
+vendor/*_haver/
 
 # Bundler
 /vendor/bundle/

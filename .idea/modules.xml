@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/toml-merge.iml" filepath="$PROJECT_DIR$/.idea/toml-merge.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/tree_haver.iml" filepath="$PROJECT_DIR$/.idea/modules/tree_haver.iml" />
     </modules>
   </component>
 </project>
