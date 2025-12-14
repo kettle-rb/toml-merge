@@ -9,6 +9,7 @@ vendor/*-cover/
 vendor/*-ruby*_*/
 vendor/*-lts/
 vendor/*_haver/
+vendor/*.md
 
 # Bundler
 /vendor/bundle/
