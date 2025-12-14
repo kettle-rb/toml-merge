@@ -15,7 +15,6 @@ $SUDO apt-get install -y \
   build-essential \
   pkg-config \
   libtree-sitter-dev \
-  tree-sitter-cli \
   wget \
   gcc \
   g++ \
@@ -29,6 +28,11 @@ $SUDO apt-get install -y \
   libcurl4-openssl-dev \
   software-properties-common \
   libffi-dev
+
+# Install tree-sitter CLI via npm
+# (since it frequently fails to install from apt repos)
+echo "Installing tree-sitter-cli via npm..."
+$SUDO npm install -g tree-sitter-cli
 
 echo "Building and installing tree-sitter-toml..."
 cd /tmp

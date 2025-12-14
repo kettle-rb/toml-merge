@@ -66,13 +66,17 @@ else
       libxslt-devel \
       libcurl-devel \
       libffi-devel \
-      tree-sitter tree-sitter-devel tree-sitter-cli
+      tree-sitter tree-sitter-devel
   else
     echo "[universal-blue] ERROR: Neither rpm-ostree nor dnf is available."
     echo "Please install required packages using your environment's package manager, then re-run."
     exit 1
   fi
 fi
+
+# Install tree-sitter CLI via npm
+echo "Installing tree-sitter-cli via npm..."
+$SUDO npm install -g tree-sitter-cli
 
 echo "[universal-blue] Building and installing tree-sitter-toml..."
 cd /tmp
