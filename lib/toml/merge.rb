@@ -1,12 +1,40 @@
 # frozen_string_literal: true
 
 # External gems
+# TreeHaver provides a unified cross-Ruby interface to Tree-sitter
 # :nocov:
 begin
-  require "tree_sitter"
+  # Try loading tree_haver as a gem first
+  require "tree_haver"
 rescue LoadError
-  # JRuby and TruffleRuby use tree_sitter_ffi
-  require "tree_sitter_ffi"
+  # Fall back to vendored tree_haver
+  # Path: lib/toml/merge.rb -> ../../.. -> vendor/tree_haver/lib/tree_haver
+  begin
+    require_relative "../../../vendor/tree_haver/lib/tree_haver"
+  rescue LoadError
+    # tree_haver not available, will fall back to direct tree-sitter bindings below
+  end
+end
+
+# Configure TreeHaver if it was loaded
+if defined?(TreeHaver)
+  # Use GrammarFinder to locate and register the TOML grammar
+  finder = TreeHaver::GrammarFinder.new(:toml)
+  finder.register! if finder.available?
+  # Load compat shim so existing code using TreeSitter:: constants works
+  require_relative "../../../vendor/tree_haver/lib/tree_haver/compat"
+else
+  # Fall back to direct tree-sitter bindings if TreeHaver not available
+  begin
+    require "tree_sitter"
+  rescue LoadError
+    # JRuby and TruffleRuby may use tree_sitter_ffi
+    begin
+      require "tree_sitter_ffi"
+    rescue LoadError
+      # No tree-sitter binding available - will fail at parse time
+    end
+  end
 end
 # :nocov:
 

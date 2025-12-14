@@ -10,6 +10,7 @@ module TomlParsingHelper
     parser_path = Toml::Merge::FileAnalysis.find_parser_path
     return unless parser_path
 
+    # Use TreeSitter namespace (aliased to TreeHaver via compat shim)
     language = TreeSitter::Language.load("toml", parser_path)
     parser = TreeSitter::Parser.new
     parser.language = language

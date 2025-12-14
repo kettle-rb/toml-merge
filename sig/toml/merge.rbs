@@ -95,7 +95,6 @@ module Toml
     class FileAnalysis
       include Ast::Merge::FileAnalyzable
 
-      PARSER_SEARCH_PATHS: Array[String]
 
       attr_reader ast: untyped?
       attr_reader errors: Array[untyped]

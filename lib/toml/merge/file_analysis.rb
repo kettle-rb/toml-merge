@@ -12,16 +12,6 @@ module Toml
     class FileAnalysis
       include Ast::Merge::FileAnalyzable
 
-      # Common paths where tree-sitter-toml library might be installed
-      # Searched in order until one is found
-      PARSER_SEARCH_PATHS = [
-        "/usr/lib/libtree-sitter-toml.so",
-        "/usr/lib64/libtree-sitter-toml.so",
-        "/usr/local/lib/libtree-sitter-toml.so",
-        "/opt/homebrew/lib/libtree-sitter-toml.dylib",
-        "/usr/local/lib/libtree-sitter-toml.dylib",
-      ].freeze
-
       # @return [TreeSitter::Tree, nil] Parsed AST
       attr_reader :ast
 
@@ -30,14 +20,29 @@ module Toml
 
       class << self
         # Find the parser library path
+        #
+        # Uses TreeHaver::GrammarFinder if available, otherwise
+        # searches common paths directly.
+        #
         # @return [String, nil] Path to the parser library or nil if not found
         def find_parser_path
-          # Check environment variable first
-          env_path = ENV["TREE_SITTER_TOML_PATH"]
-          return env_path if env_path && File.exist?(env_path)
+          # Use TreeHaver's GrammarFinder if available
+          if defined?(TreeHaver::GrammarFinder)
+            TreeHaver::GrammarFinder.new(:toml).find_library_path
+          else
+            # Fallback: check environment variable first
+            env_path = ENV["TREE_SITTER_TOML_PATH"]
+            return env_path if env_path && File.exist?(env_path)
 
-          # Search common paths
-          PARSER_SEARCH_PATHS.find { |path| File.exist?(path) }
+            # Search common paths
+            [
+              "/usr/lib/libtree-sitter-toml.so",
+              "/usr/lib64/libtree-sitter-toml.so",
+              "/usr/local/lib/libtree-sitter-toml.so",
+              "/opt/homebrew/lib/libtree-sitter-toml.dylib",
+              "/usr/local/lib/libtree-sitter-toml.dylib",
+            ].find { |path| File.exist?(path) }
+          end
         end
       end
 
@@ -125,8 +130,11 @@ module Toml
 
       def parse_toml
         unless @parser_path && File.exist?(@parser_path)
-          searched = @parser_path || PARSER_SEARCH_PATHS.join(", ")
-          error_msg = "Tree-sitter toml parser not found. Searched: #{searched}. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+          error_msg = if defined?(TreeHaver::GrammarFinder)
+            TreeHaver::GrammarFinder.new(:toml).not_found_message
+          else
+            "Tree-sitter toml parser not found. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+          end
           @errors << error_msg
           @ast = nil
           raise StandardError, error_msg
