@@ -3,11 +3,23 @@ set -e
 
 # Setup script for tree-sitter dependencies (Ubuntu/Debian)
 # Works for both GitHub Actions (with --sudo flag) and devcontainer (without --sudo flag)
+# Options:
+#   --sudo: Use sudo for package installation commands
+#   --cli:  Install tree-sitter-cli via npm (optional)
 
 SUDO=""
-if [[ "$1" == "--sudo" ]]; then
-  SUDO="sudo"
-fi
+INSTALL_CLI=false
+
+for arg in "$@"; do
+  case $arg in
+    --sudo)
+      SUDO="sudo"
+      ;;
+    --cli)
+      INSTALL_CLI=true
+      ;;
+  esac
+done
 
 echo "Installing tree-sitter system library and dependencies..."
 $SUDO apt-get update -y
@@ -29,10 +41,13 @@ $SUDO apt-get install -y \
   software-properties-common \
   libffi-dev
 
-# Install tree-sitter CLI via npm
-# (since it frequently fails to install from apt repos)
-echo "Installing tree-sitter-cli via npm..."
-$SUDO npm install -g tree-sitter-cli
+# Install tree-sitter CLI via npm (optional)
+if [ "$INSTALL_CLI" = true ]; then
+  echo "Installing tree-sitter-cli via npm..."
+  $SUDO npm install -g tree-sitter-cli
+else
+  echo "Skipping tree-sitter-cli installation (use --cli flag to install)"
+fi
 
 echo "Building and installing tree-sitter-toml..."
 cd /tmp

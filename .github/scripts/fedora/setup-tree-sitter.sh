@@ -5,12 +5,24 @@ set -euo pipefail
 # - If running on an rpm-ostree system, we will layer required toolchain packages.
 # - Layering requires a reboot to take effect. This script will detect that and print clear instructions.
 # - After required packages are available, it will build and install tree-sitter-toml into /usr/local/lib.
-# - Works in CI or locally. Use --sudo when non-root.
+# - Works in CI or locally.
+# Options:
+#   --sudo: Use sudo for package installation commands
+#   --cli:  Install tree-sitter-cli via npm (optional)
 
 SUDO=""
-if [[ "${1:-}" == "--sudo" ]]; then
-  SUDO="sudo"
-fi
+INSTALL_CLI=false
+
+for arg in "$@"; do
+  case $arg in
+    --sudo)
+      SUDO="sudo"
+      ;;
+    --cli)
+      INSTALL_CLI=true
+      ;;
+  esac
+done
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
@@ -74,9 +86,13 @@ else
   fi
 fi
 
-# Install tree-sitter CLI via npm
-echo "Installing tree-sitter-cli via npm..."
-$SUDO npm install -g tree-sitter-cli
+# Install tree-sitter CLI via npm (optional)
+if [ "$INSTALL_CLI" = true ]; then
+  echo "Installing tree-sitter-cli via npm..."
+  $SUDO npm install -g tree-sitter-cli
+else
+  echo "Skipping tree-sitter-cli installation (use --cli flag to install)"
+fi
 
 echo "[universal-blue] Building and installing tree-sitter-toml..."
 cd /tmp
