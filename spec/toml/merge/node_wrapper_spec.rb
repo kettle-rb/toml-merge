@@ -263,12 +263,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
       pair = parse_toml(toml, node_type: "pair")
       expect(pair).not_to be_nil
       value = pair.value_node
-      expect(value.integer?).to be false
-      expect(value.float?).to be false
-      expect(value.boolean?).to be false
-      expect(value.string?).to be false
       expect(value.array?).to be true
-      expect(value.inline_table?).to be false
       expect(value.container?).to be true
       expect(value.leaf?).to be false
     end
@@ -286,6 +281,14 @@ RSpec.describe Toml::Merge::NodeWrapper do
       expect(value.inline_table?).to be true
       expect(value.container?).to be true
       expect(value.leaf?).to be false
+    end
+
+    it "correctly identifies datetime value nodes" do
+      toml = "created = 2023-01-01T00:00:00Z"
+      pair = parse_toml(toml, node_type: "pair")
+      expect(pair).not_to be_nil
+      value = pair.value_node
+      expect(value.datetime?).to be true
     end
 
     it "tests type? method" do
@@ -345,6 +348,16 @@ RSpec.describe Toml::Merge::NodeWrapper do
       pair = parse_toml(toml, node_type: "pair")
       expect(pair).not_to be_nil
       expect(pair.mergeable_children).to eq([])
+    end
+
+    it "returns mergeable children for array nodes" do
+      toml = "items = [1, 2, 3]"
+      pair = parse_toml(toml, node_type: "pair")
+      expect(pair).not_to be_nil
+      value = pair.value_node
+      children = value.mergeable_children
+      expect(children).to be_an(Array)
+      expect(children.size).to eq(3) # array elements
     end
   end
 

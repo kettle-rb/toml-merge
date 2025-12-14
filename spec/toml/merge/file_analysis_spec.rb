@@ -64,6 +64,16 @@ RSpec.describe Toml::Merge::FileAnalysis do
         analysis = described_class.new(valid_toml, parser_path: "/custom/path")
         expect(analysis.instance_variable_get(:@parser_path)).to eq("/custom/path")
       end
+
+      context "with custom parser_path that doesn't exist" do
+        it "raises StandardError" do
+          allow(File).to receive(:exist?).with("/custom/path").and_return(false)
+          
+          expect {
+            described_class.new(valid_toml, parser_path: "/custom/path")
+          }.to raise_error(StandardError, /Tree-sitter toml parser not found/)
+        end
+      end
     end
 
     context "with valid TOML" do
@@ -140,6 +150,17 @@ RSpec.describe Toml::Merge::FileAnalysis do
     it "returns false for other objects" do
       expect(analysis.fallthrough_node?("string")).to be false
       expect(analysis.fallthrough_node?(123)).to be false
+    end
+  end
+
+  describe "#signature_map" do
+    subject(:analysis) { described_class.new(valid_toml) }
+
+    it "returns a hash mapping signatures to nodes" do
+      map = analysis.signature_map
+      expect(map).to be_a(Hash)
+      expect(map.keys).to all(be_an(Array).or(be_nil))
+      expect(map.values).to all(be_a(Toml::Merge::NodeWrapper))
     end
   end
 end
