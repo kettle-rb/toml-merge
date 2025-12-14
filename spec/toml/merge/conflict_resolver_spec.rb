@@ -262,8 +262,8 @@ RSpec.describe Toml::Merge::ConflictResolver do
         )
       end
 
-      let(:template_analysis) { instance_double(Toml::Merge::FileAnalysis) }
-      let(:dest_analysis) { instance_double(Toml::Merge::FileAnalysis) }
+      let(:template_analysis) { instance_double(Toml::Merge::FileAnalysis, line_at: nil) }
+      let(:dest_analysis) { instance_double(Toml::Merge::FileAnalysis, line_at: nil) }
       let(:result) { Toml::Merge::MergeResult.new }
 
       describe "#add_node_to_result" do
@@ -325,17 +325,30 @@ RSpec.describe Toml::Merge::ConflictResolver do
 
       describe "#merge_matched_nodes" do
         it "keeps destination leaf when preference is :destination" do
-          template_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
-          dest_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
+          # Use real NodeWrapper instances with minimal tree-sitter nodes
+          # to ensure is_a? checks pass and the full add_node flow works
+          template_toml = "host = \"staging\""
+          dest_toml = "host = \"production\""
+          
+          template_analysis_real = Toml::Merge::FileAnalysis.new(template_toml)
+          dest_analysis_real = Toml::Merge::FileAnalysis.new(dest_toml)
+          
+          template_node = template_analysis_real.statements.first
+          dest_node = dest_analysis_real.statements.first
 
-          allow(dest_analysis).to receive(:node_text).with(dest_node).and_return("host = \"production\"")
+          resolver_with_real = described_class.new(
+            template_analysis_real,
+            dest_analysis_real,
+            preference: :destination,
+            add_template_only_nodes: false,
+          )
 
-          resolver.send(
+          resolver_with_real.send(
             :merge_matched_nodes,
             template_node,
             dest_node,
-            template_analysis,
-            dest_analysis,
+            template_analysis_real,
+            dest_analysis_real,
             result,
           )
 
@@ -343,24 +356,28 @@ RSpec.describe Toml::Merge::ConflictResolver do
         end
 
         it "keeps template leaf when preference is :template" do
-          resolver_template = described_class.new(
-            template_analysis,
-            dest_analysis,
+          template_toml = "host = \"template\""
+          dest_toml = "host = \"dest\""
+          
+          template_analysis_real = Toml::Merge::FileAnalysis.new(template_toml)
+          dest_analysis_real = Toml::Merge::FileAnalysis.new(dest_toml)
+          
+          template_node = template_analysis_real.statements.first
+          dest_node = dest_analysis_real.statements.first
+
+          resolver_with_real = described_class.new(
+            template_analysis_real,
+            dest_analysis_real,
             preference: :template,
             add_template_only_nodes: false,
           )
 
-          template_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
-          dest_node = instance_double(Toml::Merge::NodeWrapper, table?: false, container?: false)
-
-          allow(template_analysis).to receive(:node_text).with(template_node).and_return("host = \"template\"")
-
-          resolver_template.send(
+          resolver_with_real.send(
             :merge_matched_nodes,
             template_node,
             dest_node,
-            template_analysis,
-            dest_analysis,
+            template_analysis_real,
+            dest_analysis_real,
             result,
           )
 
