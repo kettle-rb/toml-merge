@@ -39,7 +39,7 @@ appraise "head" do
   eval_gemfile "modular/x_std_libs.gemfile"
 
   # runtime dependencies that we can't add to gemspec due to platform differences
-  eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+  eval_gemfile "modular/tree_sitter.gemfile"
 end
 
 # Used for current releases of ruby, truffleruby, and jruby.
@@ -48,7 +48,7 @@ appraise "current" do
   eval_gemfile "modular/x_std_libs.gemfile"
 
   # runtime dependencies that we can't add to gemspec due to platform differences
-  eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+  eval_gemfile "modular/tree_sitter.gemfile"
 end
 
 # Test current Rubies against head versions of runtime dependencies
@@ -56,21 +56,21 @@ appraise "dep-heads" do
   eval_gemfile "modular/runtime_heads.gemfile"
 
   # runtime dependencies that we can't add to gemspec due to platform differences
-  eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+  eval_gemfile "modular/tree_sitter.gemfile"
 end
 
 appraise "ruby-3-2" do
   eval_gemfile "modular/x_std_libs/r3/libs.gemfile"
 
   # runtime dependencies that we can't add to gemspec due to platform differences
-  eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+  eval_gemfile "modular/tree_sitter.gemfile"
 end
 
 appraise "ruby-3-3" do
   eval_gemfile "modular/x_std_libs/r3/libs.gemfile"
 
   # runtime dependencies that we can't add to gemspec due to platform differences
-  eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+  eval_gemfile "modular/tree_sitter.gemfile"
 end
 
 # Only run security audit on the latest version of Ruby
@@ -85,7 +85,7 @@ appraise "coverage" do
   eval_gemfile "modular/x_std_libs.gemfile"
 
   # runtime dependencies that we can't add to gemspec due to platform differences
-  eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+  eval_gemfile "modular/tree_sitter.gemfile"
 end
 
 # Only run linter on the latest version of Ruby (but, in support of oldest supported Ruby version)
