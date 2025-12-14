@@ -49,21 +49,21 @@ RSpec.describe Toml::Merge::MergeResult do
 
   describe "#add_node" do
     it "skips nodes without start_line or end_line" do
-      analysis = instance_double("FileAnalysis")
-      node = instance_double("Toml::Merge::NodeWrapper", start_line: nil, end_line: 5)
+      analysis = instance_double(Toml::Merge::FileAnalysis)
+      node = instance_double(Toml::Merge::NodeWrapper, start_line: nil, end_line: 5)
 
       expect {
         result.add_node(node, decision: described_class::DECISION_KEPT_DEST, source: :destination, analysis: analysis)
-      }.not_to change { result.line_count }
+      }.not_to change(result, :line_count)
     end
 
     it "skips nil lines from analysis" do
-      analysis = instance_double("FileAnalysis")
+      analysis = instance_double(Toml::Merge::FileAnalysis)
       allow(analysis).to receive(:line_at).with(1).and_return("line 1")
       allow(analysis).to receive(:line_at).with(2).and_return(nil) # nil line
       allow(analysis).to receive(:line_at).with(3).and_return("line 3")
 
-      node = instance_double("Toml::Merge::NodeWrapper", start_line: 1, end_line: 3)
+      node = instance_double(Toml::Merge::NodeWrapper, start_line: 1, end_line: 3)
 
       result.add_node(node, decision: described_class::DECISION_KEPT_DEST, source: :destination, analysis: analysis)
 
@@ -109,7 +109,7 @@ RSpec.describe Toml::Merge::MergeResult do
 
   describe "#add_blank_line" do
     it "adds a blank line with default decision/source" do
-      expect { result.add_blank_line }.to change { result.line_count }.by(1)
+      expect { result.add_blank_line }.to change(result, :line_count).by(1)
       # A single blank line is tracked internally but renders as empty content
       expect(result.content).to eq("")
       # merged_lines should increment by default branch

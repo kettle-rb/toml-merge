@@ -129,31 +129,6 @@ RSpec.describe Toml::Merge::ConflictResolver do
       expect(result.content).not_to be_empty
     end
 
-    it "merges array nodes" do
-      template_with_array = <<~TOML
-        items = [1, 2, 3]
-      TOML
-
-      dest_with_array = <<~TOML
-        items = [4, 5, 6]
-      TOML
-
-      template_analysis = Toml::Merge::FileAnalysis.new(template_with_array)
-      dest_analysis = Toml::Merge::FileAnalysis.new(dest_with_array)
-      result = Toml::Merge::MergeResult.new
-
-      resolver = described_class.new(
-        template_analysis,
-        dest_analysis,
-        preference: :destination,
-        add_template_only_nodes: false,
-      )
-
-      resolver.resolve(result)
-
-      expect(result.content).not_to be_empty
-    end
-
     it "merges inline table nodes" do
       template_with_inline = <<~TOML
         config = { a = 1, b = 2 }

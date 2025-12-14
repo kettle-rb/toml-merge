@@ -38,8 +38,9 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
     it "handles nodes without end_point method" do
       node_without_end = instance_double(TreeSitter::Node, type: "pair")
-      allow(node_without_end).to receive(:respond_to?).with(:start_point).and_return(true)
-      allow(node_without_end).to receive(:respond_to?).with(:end_point).and_return(false)
+      allow(node_without_end).to receive(:respond_to?) do |meth|
+        meth == :start_point
+      end
       allow(node_without_end).to receive(:start_point).and_return(double(row: 2, column: 5))
 
       wrapper = described_class.new(node_without_end, lines: ["line1", "line2", "line3"])
@@ -49,10 +50,13 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
     it "corrects end_line when it is before start_line" do
       node_with_invalid_lines = instance_double(TreeSitter::Node, type: "pair")
-      allow(node_with_invalid_lines).to receive(:respond_to?).with(:start_point).and_return(true)
-      allow(node_with_invalid_lines).to receive(:respond_to?).with(:end_point).and_return(true)
-      allow(node_with_invalid_lines).to receive(:start_point).and_return(double(row: 5, column: 0))
-      allow(node_with_invalid_lines).to receive(:end_point).and_return(double(row: 2, column: 10))
+      allow(node_with_invalid_lines).to receive(:respond_to?) do |meth|
+        %i[start_point end_point].include?(meth)
+      end
+      allow(node_with_invalid_lines).to receive_messages(
+        start_point: double(row: 5, column: 0),
+        end_point: double(row: 2, column: 10),
+      )
 
       wrapper = described_class.new(node_with_invalid_lines, lines: ["line1", "line2", "line3", "line4", "line5", "line6"])
       expect(wrapper.start_line).to eq(6) # 5 + 1
@@ -431,7 +435,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
       table = parse_toml(toml, node_type: "table")
       expect(table.opening_line).to eq("[block]")
       # For table headers, closing_line may be the header line or nil (parser dependent)
-      expect([nil, "[block]"]).to include(table.closing_line)
+      expect(table.closing_line.nil? || table.closing_line == "[block]").to be(true)
       # text/content should include the source slice
       expect(table.text).to be_a(String)
       expect(table.content).to include("[block]")

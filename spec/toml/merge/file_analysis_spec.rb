@@ -49,13 +49,13 @@ RSpec.describe Toml::Merge::FileAnalysis do
     context "with custom parser_path" do
       it "uses provided parser path" do
         allow(File).to receive(:exist?).with("/custom/path").and_return(true)
-        
+
         # Mock the tree-sitter objects properly
         mock_language = double("TreeSitter::Language")
         mock_parser = double("TreeSitter::Parser")
         mock_root_node = double("TreeSitter::Node", has_error?: false, each: [])
         mock_tree = double("TreeSitter::Tree", root_node: mock_root_node)
-        
+
         allow(TreeSitter::Language).to receive(:load).and_return(mock_language)
         allow(TreeSitter::Parser).to receive(:new).and_return(mock_parser)
         allow(mock_parser).to receive(:language=).with(mock_language)
@@ -68,7 +68,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
       context "with custom parser_path that doesn't exist" do
         it "raises StandardError" do
           allow(File).to receive(:exist?).with("/custom/path").and_return(false)
-          
+
           expect {
             described_class.new(valid_toml, parser_path: "/custom/path")
           }.to raise_error(StandardError, /Tree-sitter toml parser not found/)
