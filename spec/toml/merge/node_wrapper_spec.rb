@@ -62,6 +62,141 @@ RSpec.describe Toml::Merge::NodeWrapper do
       expect(wrapper.start_line).to eq(6) # 5 + 1
       expect(wrapper.end_line).to eq(6) # corrected to match start_line
     end
+
+    it "uses default source when source is nil" do
+      node = instance_double(
+        TreeSitter::Node,
+        type: "pair",
+        start_point: double(row: 0, column: 0),
+        end_point: double(row: 0, column: 1),
+      )
+
+      wrapper = described_class.new(node, lines: ["a = 1"], source: nil)
+      expect(wrapper.source).to eq("a = 1")
+    end
+  end
+
+  describe "guard clauses and fallthroughs (unit)" do
+    let(:lines) { ["line1", "line2"] }
+
+    it "returns nil for #table_name when not a table" do
+      node = instance_double(TreeSitter::Node, type: "pair")
+      allow(node).to receive(:respond_to?).and_return(false)
+      allow(node).to receive(:each)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.table_name).to be_nil
+    end
+
+    it "returns nil for #table_name when table has no key children" do
+      table_node = instance_double(TreeSitter::Node, type: "table")
+      allow(table_node).to receive(:respond_to?).and_return(false)
+      allow(table_node).to receive(:each) # yields nothing
+
+      wrapper = described_class.new(table_node, lines: lines)
+      expect(wrapper.table_name).to be_nil
+    end
+
+    it "returns nil for #key_name when not a pair" do
+      node = instance_double(TreeSitter::Node, type: "table")
+      allow(node).to receive(:respond_to?).and_return(false)
+      allow(node).to receive(:each)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.key_name).to be_nil
+    end
+
+    it "returns nil for #key_name when pair has no key children" do
+      pair_node = instance_double(TreeSitter::Node, type: "pair")
+      allow(pair_node).to receive(:respond_to?).and_return(false)
+      allow(pair_node).to receive(:each) # yields nothing
+
+      wrapper = described_class.new(pair_node, lines: lines)
+      expect(wrapper.key_name).to be_nil
+    end
+
+    it "returns nil for #value_node when not a pair" do
+      node = instance_double(TreeSitter::Node, type: "table")
+      allow(node).to receive(:respond_to?).and_return(false)
+      allow(node).to receive(:each)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.value_node).to be_nil
+    end
+
+    it "returns nil for #value_node when pair has only key children" do
+      key_child = instance_double(TreeSitter::Node, type: "bare_key")
+      eq_child = instance_double(TreeSitter::Node, type: "=")
+      pair_node = instance_double(TreeSitter::Node, type: "pair")
+      allow(pair_node).to receive(:respond_to?).and_return(false)
+      allow(pair_node).to receive(:each).and_yield(key_child).and_yield(eq_child)
+
+      wrapper = described_class.new(pair_node, lines: lines)
+      expect(wrapper.value_node).to be_nil
+    end
+
+    it "returns [] for #children when node does not support each" do
+      node = instance_double(TreeSitter::Node, type: "pair")
+      allow(node).to receive(:respond_to?).with(:each).and_return(false)
+      allow(node).to receive(:respond_to?).and_return(false)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.children).to eq([])
+    end
+
+    it "returns empty string for #node_text when node lacks byte offsets" do
+      node = instance_double(TreeSitter::Node, type: "pair")
+      allow(node).to receive(:respond_to?).and_return(false)
+
+      wrapper = described_class.new(node, lines: ["abc"], source: "abc")
+
+      ts_node = instance_double(TreeSitter::Node)
+      allow(ts_node).to receive(:respond_to?).with(:start_byte).and_return(false)
+      allow(ts_node).to receive(:respond_to?).with(:end_byte).and_return(false)
+
+      expect(wrapper.send(:node_text, ts_node)).to eq("")
+    end
+
+    it "returns empty string for #content when start/end lines are missing" do
+      node = instance_double(TreeSitter::Node, type: "pair")
+      allow(node).to receive(:respond_to?).and_return(false)
+
+      wrapper = described_class.new(node, lines: ["abc"], source: "abc")
+      expect(wrapper.content).to eq("")
+    end
+
+    it "returns [] for #pairs when not table/inline_table/document" do
+      node = instance_double(TreeSitter::Node, type: "pair")
+      allow(node).to receive(:respond_to?).and_return(false)
+      allow(node).to receive(:each)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.pairs).to eq([])
+    end
+
+    it "returns [] for #elements when not an array" do
+      node = instance_double(TreeSitter::Node, type: "pair")
+      allow(node).to receive(:respond_to?).and_return(false)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.elements).to eq([])
+    end
+
+    it "returns [] for #mergeable_children when leaf type" do
+      node = instance_double(TreeSitter::Node, type: "integer")
+      allow(node).to receive(:respond_to?).and_return(false)
+
+      wrapper = described_class.new(node, lines: lines)
+      expect(wrapper.mergeable_children).to eq([])
+    end
+
+    it "uses generic fallback signature for unknown node types" do
+      unknown = instance_double(TreeSitter::Node, type: "weird")
+      allow(unknown).to receive(:respond_to?).and_return(false)
+
+      wrapper = described_class.new(unknown, lines: ["abc"], source: "abc")
+      expect(wrapper.signature.first).to eq(:weird)
+    end
   end
 
   describe "signature computation" do
