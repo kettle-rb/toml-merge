@@ -12,18 +12,20 @@ module Toml
     #   wrapper = NodeWrapper.new(tree.root_node, lines: source.lines, source: source)
     #   wrapper.signature # => [:table, "section"]
     class NodeWrapper
-      # Wrap a tree-sitter node, returning nil for nil input.
-      #
-      # @param node [TreeSitter::Node, nil] Tree-sitter node to wrap
-      # @param lines [Array<String>] Source lines for content extraction
-      # @param source [String, nil] Original source string
-      # @param leading_comments [Array<Hash>] Comments before this node
-      # @param inline_comment [Hash, nil] Inline comment on the node's line
-      # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
-      def self.wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
-        return if node.nil?
+      class << self
+        # Wrap a tree-sitter node, returning nil for nil input.
+        #
+        # @param node [TreeSitter::Node, nil] Tree-sitter node to wrap
+        # @param lines [Array<String>] Source lines for content extraction
+        # @param source [String, nil] Original source string
+        # @param leading_comments [Array<Hash>] Comments before this node
+        # @param inline_comment [Hash, nil] Inline comment on the node's line
+        # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
+        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
+          return if node.nil?
 
-        new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
+          new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
+        end
       end
 
       # @return [TreeSitter::Node] The wrapped tree-sitter node
@@ -291,7 +293,8 @@ module Toml
       # Get the opening line for a table (the line with [table_name])
       # @return [String, nil]
       def opening_line
-        return unless (table? || array_of_tables?) && @start_line
+        return unless @start_line
+        return unless table? || array_of_tables?
 
         @lines[@start_line - 1]
       end
@@ -362,7 +365,11 @@ module Toml
         when "array"
           # Arrays identified by their length
           elements_count = 0
-          node.each { |c| elements_count += 1 unless %w[comment , \[ \]].include?(c.type.to_s) }
+          node.each do |c|
+            next if %w[comment , \[ \]].include?(c.type.to_s)
+
+            elements_count += 1
+          end
           [:array, elements_count]
         when "string", "basic_string", "literal_string", "multiline_basic_string", "multiline_literal_string"
           # Strings identified by their content

@@ -35,7 +35,7 @@ RSpec.describe Toml::Merge::SmartMerger do
 
     it "accepts optional add_template_only_nodes" do
       merger = described_class.new(template_content, dest_content, add_template_only_nodes: true)
-      expect(merger.options[:add_template_only_nodes]).to eq(true)
+      expect(merger.options[:add_template_only_nodes]).to be(true)
     end
 
     context "with invalid template" do

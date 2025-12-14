@@ -28,15 +28,17 @@ module Toml
       # @return [Array] Parse errors if any
       attr_reader :errors
 
-      # Find the parser library path
-      # @return [String, nil] Path to the parser library or nil if not found
-      def self.find_parser_path
-        # Check environment variable first
-        env_path = ENV["TREE_SITTER_TOML_PATH"]
-        return env_path if env_path && File.exist?(env_path)
+      class << self
+        # Find the parser library path
+        # @return [String, nil] Path to the parser library or nil if not found
+        def find_parser_path
+          # Check environment variable first
+          env_path = ENV["TREE_SITTER_TOML_PATH"]
+          return env_path if env_path && File.exist?(env_path)
 
-        # Search common paths
-        PARSER_SEARCH_PATHS.find { |path| File.exist?(path) }
+          # Search common paths
+          PARSER_SEARCH_PATHS.find { |path| File.exist?(path) }
+        end
       end
 
       # Initialize file analysis
