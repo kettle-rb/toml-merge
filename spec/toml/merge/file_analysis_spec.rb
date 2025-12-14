@@ -163,4 +163,34 @@ RSpec.describe Toml::Merge::FileAnalysis do
       expect(map.values).to all(be_a(Toml::Merge::NodeWrapper))
     end
   end
+
+  describe "invalid parsing fast paths" do
+    it "returns [] for #tables when invalid" do
+      analysis = described_class.allocate
+      analysis.instance_variable_set(:@errors, ["boom"])
+      analysis.instance_variable_set(:@ast, nil)
+
+      expect(analysis.tables).to eq([])
+    end
+
+    it "returns [] for #root_pairs when invalid" do
+      analysis = described_class.allocate
+      analysis.instance_variable_set(:@errors, ["boom"])
+      analysis.instance_variable_set(:@ast, nil)
+
+      expect(analysis.root_pairs).to eq([])
+    end
+
+    it "skips nil signatures when building signature_map" do
+      analysis = described_class.allocate
+      analysis.instance_variable_set(:@errors, [])
+      analysis.instance_variable_set(:@ast, nil)
+
+      wrapper = instance_double(Toml::Merge::NodeWrapper)
+      allow(analysis).to receive(:statements).and_return([wrapper])
+      allow(analysis).to receive(:generate_signature).with(wrapper).and_return(nil)
+
+      expect(analysis.signature_map).to eq({})
+    end
+  end
 end
