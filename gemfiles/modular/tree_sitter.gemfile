@@ -7,13 +7,15 @@
 #
 # These platform-specific gems are the backends that TreeHaver uses:
 
-platform :jruby do
-  gem "ffi"
-  # tree_haver is the only tree-sitter tool for Ruby compatible with JRuby.
-  # TreeHaver actually has two backends compatible with JRuby:
-  #   FFI and Java Tree Sitter bindings.
-end
+# FFI Backend - works on MRI, JRuby, and TruffleRuby
+gem "ffi"
 
 platform :mri do
+  # MRI Backend
   gem "ruby_tree_sitter"
+  # Rust Backend
+  gem "tree_stump",
+      # path: "../../vendor/tree_stump"
+      github: "pboling/tree_stump",
+      branch: "tree_haver"
 end
