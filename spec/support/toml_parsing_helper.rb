@@ -10,11 +10,11 @@ module TomlParsingHelper
     parser_path = Toml::Merge::FileAnalysis.find_parser_path
     return unless parser_path
 
-    # Use TreeSitter namespace (aliased to TreeHaver via compat shim)
-    language = TreeSitter::Language.load("toml", parser_path)
-    parser = TreeSitter::Parser.new
+    # Use TreeHaver namespace
+    language = TreeHaver::Language.load("toml", parser_path)
+    parser = TreeHaver::Parser.new
     parser.language = language
-    tree = parser.parse_string(nil, source)
+    tree = parser.parse(source)
 
     return if tree.nil? || tree.root_node.nil?
 
@@ -34,9 +34,9 @@ module TomlParsingHelper
 
   # Find the first node of a specific type in the tree
   #
-  # @param node [TreeSitter::Node] Node to search
+  # @param node [TreeHaver::Node] Node to search
   # @param type [String] Type to find
-  # @return [TreeSitter::Node, nil]
+  # @return [TreeHaver::Node, nil]
   def find_node_by_type(node, type)
     return node if node.type.to_s == type
 
@@ -50,7 +50,7 @@ module TomlParsingHelper
 
   # Debug helper to print all node types in a tree
   #
-  # @param node [TreeSitter::Node] Node to print
+  # @param node [TreeHaver::Node] Node to print
   # @param indent [Integer] Indentation level
   def print_node_tree(node, indent = 0)
     puts "  " * indent + node.type.to_s

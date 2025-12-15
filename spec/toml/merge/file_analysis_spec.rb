@@ -51,15 +51,15 @@ RSpec.describe Toml::Merge::FileAnalysis do
         allow(File).to receive(:exist?).with("/custom/path").and_return(true)
 
         # Mock the tree-sitter objects properly
-        mock_language = double("TreeSitter::Language")
-        mock_parser = double("TreeSitter::Parser")
-        mock_root_node = double("TreeSitter::Node", has_error?: false, each: [])
-        mock_tree = double("TreeSitter::Tree", root_node: mock_root_node)
+        mock_language = double("TreeHaver::Language")
+        mock_parser = double("TreeHaver::Parser")
+        mock_root_node = double("TreeHaver::Node", has_error?: false, each: [])
+        mock_tree = double("TreeHaver::Tree", root_node: mock_root_node)
 
-        allow(TreeSitter::Language).to receive(:load).and_return(mock_language)
-        allow(TreeSitter::Parser).to receive(:new).and_return(mock_parser)
+        allow(TreeHaver::Language).to receive(:load).and_return(mock_language)
+        allow(TreeHaver::Parser).to receive(:new).and_return(mock_parser)
         allow(mock_parser).to receive(:language=).with(mock_language)
-        allow(mock_parser).to receive(:parse_string).and_return(mock_tree)
+        allow(mock_parser).to receive(:parse).and_return(mock_tree)
 
         analysis = described_class.new(valid_toml, parser_path: "/custom/path")
         expect(analysis.instance_variable_get(:@parser_path)).to eq("/custom/path")
@@ -71,7 +71,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
 
           expect {
             described_class.new(valid_toml, parser_path: "/custom/path")
-          }.to raise_error(StandardError, /Tree-sitter toml parser not found/)
+          }.to raise_error(StandardError, /tree-sitter toml parser not found/)
         end
       end
     end

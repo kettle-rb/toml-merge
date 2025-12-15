@@ -12,7 +12,7 @@ module Toml
     class FileAnalysis
       include Ast::Merge::FileAnalyzable
 
-      # @return [TreeSitter::Tree, nil] Parsed AST
+      # @return [TreeHaver::Tree, nil] Parsed AST
       attr_reader :ast
 
       # @return [Array] Parse errors if any
@@ -129,22 +129,45 @@ module Toml
       private
 
       def parse_toml
-        unless @parser_path && File.exist?(@parser_path)
-          error_msg = if defined?(TreeHaver::GrammarFinder)
-            TreeHaver::GrammarFinder.new(:toml).not_found_message
-          else
-            "Tree-sitter toml parser not found. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
-          end
+        # Check if TreeHaver is available
+        unless defined?(TreeHaver)
+          error_msg = "TreeHaver not available. Install tree_haver gem."
           @errors << error_msg
           @ast = nil
           raise StandardError, error_msg
         end
 
         begin
-          language = TreeSitter::Language.load("toml", @parser_path)
-          parser = TreeSitter::Parser.new
+          # Use TreeHaver's unified interface
+          parser = TreeHaver::Parser.new
+
+          # Determine which language to use
+          language = if @parser_path
+            # Custom parser path provided - use it
+            unless File.exist?(@parser_path)
+              error_msg = "tree-sitter toml parser not found at #{@parser_path}. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+              @errors << error_msg
+              @ast = nil
+              raise StandardError, error_msg
+            end
+            TreeHaver::Language.load("toml", @parser_path)
+          elsif TreeHaver::Language.respond_to?(:toml)
+            # Use registered TOML language (from GrammarFinder)
+            TreeHaver::Language.toml
+          else
+            # No language available
+            error_msg = if defined?(TreeHaver::GrammarFinder)
+              TreeHaver::GrammarFinder.new(:toml).not_found_message
+            else
+              "tree-sitter toml parser not found. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
+            end
+            @errors << error_msg
+            @ast = nil
+            raise StandardError, error_msg
+          end
+
           parser.language = language
-          @ast = parser.parse_string(nil, @source)
+          @ast = parser.parse(@source)
 
           # Check for parse errors in the tree
           if @ast&.root_node&.has_error?

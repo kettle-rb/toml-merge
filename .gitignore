@@ -10,6 +10,7 @@ vendor/*-ruby*_*/
 vendor/*-lts/
 vendor/*_haver/
 vendor/*.md
+vendor/*-rb
 
 # Bundler
 /vendor/bundle/

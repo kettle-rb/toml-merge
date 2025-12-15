@@ -6,7 +6,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
   let(:mock_node) do
     instance_double(
-      TreeSitter::Node,
+      TreeHaver::Node,
       type: "pair",
       start_point: double(row: 0, column: 0),
       end_point: double(row: 0, column: 10),
@@ -26,7 +26,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
   describe "#initialize" do
     it "handles nodes without start_point method" do
-      node_without_start = instance_double(TreeSitter::Node, type: "pair")
+      node_without_start = instance_double(TreeHaver::Node, type: "pair")
       allow(node_without_start).to receive(:respond_to?).with(:start_point).and_return(false)
       allow(node_without_start).to receive(:respond_to?).with(:end_point).and_return(true)
       allow(node_without_start).to receive(:end_point).and_return(double(row: 5, column: 10))
@@ -37,7 +37,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "handles nodes without end_point method" do
-      node_without_end = instance_double(TreeSitter::Node, type: "pair")
+      node_without_end = instance_double(TreeHaver::Node, type: "pair")
       allow(node_without_end).to receive(:respond_to?) do |meth|
         meth == :start_point
       end
@@ -49,7 +49,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "corrects end_line when it is before start_line" do
-      node_with_invalid_lines = instance_double(TreeSitter::Node, type: "pair")
+      node_with_invalid_lines = instance_double(TreeHaver::Node, type: "pair")
       allow(node_with_invalid_lines).to receive(:respond_to?) do |meth|
         %i[start_point end_point].include?(meth)
       end
@@ -65,7 +65,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
     it "uses default source when source is nil" do
       node = instance_double(
-        TreeSitter::Node,
+        TreeHaver::Node,
         type: "pair",
         start_point: double(row: 0, column: 0),
         end_point: double(row: 0, column: 1),
@@ -80,7 +80,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     let(:lines) { ["line1", "line2"] }
 
     it "returns nil for #table_name when not a table" do
-      node = instance_double(TreeSitter::Node, type: "pair")
+      node = instance_double(TreeHaver::Node, type: "pair")
       allow(node).to receive(:respond_to?).and_return(false)
       allow(node).to receive(:each)
 
@@ -89,7 +89,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns nil for #table_name when table has no key children" do
-      table_node = instance_double(TreeSitter::Node, type: "table")
+      table_node = instance_double(TreeHaver::Node, type: "table")
       allow(table_node).to receive(:respond_to?).and_return(false)
       allow(table_node).to receive(:each) # yields nothing
 
@@ -98,7 +98,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns nil for #key_name when not a pair" do
-      node = instance_double(TreeSitter::Node, type: "table")
+      node = instance_double(TreeHaver::Node, type: "table")
       allow(node).to receive(:respond_to?).and_return(false)
       allow(node).to receive(:each)
 
@@ -107,7 +107,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns nil for #key_name when pair has no key children" do
-      pair_node = instance_double(TreeSitter::Node, type: "pair")
+      pair_node = instance_double(TreeHaver::Node, type: "pair")
       allow(pair_node).to receive(:respond_to?).and_return(false)
       allow(pair_node).to receive(:each) # yields nothing
 
@@ -116,7 +116,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns nil for #value_node when not a pair" do
-      node = instance_double(TreeSitter::Node, type: "table")
+      node = instance_double(TreeHaver::Node, type: "table")
       allow(node).to receive(:respond_to?).and_return(false)
       allow(node).to receive(:each)
 
@@ -125,9 +125,9 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns nil for #value_node when pair has only key children" do
-      key_child = instance_double(TreeSitter::Node, type: "bare_key")
-      eq_child = instance_double(TreeSitter::Node, type: "=")
-      pair_node = instance_double(TreeSitter::Node, type: "pair")
+      key_child = instance_double(TreeHaver::Node, type: "bare_key")
+      eq_child = instance_double(TreeHaver::Node, type: "=")
+      pair_node = instance_double(TreeHaver::Node, type: "pair")
       allow(pair_node).to receive(:respond_to?).and_return(false)
       allow(pair_node).to receive(:each).and_yield(key_child).and_yield(eq_child)
 
@@ -136,7 +136,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns [] for #children when node does not support each" do
-      node = instance_double(TreeSitter::Node, type: "pair")
+      node = instance_double(TreeHaver::Node, type: "pair")
       allow(node).to receive(:respond_to?).with(:each).and_return(false)
       allow(node).to receive(:respond_to?).and_return(false)
 
@@ -145,12 +145,12 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns empty string for #node_text when node lacks byte offsets" do
-      node = instance_double(TreeSitter::Node, type: "pair")
+      node = instance_double(TreeHaver::Node, type: "pair")
       allow(node).to receive(:respond_to?).and_return(false)
 
       wrapper = described_class.new(node, lines: ["abc"], source: "abc")
 
-      ts_node = instance_double(TreeSitter::Node)
+      ts_node = instance_double(TreeHaver::Node)
       allow(ts_node).to receive(:respond_to?).with(:start_byte).and_return(false)
       allow(ts_node).to receive(:respond_to?).with(:end_byte).and_return(false)
 
@@ -158,7 +158,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns empty string for #content when start/end lines are missing" do
-      node = instance_double(TreeSitter::Node, type: "pair")
+      node = instance_double(TreeHaver::Node, type: "pair")
       allow(node).to receive(:respond_to?).and_return(false)
 
       wrapper = described_class.new(node, lines: ["abc"], source: "abc")
@@ -166,7 +166,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns [] for #pairs when not table/inline_table/document" do
-      node = instance_double(TreeSitter::Node, type: "pair")
+      node = instance_double(TreeHaver::Node, type: "pair")
       allow(node).to receive(:respond_to?).and_return(false)
       allow(node).to receive(:each)
 
@@ -175,7 +175,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns [] for #elements when not an array" do
-      node = instance_double(TreeSitter::Node, type: "pair")
+      node = instance_double(TreeHaver::Node, type: "pair")
       allow(node).to receive(:respond_to?).and_return(false)
 
       wrapper = described_class.new(node, lines: lines)
@@ -183,7 +183,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "returns [] for #mergeable_children when leaf type" do
-      node = instance_double(TreeSitter::Node, type: "integer")
+      node = instance_double(TreeHaver::Node, type: "integer")
       allow(node).to receive(:respond_to?).and_return(false)
 
       wrapper = described_class.new(node, lines: lines)
@@ -191,7 +191,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
 
     it "uses generic fallback signature for unknown node types" do
-      unknown = instance_double(TreeSitter::Node, type: "weird")
+      unknown = instance_double(TreeHaver::Node, type: "weird")
       allow(unknown).to receive(:respond_to?).and_return(false)
 
       wrapper = described_class.new(unknown, lines: ["abc"], source: "abc")

@@ -6,8 +6,8 @@ module Toml
     # This provides a unified interface for working with TOML AST nodes during merging.
     #
     # @example Basic usage
-    #   parser = TreeSitter::Parser.new
-    #   parser.language = TreeSitter::Language.load("toml", path)
+    #   parser = TreeHaver::Parser.new
+    #   parser.language = TreeHaver::Language.load("toml", path)
     #   tree = parser.parse_string(nil, source)
     #   wrapper = NodeWrapper.new(tree.root_node, lines: source.lines, source: source)
     #   wrapper.signature # => [:table, "section"]
@@ -15,7 +15,7 @@ module Toml
       class << self
         # Wrap a tree-sitter node, returning nil for nil input.
         #
-        # @param node [TreeSitter::Node, nil] Tree-sitter node to wrap
+        # @param node [TreeHaver::Node, nil] tree-sitter node to wrap
         # @param lines [Array<String>] Source lines for content extraction
         # @param source [String, nil] Original source string
         # @param leading_comments [Array<Hash>] Comments before this node
@@ -28,7 +28,7 @@ module Toml
         end
       end
 
-      # @return [TreeSitter::Node] The wrapped tree-sitter node
+      # @return [TreeHaver::Node] The wrapped tree-sitter node
       attr_reader :node
 
       # @return [Array<Hash>] Leading comments associated with this node
@@ -49,7 +49,7 @@ module Toml
       # @return [Array<String>] Source lines
       attr_reader :lines
 
-      # @param node [TreeSitter::Node] Tree-sitter node to wrap
+      # @param node [TreeHaver::Node] tree-sitter node to wrap
       # @param lines [Array<String>] Source lines for content extraction
       # @param source [String] Original source string for byte-based text extraction
       # @param leading_comments [Array<Hash>] Comments before this node
@@ -315,7 +315,7 @@ module Toml
       end
 
       # Extract text from a tree-sitter node using byte positions
-      # @param ts_node [TreeSitter::Node] The tree-sitter node
+      # @param ts_node [TreeHaver::Node] The tree-sitter node
       # @return [String]
       def node_text(ts_node)
         return "" unless ts_node.respond_to?(:start_byte) && ts_node.respond_to?(:end_byte)

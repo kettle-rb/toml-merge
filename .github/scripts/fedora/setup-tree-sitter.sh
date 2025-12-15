@@ -9,7 +9,7 @@ set -euo pipefail
 # Options:
 #   --sudo: Use sudo for package installation commands
 #   --cli:  Install tree-sitter-cli via npm (optional)
-#   --build: Build and install the Tree-sitter C runtime from source when distro packages are missing (optional)
+#   --build: Build and install the tree-sitter C runtime from source when distro packages are missing (optional)
 
 SUDO=""
 INSTALL_CLI=false
@@ -227,7 +227,7 @@ if have_cmd ldconfig; then
 fi
 
 echo ""
-echo "[universal-blue] Tree-sitter setup complete!"
+echo "[universal-blue] tree-sitter setup complete!"
 echo ""
 echo "Detected library paths (set these if needed):"
 
