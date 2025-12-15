@@ -11,6 +11,7 @@ vendor/*-lts/
 vendor/*_haver/
 vendor/*.md
 vendor/*-rb
+vendor/*tree*
 
 # Bundler
 /vendor/bundle/
