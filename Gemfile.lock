@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/pboling/tree_stump.git
+  revision: e5d2244e2bafa7405fb943dcc5f23f47f78aacdf
+  branch: tree_haver
+  specs:
+    tree_stump (0.1.0)
+
+GIT
   remote: https://github.com/pboling/yard-junk.git
   revision: 54ccebabbfa9a9cd44d0b991687ebbfd22c32b55
   branch: next
@@ -11,24 +18,19 @@ GIT
       yard
 
 PATH
+  remote: ../tree_haver
+  specs:
+    tree_haver (3.0.0)
+      version_gem (~> 1.1, >= 1.1.9)
+
+PATH
   remote: .
   specs:
     toml-merge (1.0.0)
       ast-merge (~> 1.0)
       toml-rb (~> 4.1)
-      tree_haver (~> 2.0)
+      tree_haver (~> 3.0)
       version_gem (~> 1.1, >= 1.1.9)
-
-PATH
-  remote: vendor/tree_haver
-  specs:
-    tree_haver (2.0.0)
-      version_gem (~> 1.1, >= 1.1.9)
-
-PATH
-  remote: vendor/tree_stump
-  specs:
-    tree_stump (0.1.0)
 
 GEM
   remote: https://gem.coop/
@@ -55,7 +57,7 @@ GEM
     debug (1.11.0)
       irb (~> 1.10)
       reline (>= 0.3.8)
-    delegate (0.4.0)
+    delegate (0.5.0)
     diff-lcs (1.6.2)
     diffy (3.4.4)
     docile (1.4.1)
@@ -96,7 +98,7 @@ GEM
     gitmoji-regex (1.0.3)
       version_gem (~> 1.1, >= 1.1.8)
     io-console (0.8.2)
-    irb (1.15.3)
+    irb (1.16.0)
       pp (>= 0.6.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
@@ -148,7 +150,7 @@ GEM
       ttfunk (~> 1.8)
     prettyprint (0.2.0)
     prism (1.6.0)
-    psych (5.3.0)
+    psych (5.3.1)
       date
       stringio
     public_suffix (7.0.0)
@@ -279,7 +281,7 @@ GEM
     simplecov-rcov (0.3.7)
       simplecov (>= 0.4.1)
     simplecov_json_formatter (0.1.4)
-    sorbet-runtime (0.6.12846)
+    sorbet-runtime (0.6.12854)
     standard (1.52.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
@@ -300,7 +302,7 @@ GEM
       version_gem (>= 1.1.4, < 3)
     stone_checksums (1.0.3)
       version_gem (~> 1.1, >= 1.1.9)
-    stringio (3.1.9)
+    stringio (3.2.0)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
     thor (1.4.0)
@@ -334,7 +336,7 @@ GEM
     yard-yaml (0.1.0)
       version_gem (~> 1.1, >= 1.1.9)
       yaml-converter (~> 0.1)
-    zeitwerk (2.7.3)
+    zeitwerk (2.7.4)
     zlib (3.2.2)
 
 PLATFORMS

@@ -10,14 +10,14 @@
 # FFI Backend - works on MRI, JRuby, and TruffleRuby
 gem "ffi"
 gem "tree_haver",
-    path: "../../vendor/tree_haver"
+    path: "../../../tree_haver"
 
 platform :mri do
   # MRI Backend
   gem "ruby_tree_sitter"
   # Rust Backend
   gem "tree_stump",
-      path: "../../vendor/tree_stump"
-      # github: "pboling/tree_stump",
-      # branch: "tree_haver"
+      # path: "../../vendor/tree_stump"
+      github: "pboling/tree_stump",
+      branch: "tree_haver"
 end
