@@ -20,7 +20,7 @@ GIT
 PATH
   remote: ../tree_haver
   specs:
-    tree_haver (3.0.0)
+    tree_haver (3.1.0)
       version_gem (~> 1.1, >= 1.1.9)
 
 PATH
