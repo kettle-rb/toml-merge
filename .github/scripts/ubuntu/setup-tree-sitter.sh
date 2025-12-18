@@ -7,24 +7,44 @@ set -e
 #   --sudo: Use sudo for package installation commands
 #   --cli:  Install tree-sitter-cli via npm (optional)
 #   --build: Build and install the tree-sitter C runtime from source when distro packages are missing (optional)
+#   --workspace PATH: Workspace root path (defaults to /workspaces/toml-merge for GHA compatibility)
 
 SUDO=""
 INSTALL_CLI=false
 BUILD_FROM_SOURCE=false
+WORKSPACE_ROOT="/workspaces/toml-merge"
 
 for arg in "$@"; do
   case $arg in
     --sudo)
       SUDO="sudo"
+      shift
       ;;
     --cli)
       INSTALL_CLI=true
+      shift
       ;;
     --build)
       BUILD_FROM_SOURCE=true
+      shift
+      ;;
+    --workspace)
+      WORKSPACE_ROOT="$2"
+      shift 2
+      ;;
+    --workspace=*)
+      WORKSPACE_ROOT="${arg#*=}"
+      shift
       ;;
   esac
 done
+
+echo "Configuration:"
+echo "  Workspace root: $WORKSPACE_ROOT"
+echo "  Using sudo: $([ -n "$SUDO" ] && echo "yes" || echo "no")"
+echo "  Install CLI: $INSTALL_CLI"
+echo "  Build from source: $BUILD_FROM_SOURCE"
+echo ""
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
@@ -64,7 +84,6 @@ $SUDO apt-get update -y
 if ! $SUDO apt-get install -y \
   build-essential \
   pkg-config \
-  # libtree-sitter-dev is optional when building from source via --build
   $( [ "$BUILD_FROM_SOURCE" = false ] && echo "libtree-sitter-dev" ) \
   wget \
   gcc \
@@ -113,21 +132,50 @@ else
 fi
 
 echo "Building and installing tree-sitter-toml..."
-cd /tmp
-wget -q https://github.com/tree-sitter-grammars/tree-sitter-toml/archive/refs/heads/master.zip
-unzip -q master.zip
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" EXIT
+cd "$TMPDIR"
+
+if ! wget -q https://github.com/tree-sitter-grammars/tree-sitter-toml/archive/refs/heads/master.zip; then
+  echo "ERROR: Failed to download tree-sitter-toml" >&2
+  exit 1
+fi
+
+if ! unzip -q master.zip; then
+  echo "ERROR: Failed to unzip tree-sitter-toml" >&2
+  exit 1
+fi
+
 cd tree-sitter-toml-master
 
 # Compile both parser.c and scanner.c
-gcc -fPIC -I./src -c src/parser.c -o parser.o
-gcc -fPIC -I./src -c src/scanner.c -o scanner.o
+if ! gcc -fPIC -I./src -c src/parser.c -o parser.o; then
+  echo "ERROR: Failed to compile parser.c" >&2
+  exit 1
+fi
+
+if ! gcc -fPIC -I./src -c src/scanner.c -o scanner.o; then
+  echo "ERROR: Failed to compile scanner.c" >&2
+  exit 1
+fi
 
 # Link both object files into the shared library
-gcc -shared -o libtree-sitter-toml.so parser.o scanner.o
+if ! gcc -shared -o libtree-sitter-toml.so parser.o scanner.o; then
+  echo "ERROR: Failed to link tree-sitter-toml.so" >&2
+  exit 1
+fi
 
 # Install to system
-$SUDO cp libtree-sitter-toml.so /usr/local/lib/
-$SUDO ldconfig
+if ! $SUDO cp libtree-sitter-toml.so /usr/local/lib/; then
+  echo "ERROR: Failed to copy tree-sitter-toml.so to /usr/local/lib/" >&2
+  exit 1
+fi
+
+if ! $SUDO ldconfig; then
+  echo "WARNING: ldconfig failed, library may not be immediately available" >&2
+fi
+
+echo "Successfully installed tree-sitter-toml to /usr/local/lib/"
 
 echo ""
 echo "tree-sitter setup complete!"
@@ -148,3 +196,4 @@ else
 fi
 
 echo "  TREE_SITTER_TOML_PATH=/usr/local/lib/libtree-sitter-toml.so"
+

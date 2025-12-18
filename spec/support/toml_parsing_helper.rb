@@ -7,13 +7,11 @@ module TomlParsingHelper
   # @param node_type [String, nil] Optional node type to extract (e.g., 'table', 'pair')
   # @return [Toml::Merge::NodeWrapper, nil] Wrapped node
   def parse_toml(source, node_type: nil)
-    parser_path = Toml::Merge::FileAnalysis.find_parser_path
-    return unless parser_path
+    return unless toml_available?
 
-    # Use TreeHaver namespace
-    language = TreeHaver::Language.load("toml", parser_path)
+    # Use TreeHaver's unified interface - handles tree-sitter and Citrus fallback
     parser = TreeHaver::Parser.new
-    parser.language = language
+    parser.language = TreeHaver::Language.toml
     tree = parser.parse(source)
 
     return if tree.nil? || tree.root_node.nil?
@@ -57,10 +55,13 @@ module TomlParsingHelper
     node.each { |child| print_node_tree(child, indent + 1) }
   end
 
-  # Check if tree-sitter TOML parser is available
+  # Check if TOML parsing is available (tree-sitter or Citrus)
   #
   # @return [Boolean]
-  def tree_sitter_available?
-    !Toml::Merge::FileAnalysis.find_parser_path.nil?
+  def toml_available?
+    TreeHaver::Language.respond_to?(:toml)
   end
+
+  # Alias for backwards compatibility
+  alias_method :tree_sitter_available?, :toml_available?
 end

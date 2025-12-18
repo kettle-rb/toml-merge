@@ -21,60 +21,10 @@ RSpec.describe Toml::Merge::FileAnalysis do
     TOML
   end
 
-  describe ".find_parser_path" do
-    it "returns path from environment variable when set and file exists" do
-      stub_env("TREE_SITTER_TOML_PATH" => "/fake/path/libtree-sitter-toml.so")
-      allow(File).to receive(:exist?).with("/fake/path/libtree-sitter-toml.so").and_return(true)
-
-      expect(described_class.find_parser_path).to eq("/fake/path/libtree-sitter-toml.so")
-    end
-
-    it "searches common paths when env var not set" do
-      stub_env("TREE_SITTER_TOML_PATH" => nil)
-      allow(File).to receive(:exist?).and_return(false)
-      allow(File).to receive(:exist?).with("/usr/lib/libtree-sitter-toml.so").and_return(true)
-
-      expect(described_class.find_parser_path).to eq("/usr/lib/libtree-sitter-toml.so")
-    end
-
-    it "returns nil when no parser found" do
-      stub_env("TREE_SITTER_TOML_PATH" => nil)
-      allow(File).to receive(:exist?).and_return(false)
-
-      expect(described_class.find_parser_path).to be_nil
-    end
-  end
+  # Note: find_parser_path and parser_path parameter were removed.
+  # TreeHaver now handles grammar discovery and Citrus fallback automatically.
 
   describe "#initialize" do
-    context "with custom parser_path" do
-      it "uses provided parser path" do
-        allow(File).to receive(:exist?).with("/custom/path").and_return(true)
-
-        # Mock the tree-sitter objects properly
-        mock_language = double("TreeHaver::Language")
-        mock_parser = double("TreeHaver::Parser")
-        mock_root_node = double("TreeHaver::Node", has_error?: false, each: [])
-        mock_tree = double("TreeHaver::Tree", root_node: mock_root_node)
-
-        allow(TreeHaver::Language).to receive(:load).and_return(mock_language)
-        allow(TreeHaver::Parser).to receive(:new).and_return(mock_parser)
-        allow(mock_parser).to receive(:language=).with(mock_language)
-        allow(mock_parser).to receive(:parse).and_return(mock_tree)
-
-        analysis = described_class.new(valid_toml, parser_path: "/custom/path")
-        expect(analysis.instance_variable_get(:@parser_path)).to eq("/custom/path")
-      end
-
-      context "with custom parser_path that doesn't exist" do
-        it "raises StandardError" do
-          allow(File).to receive(:exist?).with("/custom/path").and_return(false)
-
-          expect {
-            described_class.new(valid_toml, parser_path: "/custom/path")
-          }.to raise_error(StandardError, /tree-sitter toml parser not found/)
-        end
-      end
-    end
 
     context "with valid TOML" do
       subject(:analysis) { described_class.new(valid_toml) }

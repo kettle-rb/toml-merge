@@ -18,44 +18,14 @@ module Toml
       # @return [Array] Parse errors if any
       attr_reader :errors
 
-      class << self
-        # Find the parser library path
-        #
-        # Uses TreeHaver::GrammarFinder if available, otherwise
-        # searches common paths directly.
-        #
-        # @return [String, nil] Path to the parser library or nil if not found
-        def find_parser_path
-          # Use TreeHaver's GrammarFinder if available
-          if defined?(TreeHaver::GrammarFinder)
-            TreeHaver::GrammarFinder.new(:toml).find_library_path
-          else
-            # Fallback: check environment variable first
-            env_path = ENV["TREE_SITTER_TOML_PATH"]
-            return env_path if env_path && File.exist?(env_path)
-
-            # Search common paths
-            [
-              "/usr/lib/libtree-sitter-toml.so",
-              "/usr/lib64/libtree-sitter-toml.so",
-              "/usr/local/lib/libtree-sitter-toml.so",
-              "/opt/homebrew/lib/libtree-sitter-toml.dylib",
-              "/usr/local/lib/libtree-sitter-toml.dylib",
-            ].find { |path| File.exist?(path) }
-          end
-        end
-      end
-
       # Initialize file analysis
       #
       # @param source [String] TOML source code to analyze
       # @param signature_generator [Proc, nil] Custom signature generator
-      # @param parser_path [String, nil] Path to tree-sitter-toml parser library
-      def initialize(source, signature_generator: nil, parser_path: nil)
+      def initialize(source, signature_generator: nil)
         @source = source
         @lines = source.lines.map(&:chomp)
         @signature_generator = signature_generator
-        @parser_path = parser_path || self.class.find_parser_path
         @errors = []
 
         # Parse the TOML
@@ -139,34 +109,10 @@ module Toml
 
         begin
           # Use TreeHaver's unified interface
+          # TreeHaver automatically handles backend selection and Citrus fallback
+          # when tree-sitter-toml is not available
           parser = TreeHaver::Parser.new
-
-          # Determine which language to use
-          language = if @parser_path
-            # Custom parser path provided - use it
-            unless File.exist?(@parser_path)
-              error_msg = "tree-sitter toml parser not found at #{@parser_path}. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
-              @errors << error_msg
-              @ast = nil
-              raise StandardError, error_msg
-            end
-            TreeHaver::Language.load("toml", @parser_path)
-          elsif TreeHaver::Language.respond_to?(:toml)
-            # Use registered TOML language (from GrammarFinder)
-            TreeHaver::Language.toml
-          else
-            # No language available
-            error_msg = if defined?(TreeHaver::GrammarFinder)
-              TreeHaver::GrammarFinder.new(:toml).not_found_message
-            else
-              "tree-sitter toml parser not found. Install tree-sitter-toml or set TREE_SITTER_TOML_PATH."
-            end
-            @errors << error_msg
-            @ast = nil
-            raise StandardError, error_msg
-          end
-
-          parser.language = language
+          parser.language = TreeHaver::Language.toml
           @ast = parser.parse(@source)
 
           # Check for parse errors in the tree
