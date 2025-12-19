@@ -20,14 +20,6 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
-- Initial release
-- Added support for pure Ruby TOML parsing via tree_haver v3 Citrus backend with toml-rb
-  - Automatically registers both tree-sitter-toml (native, fast) and toml-rb (pure Ruby) grammars
-  - TreeHaver auto-selects best available backend (tree-sitter preferred, Citrus fallback)
-  - Enables TOML parsing on platforms without native library support
-  - Can force Citrus backend via `TREE_HAVER_BACKEND=citrus` environment variable
-- Added graceful error handling when neither tree-sitter-toml nor toml-rb are available
-
 ### Changed
 
 ### Deprecated
@@ -37,6 +29,23 @@ Please file a bug if you notice a violation of semantic versioning.
 ### Fixed
 
 ### Security
+
+## [1.0.0] - 2025-12-19
+
+- TAG: [v1.0.0][1.0.0t]
+- COVERAGE: 94.05% -- 506/538 lines in 9 files
+- BRANCH COVERAGE: 76.64% -- 164/214 branches in 9 files
+- 96.55% documented
+
+### Added
+
+- Initial release
+- Added support for pure Ruby TOML parsing via tree_haver v3 Citrus backend with toml-rb
+  - Automatically registers both tree-sitter-toml (native, fast) and toml-rb (pure Ruby) grammars
+  - TreeHaver auto-selects best available backend (tree-sitter preferred, Citrus fallback)
+  - Enables TOML parsing on platforms without native library support
+  - Can force Citrus backend via `TREE_HAVER_BACKEND=citrus` environment variable
+- Added graceful error handling when neither tree-sitter-toml nor toml-rb are available
 
 [Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/kettle-rb/toml-merge/compare/772a5f5802ce518f2e2c83a561eb583ed634bac4...v1.0.0

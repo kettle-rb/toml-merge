@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: ANALYSIS-toml-rb-backend
+  
+    &mdash; Documentation by YARD 0.9.38
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "ANALYSIS-toml-rb-backend";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: ANALYSIS-toml-rb-backend</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="toml-rb-as-alternative-backend---feasibility-analysis">toml-rb as Alternative Backend - Feasibility Analysis</h1>
+
+<h2 id="executive-summary">Executive Summary</h2>
+
+<p><strong>YES, toml-rb is HIGHLY FEASIBLE as an alternative backend!</strong></p>
+
+<p>The toml-rb gem (using Citrus parser) provides sufficient AST-like capabilities to serve as a pure-Ruby alternative to tree-sitter. We can implement a dual-backend architecture similar to tree_haver.</p>
+
+<h2 id="what-toml-rb-provides">What toml-rb Provides</h2>
+
+<h3 id="1-ast-like-parse-tree-via-citrus">1. AST-like Parse Tree (via Citrus)</h3>
+
+<pre class="code language-ruby"><code class="language-ruby">parsed = TomlRB::Document.parse(source)
+# Returns: Citrus::Match with hierarchical match objects
+</code></pre>
+
+<p>The Citrus::Match objects provide:</p>
+<ul>
+  <li>
+<strong>Position tracking</strong>: <code>offset</code> and <code>length</code> properties</li>
+  <li>
+<strong>Line calculation</strong>: Can compute line numbers from byte offsets</li>
+  <li>
+<strong>Text extraction</strong>: Access matched text via <code>string</code> method</li>
+  <li>
+<strong>Hierarchical structure</strong>: <code>matches</code> array for sequential traversal</li>
+  <li>
+<strong>Type information</strong>: Via TomlRB value objects (Table, TableArray, Keyvalue)</li>
+</ul>
+
+<h3 id="2-semantic-toml-objects">2. Semantic TOML Objects</h3>
+
+<p>TomlRB wraps Citrus matches with semantic objects:</p>
+
+<ul>
+  <li>
+<strong>TomlRB::Table</strong> - TOML sections <code>[section]</code>
+    <ul>
+      <li>
+<code>@dotted_keys</code> - array of key components</li>
+      <li>
+<code>full_key</code> - complete dotted path</li>
+    </ul>
+  </li>
+  <li>
+<strong>TomlRB::TableArray</strong> - Array of tables <code>[[items]]</code>
+    <ul>
+      <li>
+<code>@dotted_keys</code> - array of key components</li>
+      <li>
+<code>full_key</code> - complete dotted path</li>
+    </ul>
+  </li>
+  <li>
+<strong>TomlRB::Keyvalue</strong> - Key-value pairs
+    <ul>
+      <li>
+<code>@dotted_keys</code> - array of key components</li>
+      <li>
+<code>@value</code> - parsed Ruby value (String, Integer, Array, Hash, etc.)</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="3-position-information">3. Position Information</h3>
+
+<p>Each Citrus::Match provides:</p>
+<pre class="code language-ruby"><code class="language-ruby">match.offset          # Byte offset from start
+match.length          # Length in bytes
+match.input.string    # Full source text
+match.string          # Matched text
+
+# Calculate line numbers:
+start_line = match.input.string[0...match.offset].count(&quot;\n&quot;) + 1
+end_line = match.input.string[0...(match.offset + match.length)].count(&quot;\n&quot;) + 1
+</code></pre>
+
+<h3 id="4-access-to-sub-structures">4. Access to Sub-structures</h3>
+
+<pre class="code language-ruby"><code class="language-ruby">match.captures        # Hash of named captures from grammar
+match.value          # TomlRB semantic object (Table, Keyvalue, etc.)
+</code></pre>
+
+<h2 id="architecture-design">Architecture Design</h2>
+
+<p>Following tree_haver’s pattern, we should implement:</p>
+
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_lib'>lib</span><span class='op'>/</span><span class='id identifier rubyid_toml'>toml</span><span class='op'>/</span><span class='id identifier rubyid_merge'>merge</span><span class='op'>/</span>
+  <span class='id identifier rubyid_backends'>backends</span><span class='op'>/</span>
+    <span class='id identifier rubyid_tree_sitter'>tree_sitter</span><span class='period'>.</span><span class='id identifier rubyid_rb'>rb</span>      <span class='comment'># Current implementation (wrap existing code)
+</span>    <span class='id identifier rubyid_citrus'>citrus</span><span class='period'>.</span><span class='id identifier rubyid_rb'>rb</span>           <span class='comment'># New toml-rb/citrus backend
+</span>  <span class='id identifier rubyid_backend_adapter'>backend_adapter</span><span class='period'>.</span><span class='id identifier rubyid_rb'>rb</span>    <span class='comment'># Abstract interface
+</span>  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_rb'>rb</span>            <span class='comment'># Backend selection
+</span></code></pre>
+
+<h3 id="backend-selection-logic">Backend Selection Logic</h3>
+
+<pre class="code language-ruby"><code class="language-ruby">module Toml
+  module Merge
+    class &lt;&lt; self
+      def backend
+        @backend ||= ENV[&quot;TOML_MERGE_BACKEND&quot;]&amp;.to_sym || :auto
+      end
+      
+      def backend=(name)
+        @backend = name&amp;.to_sym
+      end
+      
+      def backend_module
+        case backend
+        when :tree_sitter
+          Backends::TreeSitter
+        when :citrus
+          Backends::Citrus
+        else # :auto
+          # Prefer tree-sitter if available (better performance)
+          if Backends::TreeSitter.available?
+            Backends::TreeSitter
+          elsif Backends::Citrus.available?
+            Backends::Citrus
+          else
+            raise &quot;No TOML parsing backend available&quot;
+          end
+        end
+      end
+    end
+  end
+end
+</code></pre>
+
+<h3 id="backend-interface">Backend Interface</h3>
+
+<p>Each backend should implement:</p>
+
+<pre class="code language-ruby"><code class="language-ruby">module Toml::Merge::Backends
+  module BackendInterface
+    # Check if backend is available
+    def self.available?
+    
+    # Parse source and return wrapped AST
+    def self.parse(source)  # =&gt; FileAnalysis-compatible object
+    
+    # Return capabilities
+    def self.capabilities
+      # { backend: :citrus, supports_comments: true, ... }
+    end
+  end
+end
+</code></pre>
+
+<h3 id="node-wrapper-abstraction">Node Wrapper Abstraction</h3>
+
+<p>Create a unified node wrapper that works with both backends:</p>
+
+<pre class="code language-ruby"><code class="language-ruby"># Current: NodeWrapper wraps TreeSitter::Node
+# New:     NodeWrapper can wrap either TreeSitter::Node OR Citrus::Match
+
+class NodeWrapper
+  def initialize(node, backend:, **options)
+    @node = node
+    @backend = backend
+    @options = options
+    
+    case backend
+    when :tree_sitter
+      @adapter = TreeSitterAdapter.new(node, **options)
+    when :citrus
+      @adapter = CitrusAdapter.new(node, **options)
+    end
+  end
+  
+  # Delegate to adapter
+  def type; @adapter.type; end
+  def start_line; @adapter.start_line; end
+  def end_line; @adapter.end_line; end
+  def text; @adapter.text; end
+  def signature; @adapter.signature; end
+  # ... etc
+end
+</code></pre>
+
+<h2 id="implementation-plan">Implementation Plan</h2>
+
+<h3 id="phase-1-backend-infrastructure-foundation">Phase 1: Backend Infrastructure (Foundation)</h3>
+<ol>
+  <li>Create <code>lib/toml/merge/backends/</code> directory</li>
+  <li>Create <code>backend_adapter.rb</code> with interface definition</li>
+  <li>Refactor existing code into <code>backends/tree_sitter.rb</code>
+</li>
+  <li>Add backend selection logic to main module</li>
+  <li>Add tests for backend switching</li>
+</ol>
+
+<h3 id="phase-2-citrus-backend-core-implementation">Phase 2: Citrus Backend (Core Implementation)</h3>
+<ol>
+  <li>Create <code>backends/citrus.rb</code>
+</li>
+  <li>Implement <code>CitrusNodeAdapter</code> to wrap Citrus::Match objects</li>
+  <li>Map Citrus structures to NodeWrapper interface:
+    <ul>
+      <li>TomlRB::Table → table type</li>
+      <li>TomlRB::TableArray → array_of_tables type</li>
+      <li>TomlRB::Keyvalue → pair type</li>
+    </ul>
+  </li>
+  <li>Implement position tracking (line numbers from byte offsets)</li>
+  <li>Add comment extraction from Citrus matches</li>
+</ol>
+
+<h3 id="phase-3-fileanalysis-integration">Phase 3: FileAnalysis Integration</h3>
+<ol>
+  <li>Update <code>FileAnalysis</code> to use backend system</li>
+  <li>Make parser initialization backend-aware</li>
+  <li>Ensure signature generation works with both backends</li>
+</ol>
+
+<h3 id="phase-4-testing--validation">Phase 4: Testing &amp; Validation</h3>
+<ol>
+  <li>Add backend-specific specs</li>
+  <li>Run full test suite against both backends</li>
+  <li>Add integration tests comparing results</li>
+  <li>Performance benchmarking (tree-sitter vs citrus)</li>
+</ol>
+
+<h3 id="phase-5-documentation--polish">Phase 5: Documentation &amp; Polish</h3>
+<ol>
+  <li>Update README with backend options</li>
+  <li>Document environment variables</li>
+  <li>Add backend selection examples</li>
+  <li>Update installation instructions</li>
+</ol>
+
+<h2 id="benefits-of-dual-backend">Benefits of Dual Backend</h2>
+
+<h3 id="1-platform-flexibility">1. <strong>Platform Flexibility</strong>
+</h3>
+<ul>
+  <li>tree-sitter: Fast, but requires native libraries</li>
+  <li>citrus: Pure Ruby, works everywhere (JRuby, TruffleRuby, limited environments)</li>
+</ul>
+
+<h3 id="2-graceful-degradation">2. <strong>Graceful Degradation</strong>
+</h3>
+<ul>
+  <li>Try tree-sitter first (performance)</li>
+  <li>Fall back to citrus (compatibility)</li>
+  <li>Users can force backend via <code>ENV["TOML_MERGE_BACKEND"]</code>
+</li>
+</ul>
+
+<h3 id="3-testing-coverage">3. <strong>Testing Coverage</strong>
+</h3>
+<ul>
+  <li>Test both implementations</li>
+  <li>Catch backend-specific bugs</li>
+  <li>Validate semantic correctness</li>
+</ul>
+
+<h3 id="4-future-proofing">4. <strong>Future-Proofing</strong>
+</h3>
+<ul>
+  <li>Easy to add more backends later</li>
+  <li>Clear abstraction layer</li>
+  <li>Follows tree_haver’s proven pattern</li>
+</ul>
+
+<h2 id="risks--mitigation">Risks &amp; Mitigation</h2>
+
+<h3 id="risk-1-performance-difference">Risk 1: Performance Difference</h3>
+<p><strong>Risk</strong>: Citrus may be slower than tree-sitter<br>
+<strong>Mitigation</strong>:</p>
+<ul>
+  <li>Default to tree-sitter when available</li>
+  <li>Benchmark both on real-world files</li>
+  <li>Document performance characteristics</li>
+</ul>
+
+<h3 id="risk-2-semantic-differences">Risk 2: Semantic Differences</h3>
+<p><strong>Risk</strong>: Backends might parse/represent TOML differently<br>
+<strong>Mitigation</strong>:</p>
+<ul>
+  <li>Comprehensive test suite covering both backends</li>
+  <li>Use TOML spec compliance tests</li>
+  <li>Validate output equivalence</li>
+</ul>
+
+<h3 id="risk-3-maintenance-burden">Risk 3: Maintenance Burden</h3>
+<p><strong>Risk</strong>: Two backends = 2x maintenance<br>
+<strong>Mitigation</strong>:</p>
+<ul>
+  <li>Strong abstraction layer minimizes duplication</li>
+  <li>Shared test suite validates both</li>
+  <li>Clear backend interface contract</li>
+</ul>
+
+<h3 id="risk-4-comment-handling">Risk 4: Comment Handling</h3>
+<p><strong>Risk</strong>: Comments might be harder to track in Citrus<br>
+<strong>Mitigation</strong>:</p>
+<ul>
+  <li>Citrus matches include comment nodes</li>
+  <li>Can extract via pattern matching</li>
+  <li>May need special handling for inline comments</li>
+</ul>
+
+<h2 id="code-organization">Code Organization</h2>
+
+<pre class="code ruby"><code class="ruby">lib/toml/merge/
+├── backends/
+│   ├── backend_adapter.rb        # Abstract interface
+│   ├── tree_sitter.rb            # Existing tree-sitter implementation
+│   ├── citrus.rb                 # New toml-rb/citrus implementation
+│   └── adapters/
+│       ├── tree_sitter_node.rb   # TreeSitter::Node adapter
+│       └── citrus_match.rb       # Citrus::Match adapter
+├── config.rb                     # Backend selection
+├── file_analysis.rb              # Updated to use backends
+├── node_wrapper.rb               # Updated to use adapters
+└── ...
+
+spec/toml/merge/
+├── backends/
+│   ├── tree_sitter_spec.rb
+│   ├── citrus_spec.rb
+│   └── shared_examples.rb        # Shared behavior tests
+└── ...
+</code></pre>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p><strong>toml-rb with Citrus is DEFINITELY a viable alternative backend.</strong></p>
+
+<p>The Citrus parse tree provides all necessary information:</p>
+<ul>
+  <li>✅ Node types and structure</li>
+  <li>✅ Position information (with calculation)</li>
+  <li>✅ Text extraction</li>
+  <li>✅ Hierarchical traversal</li>
+  <li>✅ Semantic type information</li>
+</ul>
+
+<p><strong>Recommendation</strong>: Proceed with dual-backend implementation following tree_haver’s architecture pattern. This will give toml-merge maximum flexibility, broader platform support, and a more robust codebase.</p>
+
+<p>The main work is creating the abstraction layer and adapter classes, but the underlying data is absolutely sufficient for our needs.</p>
+</div></div>
+
+      <div id="footer">
+  Generated on Fri Dec 19 07:47:38 2025 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.38 (ruby-3.4.7).
+</div>
+
+    </div>
+  </body>
+</html>
