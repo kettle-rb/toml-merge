@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+# To retain during kettle-dev templating:
+#     kettle-dev:freeze
+#     # ... your code
+#     kettle-dev:unfreeze
+#
+
+# Not used yet by toml-merge

@@ -65,70 +65,59 @@ tree-sitter AST nodes and comparing structural elements. It supports:
   or use a Hash for per-node-type preferences with `node_splitter` (see [ast-merge](https://github.com/kettle-rb/ast-merge) docs)
 - **Full TOML support** - Works with all TOML 1.0 features including inline tables, arrays of tables, and dotted keys
 
-### Part of a gem family
+### The `*-merge` Gem Family
 
-| Gem | File Type | Parser |
-|-----|-----------|--------|
-| [ast-merge](https://github.com/kettle-rb/ast-merge) | Text | internal |
-| [prism-merge](https://github.com/kettle-rb/prism-merge) | Ruby | Prism |
-| [psych-merge](https://github.com/kettle-rb/psych-merge) | YAML | Psych |
-| [json-merge](https://github.com/kettle-rb/json-merge) | JSON | tree-sitter-json |
-| [jsonc-merge](https://github.com/kettle-rb/jsonc-merge) | JSONC | ⚠️ [tree-sitter-jsonc](https://gitlab.com/WhyNotHugo/tree-sitter-jsonc) (PoC) |
-| [bash-merge](https://github.com/kettle-rb/bash-merge) | Shell | tree-sitter-bash |
-| [rbs-merge](https://github.com/kettle-rb/rbs-merge) | RBS Types | RBS |
-| [dotenv-merge](https://github.com/kettle-rb/dotenv-merge) | Dotenv | internal ([dotenv](https://github.com/bkeepers/dotenv)) |
-| **toml-merge** | TOML | tree-sitter-toml |
-| [markdown-merge](https://github.com/kettle-rb/markdown-merge) | Markdown | _base classes_ |
-| [markly-merge](https://github.com/kettle-rb/markly-merge) | Markdown | Markly (cmark-gfm) |
-| [commonmarker-merge](https://github.com/kettle-rb/commonmarker-merge) | Markdown | Commonmarker (Comrak) |
+This gem is part of a family of gems that provide intelligent merging for various file formats:
+
+| Gem | Format | Parser Backend(s) | Description |
+|-----|--------|-------------------|-------------|
+| [tree_haver][tree_haver] | Multi | MRI C, Rust, FFI, Java, Prism, Psych, Commonmarker, Markly, Citrus | **Foundation**: Cross-Ruby adapter for parsing libraries (like Faraday for HTTP) |
+| [ast-merge][ast-merge] | Text | internal | **Infrastructure**: Shared base classes and merge logic for all `*-merge` gems |
+| [prism-merge][prism-merge] | Ruby | [Prism][prism] (via [tree_haver][tree_haver]) | Smart merge for Ruby source files |
+| [psych-merge][psych-merge] | YAML | [Psych][psych] (via [tree_haver][tree_haver]) | Smart merge for YAML files |
+| [json-merge][json-merge] | JSON | [tree-sitter-json][ts-json] (via [tree_haver][tree_haver]) | Smart merge for JSON files |
+| [jsonc-merge][jsonc-merge] | JSONC | [tree-sitter-jsonc][ts-jsonc] (via [tree_haver][tree_haver]) | ⚠️ Proof of concept; Smart merge for JSON with Comments |
+| [bash-merge][bash-merge] | Bash | [tree-sitter-bash][ts-bash] (via [tree_haver][tree_haver]) | Smart merge for Bash scripts |
+| [rbs-merge][rbs-merge] | RBS | [RBS][rbs] | Smart merge for Ruby type signatures |
+| [dotenv-merge][dotenv-merge] | Dotenv | internal ([dotenv][dotenv]) | Smart merge for `.env` files |
+| [toml-merge][toml-merge] | TOML | [tree-sitter-toml][ts-toml] (via [tree_haver][tree_haver]) | Smart merge for TOML files |
+| [markdown-merge][markdown-merge] | Markdown | [Commonmarker][commonmarker] / [Markly][markly] (via [tree_haver][tree_haver]) | **Foundation**: Shared base for Markdown mergers with inner code block merging |
+| [markly-merge][markly-merge] | Markdown | [Markly][markly] (via [tree_haver][tree_haver]) | Smart merge for Markdown (CommonMark via cmark-gfm C) |
+| [commonmarker-merge][commonmarker-merge] | Markdown | [Commonmarker][commonmarker] (via [tree_haver][tree_haver]) | Smart merge for Markdown (CommonMark via comrak Rust) |
 
 **Example implementations** for the gem templating use case:
 
-| Gem | Purpose |
-|-----|---------|
-| [kettle-dev](https://github.com/kettle-rb/kettle-dev) | Gem templating tool |
-| [kettle-jem](https://github.com/kettle-rb/kettle-jem) | Gem template library |
+| Gem | Purpose | Description |
+|-----|---------|-------------|
+| [kettle-dev][kettle-dev] | Gem Development | Gem templating tool using `*-merge` gems |
+| [kettle-jem][kettle-jem] | Gem Templating | Gem template library with smart merge support |
 
-### Configuration
+[tree_haver]: https://github.com/kettle-rb/tree_haver
+[ast-merge]: https://github.com/kettle-rb/ast-merge
+[prism-merge]: https://github.com/kettle-rb/prism-merge
+[psych-merge]: https://github.com/kettle-rb/psych-merge
+[json-merge]: https://github.com/kettle-rb/json-merge
+[jsonc-merge]: https://github.com/kettle-rb/jsonc-merge
+[bash-merge]: https://github.com/kettle-rb/bash-merge
+[rbs-merge]: https://github.com/kettle-rb/rbs-merge
+[dotenv-merge]: https://github.com/kettle-rb/dotenv-merge
+[toml-merge]: https://github.com/kettle-rb/toml-merge
+[markdown-merge]: https://github.com/kettle-rb/markdown-merge
+[markly-merge]: https://github.com/kettle-rb/markly-merge
+[commonmarker-merge]: https://github.com/kettle-rb/commonmarker-merge
+[kettle-dev]: https://github.com/kettle-rb/kettle-dev
+[kettle-jem]: https://github.com/kettle-rb/kettle-jem
+[prism]: https://github.com/ruby/prism
+[psych]: https://github.com/ruby/psych
+[ts-json]: https://github.com/tree-sitter/tree-sitter-json
+[ts-jsonc]: https://gitlab.com/WhyNotHugo/tree-sitter-jsonc
+[ts-bash]: https://github.com/tree-sitter/tree-sitter-bash
+[ts-toml]: https://github.com/tree-sitter-grammars/tree-sitter-toml
+[rbs]: https://github.com/ruby/rbs
+[dotenv]: https://github.com/bkeepers/dotenv
+[markly]: https://github.com/ioquatix/markly
+[commonmarker]: https://github.com/gjtorikian/commonmarker
 
-The tree-sitter TOML parser requires a shared library. Set the `TREE_SITTER_TOML_PATH` environment variable to point to your compiled `libtree-sitter-toml.so` (or `.dylib` on macOS):
-
-```bash
-export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
-```
-
-### Basic Usage
-
-```ruby
-require "toml/merge"
-
-template = <<~TOML
-  [package]
-  name = "my-app"
-  version = "1.0.0"
-  
-  [dependencies]
-  serde = "1.0"
-TOML
-
-destination = <<~TOML
-  [package]
-  name = "my-app"
-  version = "2.0.0"
-  authors = ["Custom Author"]
-  
-  [dev-dependencies]
-  tokio = "1.0"
-TOML
-
-merger = Toml::Merge::SmartMerger.new(template, destination)
-result = merger.merge
-
-puts result.content if result.success?
-# The [package] section is merged with destination's version and authors preserved,
-# [dependencies] from template is included,
-# [dev-dependencies] from destination is kept
-```
 
 ## 💡 Info you can shake a stick at
 
@@ -242,6 +231,27 @@ NOTE: Be prepared to track down certs for signed gems and add them the same way 
 </details>
 
 ## ⚙️ Configuration
+
+### Parser Backend Options
+
+`toml-merge` uses [tree_haver][tree_haver] for parsing, which supports multiple backends:
+
+**Tree-sitter backend** (default, requires native library):
+- Set the `TREE_SITTER_TOML_PATH` environment variable to point to your compiled `libtree-sitter-toml.so` (or `.dylib` on macOS):
+
+```bash
+export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
+```
+
+**Citrus backend** (pure Ruby, no native dependencies):
+- Alternative option using the [citrus](https://github.com/mjackson/citrus) and [toml-rb](https://github.com/emancu/toml-rb) gems
+- No compilation or system dependencies required
+- Ideal for environments where native extensions are problematic
+- Configure via tree_haver's backend selection
+
+For more details on backend configuration, see the [tree_haver documentation][tree_haver].
+
+### Merge Options
 
 ```ruby
 merger = Toml::Merge::SmartMerger.new(
@@ -490,7 +500,7 @@ See [LICENSE.txt][📄license] for the official [Copyright Notice][📄copyright
 
 <ul>
     <li>
-        Copyright (c) 2023, 2025 Peter H. Boling, of
+        Copyright (c) 2025 Peter H. Boling, of
         <a href="https://discord.gg/3qme4XHNKN">
             Galtzo.com
             <picture>
@@ -680,7 +690,7 @@ Thanks for RTFM. ☺️
 [📌gitmoji]: https://gitmoji.dev
 [📌gitmoji-img]: https://img.shields.io/badge/gitmoji_commits-%20%F0%9F%98%9C%20%F0%9F%98%8D-34495e.svg?style=flat-square
 [🧮kloc]: https://www.youtube.com/watch?v=dQw4w9WgXcQ
-[🧮kloc-img]: https://img.shields.io/badge/KLOC-4.308-FFDD67.svg?style=for-the-badge&logo=YouTube&logoColor=blue
+[🧮kloc-img]: https://img.shields.io/badge/KLOC-0.538-FFDD67.svg?style=for-the-badge&logo=YouTube&logoColor=blue
 [🔐security]: SECURITY.md
 [🔐security-img]: https://img.shields.io/badge/security-policy-259D6C.svg?style=flat
 [📄copyright-notice-explainer]: https://opensource.stackexchange.com/questions/5778/why-do-licenses-such-as-the-mit-license-specify-a-single-year

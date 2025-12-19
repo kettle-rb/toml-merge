@@ -241,9 +241,7 @@ module Toml
       # @param decision [String] Decision constant
       # @param analysis [FileAnalysis] Analysis for line access
       def add_node_to_result(node, result, source, decision, analysis)
-        if freeze_node?(node)
-          result.add_freeze_block(node)
-        elsif node.is_a?(NodeWrapper)
+        if node.is_a?(NodeWrapper)
           add_wrapper_to_result(node, result, source, decision, analysis)
         else
           DebugLogger.debug("Unknown node type", {node_type: node.class.name})

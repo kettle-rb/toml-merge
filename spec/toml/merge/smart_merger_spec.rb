@@ -35,7 +35,7 @@ RSpec.describe Toml::Merge::SmartMerger do
 
     it "accepts optional add_template_only_nodes" do
       merger = described_class.new(template_content, dest_content, add_template_only_nodes: true)
-      expect(merger.options[:add_template_only_nodes]).to eq(true)
+      expect(merger.options[:add_template_only_nodes]).to be(true)
     end
 
     context "with invalid template" do
@@ -80,6 +80,19 @@ RSpec.describe Toml::Merge::SmartMerger do
       expect(result).to be_a(String)
       expect(result).not_to be_empty
     end
+
+    context "with debug logging enabled" do
+      before do
+        stub_env("TOML_MERGE_DEBUG" => "1")
+      end
+
+      it "logs debug information during merge" do
+        expect {
+          result = described_class.new(template_content, dest_content).merge
+          expect(result).to be_a(String)
+        }.not_to raise_error
+      end
+    end
   end
 
   describe "#merge_with_debug" do
@@ -92,6 +105,28 @@ RSpec.describe Toml::Merge::SmartMerger do
 
     it "returns a hash with statistics" do
       expect(debug_result[:statistics]).to be_a(Hash)
+    end
+  end
+
+  describe "protected hooks (unit)" do
+    subject(:merger) { described_class.new(template_content, dest_content) }
+
+    it "exposes the configured analysis class" do
+      expect(merger.send(:analysis_class)).to eq(Toml::Merge::FileAnalysis)
+    end
+
+    it "uses the TOML resolver and result classes" do
+      expect(merger.send(:resolver_class)).to eq(Toml::Merge::ConflictResolver)
+      expect(merger.send(:result_class)).to eq(Toml::Merge::MergeResult)
+    end
+
+    it "has a default freeze token" do
+      expect(merger.send(:default_freeze_token)).to eq("toml-merge")
+    end
+
+    it "builds full analysis options with signature_generator only" do
+      merger.instance_variable_set(:@signature_generator, :some_generator)
+      expect(merger.send(:build_full_analysis_options)).to eq({signature_generator: :some_generator})
     end
   end
 end

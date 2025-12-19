@@ -6,8 +6,8 @@ permissions:
   id-token: write
 
 env:
-  K_SOUP_COV_MIN_BRANCH: 30
-  K_SOUP_COV_MIN_LINE: 64
+  K_SOUP_COV_MIN_BRANCH: 85
+  K_SOUP_COV_MIN_LINE: 96
   K_SOUP_COV_MIN_HARD: true
   K_SOUP_COV_FORMATTERS: "xml,rcov,lcov,tty"
   K_SOUP_COV_DO: true
@@ -39,8 +39,13 @@ jobs:
     name: Code Coverage on ${{ matrix.ruby }}@current
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental || endsWith(matrix.ruby, 'head') }}
-    env: # $BUNDLE_GEMFILE must be set at job level, so it is set for all steps
+    env:
+      # $BUNDLE_GEMFILE must be set at job level, so it is set for all steps
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}.gemfile
+      # tree-sitter library paths for JRuby/TruffleRuby compatibility
+      LD_LIBRARY_PATH: "/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib"
+      TREE_SITTER_RUNTIME_LIB: "/usr/lib/x86_64-linux-gnu/libtree-sitter.so.0"
+      TREE_SITTER_TOML_PATH: "/usr/local/lib/libtree-sitter-toml.so"
     strategy:
       fail-fast: false
       matrix:
@@ -57,13 +62,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Install tree-sitter dependencies (Ubuntu)
+        run: .github/scripts/ubuntu/setup-tree-sitter.sh
+
       - name: Setup Ruby & RubyGems
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "${{ matrix.ruby }}"
           rubygems: "${{ matrix.rubygems }}"
           bundler: "${{ matrix.bundler }}"
-          bundler-cache: false
+          bundler-cache: true
 
       # Raw `bundle` will use the BUNDLE_GEMFILE set to matrix.gemfile (i.e. Appraisal.root)
       # We need to do this first to get appraisal installed.
@@ -115,7 +123,7 @@ jobs:
           hide_complexity: true
           indicators: true
           output: both
-          thresholds: '64 30'
+          thresholds: '96 85'
         continue-on-error: ${{ matrix.experimental != 'false' }}
 
       - name: Add Coverage PR Comment

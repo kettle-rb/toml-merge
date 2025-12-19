@@ -2,6 +2,17 @@
 /pkg/
 /tmp/
 *.gem
+/.devcontainer/*.temp.dockerfile
+vendor/*-dev/
+vendor/*-merge/
+vendor/*-jem/
+vendor/*-cover/
+vendor/*-ruby*_*/
+vendor/*-lts/
+vendor/*_haver/
+vendor/*.md
+vendor/*-rb
+vendor/*tree*
 
 # Bundler
 /vendor/bundle/

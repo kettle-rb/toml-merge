@@ -8,6 +8,9 @@ git_source(:gitlab) { |repo_name| "https://gitlab.com/#{repo_name}" }
 # Specify your gem's dependencies in prism-merge.gemspec
 gemspec
 
+# runtime dependencies that we can't add to gemspec due to platform differences
+eval_gemfile "gemfiles/modular/tree_sitter.gemfile"
+
 eval_gemfile "gemfiles/modular/debug.gemfile"
 eval_gemfile "gemfiles/modular/coverage.gemfile"
 eval_gemfile "gemfiles/modular/style.gemfile"
@@ -15,4 +18,7 @@ eval_gemfile "gemfiles/modular/documentation.gemfile"
 eval_gemfile "gemfiles/modular/optional.gemfile"
 eval_gemfile "gemfiles/modular/x_std_libs.gemfile"
 
-gem "ast-merge", path: "../../"
+if ENV.fetch("KETTLE_RB_DEV", "false").casecmp?("true")
+  gem "ast-merge", path: "../../"
+  gem "tree_haver", path: "../tree_haver"
+end

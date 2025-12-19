@@ -3,4 +3,9 @@
 # We run code coverage on the latest version of Ruby only.
 
 # Coverage
-gem "kettle-soup-cover", "~> 1.0", ">= 1.0.10", require: false
+if ENV.fetch("KETTLE_DEV_LOCAL", "false").casecmp?("true")
+  gem "kettle-dev", path: "../../vendor/kettle-dev"
+  gem "kettle-soup-cover", path: "../../vendor/kettle-soup-cover"
+else
+  gem "kettle-soup-cover", "~> 1.0", ">= 1.0.10", require: false
+end

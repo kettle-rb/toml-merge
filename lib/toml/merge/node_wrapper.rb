@@ -6,27 +6,29 @@ module Toml
     # This provides a unified interface for working with TOML AST nodes during merging.
     #
     # @example Basic usage
-    #   parser = TreeSitter::Parser.new
-    #   parser.language = TreeSitter::Language.load("toml", path)
+    #   parser = TreeHaver::Parser.new
+    #   parser.language = TreeHaver::Language.load("toml", path)
     #   tree = parser.parse_string(nil, source)
     #   wrapper = NodeWrapper.new(tree.root_node, lines: source.lines, source: source)
     #   wrapper.signature # => [:table, "section"]
     class NodeWrapper
-      # Wrap a tree-sitter node, returning nil for nil input.
-      #
-      # @param node [TreeSitter::Node, nil] Tree-sitter node to wrap
-      # @param lines [Array<String>] Source lines for content extraction
-      # @param source [String, nil] Original source string
-      # @param leading_comments [Array<Hash>] Comments before this node
-      # @param inline_comment [Hash, nil] Inline comment on the node's line
-      # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
-      def self.wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
-        return if node.nil?
+      class << self
+        # Wrap a tree-sitter node, returning nil for nil input.
+        #
+        # @param node [TreeHaver::Node, nil] tree-sitter node to wrap
+        # @param lines [Array<String>] Source lines for content extraction
+        # @param source [String, nil] Original source string
+        # @param leading_comments [Array<Hash>] Comments before this node
+        # @param inline_comment [Hash, nil] Inline comment on the node's line
+        # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
+        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
+          return if node.nil?
 
-        new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
+          new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
+        end
       end
 
-      # @return [TreeSitter::Node] The wrapped tree-sitter node
+      # @return [TreeHaver::Node] The wrapped tree-sitter node
       attr_reader :node
 
       # @return [Array<Hash>] Leading comments associated with this node
@@ -47,7 +49,7 @@ module Toml
       # @return [Array<String>] Source lines
       attr_reader :lines
 
-      # @param node [TreeSitter::Node] Tree-sitter node to wrap
+      # @param node [TreeHaver::Node] tree-sitter node to wrap
       # @param lines [Array<String>] Source lines for content extraction
       # @param source [String] Original source string for byte-based text extraction
       # @param leading_comments [Array<Hash>] Comments before this node
@@ -97,7 +99,8 @@ module Toml
       # Check if this is a TOML array of tables
       # @return [Boolean]
       def array_of_tables?
-        @node.type.to_s == "array_of_tables"
+        type_str = @node.type.to_s
+        type_str == "array_of_tables" || type_str == "table_array_element"
       end
 
       # Check if this is a TOML inline table
@@ -290,7 +293,8 @@ module Toml
       # Get the opening line for a table (the line with [table_name])
       # @return [String, nil]
       def opening_line
-        return unless (table? || array_of_tables?) && @start_line
+        return unless @start_line
+        return unless table? || array_of_tables?
 
         @lines[@start_line - 1]
       end
@@ -311,7 +315,7 @@ module Toml
       end
 
       # Extract text from a tree-sitter node using byte positions
-      # @param ts_node [TreeSitter::Node] The tree-sitter node
+      # @param ts_node [TreeHaver::Node] The tree-sitter node
       # @return [String]
       def node_text(ts_node)
         return "" unless ts_node.respond_to?(:start_byte) && ts_node.respond_to?(:end_byte)
@@ -346,7 +350,7 @@ module Toml
           # Tables identified by their header name
           name = table_name
           [:table, name]
-        when "array_of_tables"
+        when "array_of_tables", "table_array_element"
           # Array of tables identified by their header name
           name = table_name
           [:array_of_tables, name]
@@ -361,7 +365,11 @@ module Toml
         when "array"
           # Arrays identified by their length
           elements_count = 0
-          node.each { |c| elements_count += 1 unless %w[comment , \[ \]].include?(c.type.to_s) }
+          node.each do |c|
+            next if %w[comment , \[ \]].include?(c.type.to_s)
+
+            elements_count += 1
+          end
           [:array, elements_count]
         when "string", "basic_string", "literal_string", "multiline_basic_string", "multiline_literal_string"
           # Strings identified by their content
