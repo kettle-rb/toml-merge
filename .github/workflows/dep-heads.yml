@@ -80,8 +80,8 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install tree-sitter dependencies
-        run: .github/scripts/ubuntu/setup-tree-sitter.sh --sudo
+      - name: Install tree-sitter dependencies (Ubuntu)
+        run: .github/scripts/ubuntu/setup-tree-sitter.sh
 
       - name: Setup Ruby & RubyGems
         if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
