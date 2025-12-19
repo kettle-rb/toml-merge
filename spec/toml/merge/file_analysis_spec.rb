@@ -25,7 +25,6 @@ RSpec.describe Toml::Merge::FileAnalysis do
   # TreeHaver now handles grammar discovery and Citrus fallback automatically.
 
   describe "#initialize" do
-
     context "with valid TOML" do
       subject(:analysis) { described_class.new(valid_toml) }
 

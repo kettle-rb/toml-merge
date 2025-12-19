@@ -13,6 +13,7 @@ apt-get install -y direnv default-jdk git zlib1g-dev build-essential libssl-dev 
 # Try common locations in order
 SETUP_SCRIPT=""
 for candidate in \
+  "/IdeaProjects/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" \
   "/workspaces/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" \
   "/workspace/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" \
   "/home/vscode/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" \
@@ -26,6 +27,7 @@ done
 if [ -z "$SETUP_SCRIPT" ]; then
   echo "ERROR: Cannot find setup-tree-sitter.sh in any expected location" >&2
   echo "Tried:" >&2
+  echo "  /IdeaProjects/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" >&2
   echo "  /workspaces/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" >&2
   echo "  /workspace/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" >&2
   echo "  /home/vscode/toml-merge/.github/scripts/ubuntu/setup-tree-sitter.sh" >&2

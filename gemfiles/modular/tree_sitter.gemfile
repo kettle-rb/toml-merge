@@ -8,16 +8,17 @@
 # These platform-specific gems are the backends that TreeHaver uses:
 
 # FFI Backend - works on MRI, JRuby, and TruffleRuby
-gem "ffi"
-gem "tree_haver",
-    path: "../../../tree_haver"
+gem "ffi", require: false # DO NOT LOAD, because conflicts with MRI
+# toml-rb is runtime dep in gemspec
+# gem "toml-rb"
+# gem "citrus"
 
 platform :mri do
   # MRI Backend
-  gem "ruby_tree_sitter"
+  gem "ruby_tree_sitter", require: false # DO NOT LOAD, because conflicts with FFI
   # Rust Backend
   gem "tree_stump",
-      # path: "../../vendor/tree_stump"
-      github: "pboling/tree_stump",
-      branch: "tree_haver"
+    # path: "../../vendor/tree_stump"
+    github: "pboling/tree_stump",
+    branch: "tree_haver"
 end
