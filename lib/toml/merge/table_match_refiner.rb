@@ -90,8 +90,8 @@ module Toml
       def table_node?(node)
         return false unless node.respond_to?(:type)
 
-        type = node.type.to_s
-        type == "table" || type == "table_array_element"
+        canonical = NodeTypeNormalizer.canonical_type(node.type)
+        NodeTypeNormalizer.table_type?(canonical)
       end
 
       # Compute similarity score between two tables.

@@ -42,6 +42,9 @@ RSpec.describe Toml::Merge::DebugLogger do
   end
 
   describe ".log_node" do
+    let(:simple_toml) { "title = \"Test\"" }
+    let(:analysis) { Toml::Merge::FileAnalysis.new(simple_toml) }
+
     context "when disabled" do
       before do
         stub_env("TOML_MERGE_DEBUG" => nil)
@@ -65,6 +68,20 @@ RSpec.describe Toml::Merge::DebugLogger do
           .to output(/\[Toml::Merge\].*Wrapper/).to_stderr
       end
 
+      it "includes type and line information for NodeWrapper" do
+        node = analysis.root_pairs.first
+        expect {
+          described_class.log_node(node, label: "Pair")
+        }.to output(/type/).to_stderr
+      end
+
+      it "handles non-NodeWrapper objects" do
+        generic_node = double("Node", type: "test", start_point: double(row: 0), end_point: double(row: 1))
+        expect {
+          described_class.log_node(generic_node, label: "Generic")
+        }.to output(/Generic/).to_stderr
+      end
+
       it "falls back to extract_node_info for other objects" do
         other = Object.new
         # Don't stub extract_node_info to ensure the else branch is actually executed
@@ -85,6 +102,18 @@ RSpec.describe Toml::Merge::DebugLogger do
     it "yields and prints timing when enabled" do
       stub_env("TOML_MERGE_DEBUG" => "1")
       expect { described_class.time("block") { :ok } }.to output(/block/).to_stderr
+    end
+  end
+
+  describe ".env_var_name" do
+    it "returns TOML_MERGE_DEBUG" do
+      expect(described_class.env_var_name).to eq("TOML_MERGE_DEBUG")
+    end
+  end
+
+  describe ".log_prefix" do
+    it "returns the Toml::Merge prefix" do
+      expect(described_class.log_prefix).to eq("[Toml::Merge]")
     end
   end
 end

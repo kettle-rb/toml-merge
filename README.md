@@ -118,6 +118,46 @@ This gem is part of a family of gems that provide intelligent merging for variou
 [markly]: https://github.com/ioquatix/markly
 [commonmarker]: https://github.com/gjtorikian/commonmarker
 
+### Configuration
+
+The tree-sitter TOML parser requires a shared library. Set the `TREE_SITTER_TOML_PATH` environment variable to point to your compiled `libtree-sitter-toml.so` (or `.dylib` on macOS):
+
+```bash
+export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
+```
+
+### Basic Usage
+
+```ruby
+require "toml/merge"
+
+template = <<~TOML
+  [package]
+  name = "my-app"
+  version = "1.0.0"
+  
+  [dependencies]
+  serde = "1.0"
+TOML
+
+destination = <<~TOML
+  [package]
+  name = "my-app"
+  version = "2.0.0"
+  authors = ["Custom Author"]
+  
+  [dev-dependencies]
+  tokio = "1.0"
+TOML
+
+merger = Toml::Merge::SmartMerger.new(template, destination)
+result = merger.merge
+
+puts result.content if result.success?
+# The [package] section is merged with destination's version and authors preserved,
+# [dependencies] from template is included,
+# [dev-dependencies] from destination is kept
+```
 
 ## 💡 Info you can shake a stick at
 

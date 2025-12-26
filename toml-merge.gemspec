@@ -81,9 +81,15 @@ Gem::Specification.new do |spec|
   # Listed files are the relative paths from bindir above.
   spec.executables = []
 
-  # Parsers
-  spec.add_dependency("toml-rb", "~> 4.1")                              # ruby >= 2.3.0
-  spec.add_dependency("tree_haver", "~> 3.1")                           # ruby >= 3.2.0
+  # Parser and AST infrastructure
+  spec.add_dependency("tree_haver", "~> 3.1", ">= 3.1.0")               # ruby >= 3.2.0
+  # NOTE: tree-sitter-toml parser must be installed separately via your package manager
+  #       e.g., `apt install libtree-sitter-toml-dev` or built from source
+  # ruby_tree_sitter fails to install outside MRI, so it is not a default runtime dependency.
+  # citrus + toml-rb is an alternative pure ruby option
+  # spec.add_dependency("ruby_tree_sitter", "~> 2.0")
+  # spec.add_dependency("citrus")
+  # spec.add_dependency("toml-rb", "~> 4.1")
 
   # Shared merge infrastructure
   spec.add_dependency("ast-merge", "~> 1.1")                            # ruby >= 3.2.0

@@ -1,37 +1,17 @@
 # frozen_string_literal: true
 
 # External gems
-# TreeHaver provides a unified cross-Ruby interface to tree-sitter and Citrus
+# TreeHaver provides a unified cross-Ruby interface to tree-sitter
 require "tree_haver"
 
-# Register tree-sitter grammar (preferred, fast)
-tree_sitter_finder = TreeHaver::GrammarFinder.new(:toml)
-tree_sitter_available = tree_sitter_finder.available?
-tree_sitter_finder.register! if tree_sitter_available
+# Register tree-sitter toml grammar
+toml_finder = TreeHaver::GrammarFinder.new(:toml)
+toml_available = toml_finder.available?
+toml_finder.register! if toml_available
 
-# Register Citrus grammar (fallback, pure Ruby)
-citrus_finder = TreeHaver::CitrusGrammarFinder.new(
-  language: :toml,
-  gem_name: "toml-rb",
-  grammar_const: "TomlRB::Document",
-  require_path: "toml-rb",  # Explicit require path (gem uses "toml-rb.rb" not "toml/rb.rb")
-)
-citrus_available = citrus_finder.available?
-citrus_finder.register! if citrus_available
-
-# Ensure at least one grammar is available
-unless tree_sitter_available || citrus_available
-  raise TreeHaver::NotAvailable,
-    "No TOML parser available. Install either:\n  " \
-      "- tree-sitter-toml (fast): #{tree_sitter_finder.not_found_message}\n  " \
-      "- toml-rb gem (pure Ruby): #{citrus_finder.not_found_message}"
-end
-
-# Warn if Citrus backend is forced but toml-rb not available
-if TreeHaver.backend == :citrus && !citrus_available && tree_sitter_available
-  warn "WARNING: TREE_HAVER_BACKEND=citrus but toml-rb not installed. " \
-    "Using tree-sitter backend instead. Install toml-rb: gem install toml-rb"
-  TreeHaver.backend = :auto
+# Ensure grammar is available
+unless toml_available
+  warn "WARNING: TOML grammar not available. #{toml_finder.not_found_message}"
 end
 
 require "version_gem"
@@ -121,6 +101,7 @@ module Toml
     autoload :DebugLogger, "toml/merge/debug_logger"
     autoload :FileAnalysis, "toml/merge/file_analysis"
     autoload :MergeResult, "toml/merge/merge_result"
+    autoload :NodeTypeNormalizer, "toml/merge/node_type_normalizer"
     autoload :NodeWrapper, "toml/merge/node_wrapper"
     autoload :ConflictResolver, "toml/merge/conflict_resolver"
     autoload :SmartMerger, "toml/merge/smart_merger"

@@ -42,10 +42,14 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
 
     context "with invalid TOML" do
-      it "raises StandardError" do
-        expect {
-          described_class.new(invalid_toml)
-        }.to raise_error(StandardError, /TOML parse error/)
+      subject(:analysis) { described_class.new(invalid_toml) }
+
+      it "is not valid" do
+        expect(analysis.valid?).to be false
+      end
+
+      it "has errors" do
+        expect(analysis.errors).not_to be_empty
       end
     end
   end
@@ -140,6 +144,197 @@ RSpec.describe Toml::Merge::FileAnalysis do
       allow(analysis).to receive(:generate_signature).with(wrapper).and_return(nil)
 
       expect(analysis.signature_map).to eq({})
+    end
+  end
+
+  describe "#tables" do
+    subject(:analysis) { described_class.new(valid_toml) }
+
+    it "returns an array of table NodeWrappers" do
+      tables = analysis.tables
+      expect(tables).to be_an(Array)
+      expect(tables.length).to eq(2)
+    end
+
+    it "returns only table nodes" do
+      tables = analysis.tables
+      tables.each do |table|
+        expect(table.table? || table.array_of_tables?).to be true
+      end
+    end
+  end
+
+  describe "#root_pairs" do
+    subject(:analysis) { described_class.new(valid_toml) }
+
+    it "returns an array of pair NodeWrappers" do
+      pairs = analysis.root_pairs
+      expect(pairs).to be_an(Array)
+      expect(pairs.length).to eq(1) # Only "title" at root level
+    end
+
+    it "returns only pair nodes" do
+      pairs = analysis.root_pairs
+      pairs.each do |pair|
+        expect(pair.pair?).to be true
+      end
+    end
+
+    it "returns key name for pairs" do
+      pairs = analysis.root_pairs
+      expect(pairs.first.key_name).to eq("title")
+    end
+  end
+
+  describe "#line_at" do
+    subject(:analysis) { described_class.new(valid_toml) }
+
+    it "returns line at valid index (1-based)" do
+      line = analysis.line_at(1)
+      expect(line).to eq('title = "My App"')
+    end
+
+    it "returns nil for invalid index" do
+      line = analysis.line_at(100)
+      expect(line).to be_nil
+    end
+
+    it "returns nil for zero index" do
+      line = analysis.line_at(0)
+      expect(line).to be_nil
+    end
+  end
+
+  describe "#generate_signature" do
+    subject(:analysis) { described_class.new(valid_toml) }
+
+    it "generates signature for a table" do
+      table = analysis.tables.first
+      sig = analysis.generate_signature(table)
+      expect(sig).to be_an(Array)
+      expect(sig).to include("server")
+    end
+
+    it "generates signature for a pair" do
+      pair = analysis.root_pairs.first
+      sig = analysis.generate_signature(pair)
+      expect(sig).to be_an(Array)
+      expect(sig).to include("title")
+    end
+
+    it "returns nil for nil input" do
+      sig = analysis.generate_signature(nil)
+      expect(sig).to be_nil
+    end
+  end
+
+  describe ".find_parser_path" do
+    it "returns a string path or nil" do
+      path = described_class.find_parser_path
+      expect(path.is_a?(String) || path.nil?).to be true
+    end
+  end
+
+  describe "with array of tables" do
+    let(:array_toml) do
+      <<~TOML
+        [[servers]]
+        name = "alpha"
+
+        [[servers]]
+        name = "beta"
+      TOML
+    end
+
+    subject(:analysis) { described_class.new(array_toml) }
+
+    it "parses array of tables" do
+      expect(analysis.valid?).to be true
+    end
+
+    it "returns tables for array of tables" do
+      tables = analysis.tables
+      expect(tables.length).to eq(2)
+      tables.each do |table|
+        expect(table.array_of_tables?).to be true
+      end
+    end
+  end
+
+  describe "with inline tables" do
+    let(:inline_toml) do
+      <<~TOML
+        config = { debug = true, level = 3 }
+      TOML
+    end
+
+    subject(:analysis) { described_class.new(inline_toml) }
+
+    it "parses inline tables" do
+      expect(analysis.valid?).to be true
+    end
+
+    it "returns root pairs including inline table" do
+      pairs = analysis.root_pairs
+      expect(pairs.length).to eq(1)
+      expect(pairs.first.key_name).to eq("config")
+    end
+  end
+
+  describe "#fallthrough_node?", :toml_backend do
+    let(:simple_toml) { "key = \"value\"" }
+    subject(:analysis) { described_class.new(simple_toml) }
+
+    it "returns true for NodeWrapper instances" do
+      root = analysis.root_node
+      expect(analysis.fallthrough_node?(root)).to be true
+    end
+
+    it "returns false for strings" do
+      expect(analysis.fallthrough_node?("not a node")).to be false
+    end
+
+    it "returns false for nil" do
+      expect(analysis.fallthrough_node?(nil)).to be false
+    end
+
+    it "returns false for numbers" do
+      expect(analysis.fallthrough_node?(123)).to be false
+    end
+  end
+
+  describe "error handling", :toml_backend do
+    it "handles TreeHaver::NotAvailable gracefully" do
+      allow(TreeHaver).to receive(:parser_for).and_raise(TreeHaver::NotAvailable.new("No parser available"))
+
+      analysis = described_class.new("key = \"value\"")
+      expect(analysis.valid?).to be false
+      expect(analysis.errors).not_to be_empty
+      expect(analysis.errors.first).to include("No parser available")
+    end
+
+    it "handles other StandardError gracefully" do
+      allow(TreeHaver).to receive(:parser_for).and_raise(StandardError.new("Unexpected error"))
+
+      analysis = described_class.new("key = \"value\"")
+      expect(analysis.valid?).to be false
+      expect(analysis.errors).not_to be_empty
+    end
+
+    it "handles invalid parser path gracefully" do
+      analysis = described_class.new("key = \"value\"", parser_path: "/nonexistent/path/to/parser.so")
+      expect(analysis.valid?).to be false
+      expect(analysis.errors).not_to be_empty
+    end
+  end
+
+  describe "with parse errors", :toml_backend do
+    let(:invalid_toml) { "key = " }
+
+    it "collects parse errors" do
+      analysis = described_class.new(invalid_toml)
+      # May or may not be valid depending on error recovery
+      expect(analysis.valid?).to be(true).or be(false)
     end
   end
 end

@@ -7,8 +7,8 @@ module Toml
     #
     # @example Basic usage
     #   parser = TreeHaver::Parser.new
-    #   parser.language = TreeHaver::Language.load("toml", path)
-    #   tree = parser.parse_string(nil, source)
+    #   parser.language = TreeHaver::Language.toml
+    #   tree = parser.parse(source)
     #   wrapper = NodeWrapper.new(tree.root_node, lines: source.lines, source: source)
     #   wrapper.signature # => [:table, "section"]
     class NodeWrapper
@@ -83,78 +83,85 @@ module Toml
         @node.type.to_sym
       end
 
-      # Check if this node has a specific type
+      # Get the canonical (normalized) type for this node
+      # @return [Symbol]
+      def canonical_type
+        NodeTypeNormalizer.canonical_type(@node.type)
+      end
+
+      # Check if this node has a specific type (checks both raw and canonical)
       # @param type_name [Symbol, String] Type to check
       # @return [Boolean]
       def type?(type_name)
-        @node.type.to_s == type_name.to_s
+        type_sym = type_name.to_sym
+        @node.type.to_sym == type_sym || canonical_type == type_sym
       end
 
       # Check if this is a TOML table (section)
       # @return [Boolean]
       def table?
-        @node.type.to_s == "table"
+        canonical_type == :table
       end
 
       # Check if this is a TOML array of tables
+      # Uses NodeTypeNormalizer for backend-agnostic type checking.
       # @return [Boolean]
       def array_of_tables?
-        type_str = @node.type.to_s
-        type_str == "array_of_tables" || type_str == "table_array_element"
+        canonical_type == :array_of_tables
       end
 
       # Check if this is a TOML inline table
       # @return [Boolean]
       def inline_table?
-        @node.type.to_s == "inline_table"
+        canonical_type == :inline_table
       end
 
       # Check if this is a TOML array
       # @return [Boolean]
       def array?
-        @node.type.to_s == "array"
+        canonical_type == :array
       end
 
       # Check if this is a TOML string
       # @return [Boolean]
       def string?
-        %w[string basic_string literal_string multiline_basic_string multiline_literal_string].include?(@node.type.to_s)
+        canonical_type == :string
       end
 
       # Check if this is a TOML integer
       # @return [Boolean]
       def integer?
-        @node.type.to_s == "integer"
+        canonical_type == :integer
       end
 
       # Check if this is a TOML float
       # @return [Boolean]
       def float?
-        @node.type.to_s == "float"
+        canonical_type == :float
       end
 
       # Check if this is a TOML boolean
       # @return [Boolean]
       def boolean?
-        @node.type.to_s == "boolean"
+        canonical_type == :boolean
       end
 
       # Check if this is a key-value pair
       # @return [Boolean]
       def pair?
-        @node.type.to_s == "pair"
+        canonical_type == :pair
       end
 
       # Check if this is a comment
       # @return [Boolean]
       def comment?
-        @node.type.to_s == "comment"
+        canonical_type == :comment
       end
 
       # Check if this is a datetime
       # @return [Boolean]
       def datetime?
-        %w[offset_date_time local_date_time local_date local_time].include?(@node.type.to_s)
+        canonical_type == :datetime
       end
 
       # Get the table name (header) if this is a table
@@ -164,8 +171,8 @@ module Toml
 
         # Find the dotted_key or bare_key child that represents the table name
         @node.each do |child|
-          child_type = child.type.to_s
-          if %w[dotted_key bare_key quoted_key].include?(child_type)
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          if NodeTypeNormalizer.key_type?(child_canonical)
             return node_text(child)
           end
         end
@@ -177,10 +184,10 @@ module Toml
       def key_name
         return unless pair?
 
-        # In TOML tree-sitter, pair has key children (bare_key, quoted_key, or dotted_key)
+        # In TOML, pair has key children (bare_key, quoted_key, or dotted_key)
         @node.each do |child|
-          child_type = child.type.to_s
-          if %w[bare_key quoted_key dotted_key].include?(child_type)
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          if NodeTypeNormalizer.key_type?(child_canonical)
             key_text = node_text(child)
             # Remove surrounding quotes if present
             return key_text&.gsub(/\A["']|["']\z/, "")
@@ -195,9 +202,10 @@ module Toml
         return unless pair?
 
         @node.each do |child|
-          child_type = child.type.to_s
-          # Skip keys, get the value
-          next if %w[bare_key quoted_key dotted_key =].include?(child_type)
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          # Skip keys and equals sign, get the value
+          next if NodeTypeNormalizer.key_type?(child_canonical)
+          next if child_canonical == :equals
 
           return NodeWrapper.new(child, lines: @lines, source: @source)
         end
@@ -211,7 +219,8 @@ module Toml
 
         result = []
         @node.each do |child|
-          next unless child.type.to_s == "pair"
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          next unless child_canonical == :pair
 
           result << NodeWrapper.new(child, lines: @lines, source: @source)
         end
@@ -221,7 +230,7 @@ module Toml
       # Check if this is the document root
       # @return [Boolean]
       def document?
-        @node.type.to_s == "document"
+        canonical_type == :document
       end
 
       # Get array elements if this is an array
@@ -231,10 +240,10 @@ module Toml
 
         result = []
         @node.each do |child|
-          child_type = child.type.to_s
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
           # Skip punctuation and comments
-          next if child_type == "comment"
-          next if %w[, \[ \]].include?(child_type)
+          next if child_canonical == :comment
+          next if %i[comma bracket_open bracket_close].include?(child_canonical)
 
           result << NodeWrapper.new(child, lines: @lines, source: @source)
         end
@@ -258,8 +267,8 @@ module Toml
       # For other node types, returns empty array (leaf nodes).
       # @return [Array<NodeWrapper>]
       def mergeable_children
-        case type
-        when :table, :inline_table
+        case canonical_type
+        when :table, :inline_table, :array_of_tables
           pairs
         when :array
           elements
@@ -267,8 +276,8 @@ module Toml
           # Return top-level pairs and tables
           result = []
           @node.each do |child|
-            child_type = child.type.to_s
-            next if child_type == "comment"
+            child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+            next if child_canonical == :comment
 
             result << NodeWrapper.new(child, lines: @lines, source: @source)
           end
@@ -340,70 +349,68 @@ module Toml
       private
 
       def compute_signature(node)
-        node_type = node.type.to_s
+        # Use canonical type for signature generation
+        canonical = NodeTypeNormalizer.canonical_type(node.type)
 
-        case node_type
-        when "document"
+        case canonical
+        when :document
           # Root document
           [:document]
-        when "table"
+        when :table
           # Tables identified by their header name
           name = table_name
           [:table, name]
-        when "array_of_tables", "table_array_element"
+        when :array_of_tables
           # Array of tables identified by their header name
           name = table_name
           [:array_of_tables, name]
-        when "pair"
+        when :pair
           # Pairs identified by their key name
           key = key_name
           [:pair, key]
-        when "inline_table"
+        when :inline_table
           # Inline tables identified by their keys
           keys = extract_inline_table_keys(node)
           [:inline_table, keys.sort]
-        when "array"
+        when :array
           # Arrays identified by their length
           elements_count = 0
-          node.each do |c|
-            next if %w[comment , \[ \]].include?(c.type.to_s)
-
-            elements_count += 1
-          end
+          node.each { |c| elements_count += 1 unless %i[comment comma bracket_open bracket_close].include?(NodeTypeNormalizer.canonical_type(c.type)) }
           [:array, elements_count]
-        when "string", "basic_string", "literal_string", "multiline_basic_string", "multiline_literal_string"
+        when :string
           # Strings identified by their content
           [:string, node_text(node)]
-        when "integer"
+        when :integer
           # Integers identified by their value
           [:integer, node_text(node)]
-        when "float"
+        when :float
           # Floats identified by their value
           [:float, node_text(node)]
-        when "boolean"
+        when :boolean
           # Booleans
           [:boolean, node_text(node)]
-        when "offset_date_time", "local_date_time", "local_date", "local_time"
+        when :datetime
           # Datetime values
           [:datetime, node_text(node)]
-        when "comment"
+        when :comment
           # Comments identified by their content
           [:comment, node_text(node)&.strip]
         else
-          # Generic fallback
+          # Generic fallback - use canonical type in signature
           content_preview = node_text(node)&.slice(0, 50)&.strip
-          [node_type.to_sym, content_preview]
+          [canonical, content_preview]
         end
       end
 
       def extract_inline_table_keys(inline_table_node)
         keys = []
         inline_table_node.each do |child|
-          next unless child.type.to_s == "pair"
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          next unless child_canonical == :pair
 
           child.each do |pair_child|
-            child_type = pair_child.type.to_s
-            if %w[bare_key quoted_key dotted_key].include?(child_type)
+            pair_child_canonical = NodeTypeNormalizer.canonical_type(pair_child.type)
+            if NodeTypeNormalizer.key_type?(pair_child_canonical)
               key_text = node_text(pair_child)&.gsub(/\A["']|["']\z/, "")
               keys << key_text if key_text
               break

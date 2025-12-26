@@ -27,28 +27,41 @@ module Toml
       #
       # @param template_content [String] Template TOML content
       # @param dest_content [String] Destination TOML content
-      # @param preference [Symbol] :destination or :template
+      # @param signature_generator [Proc, nil] Custom signature generator
+      # @param preference [Symbol, Hash] :destination, :template, or per-type Hash
       # @param add_template_only_nodes [Boolean] Whether to add nodes only found in template
+      # @param freeze_token [String, nil] Token for freeze block markers
       # @param match_refiner [#call, nil] Match refiner for fuzzy matching
       # @param regions [Array<Hash>, nil] Region configurations for nested merging
       # @param region_placeholder [String, nil] Custom placeholder for regions
+      # @param node_typing [Hash{Symbol,String => #call}, nil] Node typing configuration
+      #   for per-node-type merge preferences
+      # @param options [Hash] Additional options for forward compatibility
       def initialize(
         template_content,
         dest_content,
+        signature_generator: nil,
         preference: :destination,
         add_template_only_nodes: false,
+        freeze_token: nil,
         match_refiner: nil,
         regions: nil,
-        region_placeholder: nil
+        region_placeholder: nil,
+        node_typing: nil,
+        **options
       )
         super(
           template_content,
           dest_content,
+          signature_generator: signature_generator,
           preference: preference,
           add_template_only_nodes: add_template_only_nodes,
+          freeze_token: freeze_token,
           match_refiner: match_refiner,
           regions: regions,
           region_placeholder: region_placeholder,
+          node_typing: node_typing,
+          **options
         )
       end
 
