@@ -65,7 +65,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
   # Tests that require a working TOML backend (tree-sitter or citrus)
   # These tests use FileAnalysis to get real parsed nodes
-  describe "with parsed TOML nodes", :toml_backend do
+  describe "with parsed TOML nodes", :toml_parsing do
     let(:simple_toml) do
       <<~TOML
         title = "My App"
@@ -226,7 +226,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
       end
     end
 
-    describe "array of tables", :toml_backend do
+    describe "array of tables", :toml_parsing do
       let(:array_analysis) { Toml::Merge::FileAnalysis.new(array_toml) }
 
       # Extract array of tables nodes using the normalized predicate
@@ -288,7 +288,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "comment handling", :toml_backend do
+  describe "comment handling", :toml_parsing do
     let(:commented_toml) do
       <<~TOML
         # This is a header comment
@@ -327,7 +327,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "value type detection", :toml_backend do
+  describe "value type detection", :toml_parsing do
     let(:types_toml) do
       <<~TOML
         string_val = "hello"
@@ -379,7 +379,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#elements for arrays", :toml_backend do
+  describe "#elements for arrays", :toml_parsing do
     let(:array_toml) do
       <<~TOML
         numbers = [1, 2, 3, 4, 5]
@@ -399,7 +399,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#datetime?", :toml_backend do
+  describe "#datetime?", :toml_parsing do
     let(:datetime_toml) do
       <<~TOML
         date_val = 2025-12-23
@@ -416,7 +416,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#comment?", :toml_backend do
+  describe "#comment?", :toml_parsing do
     let(:comment_toml) do
       <<~TOML
         # This is a comment
@@ -438,7 +438,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#opening_line and #closing_line", :toml_backend do
+  describe "#opening_line and #closing_line", :toml_parsing do
     let(:table_toml) do
       <<~TOML
         [server]
@@ -472,7 +472,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#leaf? and #container?", :toml_backend do
+  describe "#leaf? and #container?", :toml_parsing do
     let(:mixed_toml) do
       <<~TOML
         name = "test"
@@ -499,7 +499,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#content", :toml_backend do
+  describe "#content", :toml_parsing do
     let(:content_toml) do
       <<~TOML
         [section]
@@ -528,7 +528,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#type?", :toml_backend do
+  describe "#type?", :toml_parsing do
     let(:simple_toml) { "key = \"value\"" }
     let(:analysis) { Toml::Merge::FileAnalysis.new(simple_toml) }
 
@@ -549,7 +549,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "signature generation for inline_table", :toml_backend do
+  describe "signature generation for inline_table", :toml_parsing do
     let(:inline_table_toml) do
       <<~TOML
         config = { debug = true, level = 3 }
@@ -569,7 +569,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "signature generation for fallback types", :toml_backend do
+  describe "signature generation for fallback types", :toml_parsing do
     let(:simple_toml) { "key = \"value\"" }
     let(:analysis) { Toml::Merge::FileAnalysis.new(simple_toml) }
 
@@ -583,7 +583,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#datetime?", :toml_backend do
+  describe "#datetime?", :toml_parsing do
     let(:datetime_toml) do
       <<~TOML
         created_at = 2025-12-24T10:30:00Z
@@ -602,7 +602,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "signature generation for all types", :toml_backend do
+  describe "signature generation for all types", :toml_parsing do
     let(:comprehensive_toml) do
       <<~TOML
         # Comment line
@@ -694,7 +694,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#opening_line and #closing_line", :toml_backend do
+  describe "#opening_line and #closing_line", :toml_parsing do
     let(:table_toml) do
       <<~TOML
         [server]
@@ -729,7 +729,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#elements for array values", :toml_backend do
+  describe "#elements for array values", :toml_parsing do
     let(:array_toml) do
       <<~TOML
         numbers = [1, 2, 3, 4, 5]
@@ -765,7 +765,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#mergeable_children edge cases", :toml_backend do
+  describe "#mergeable_children edge cases", :toml_parsing do
     let(:mixed_toml) do
       <<~TOML
         # A comment
@@ -795,7 +795,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#extract_inline_table_keys", :toml_backend do
+  describe "#extract_inline_table_keys", :toml_parsing do
     let(:inline_toml) do
       <<~TOML
         config = { alpha = 1, beta = 2, gamma = 3 }

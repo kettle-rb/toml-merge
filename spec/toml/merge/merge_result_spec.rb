@@ -82,7 +82,7 @@ RSpec.describe Toml::Merge::MergeResult do
     end
   end
 
-  describe "#add_node", :toml_backend do
+  describe "#add_node", :toml_parsing do
     let(:toml_source) do
       <<~TOML
         [server]

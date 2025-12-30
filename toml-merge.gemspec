@@ -85,14 +85,19 @@ Gem::Specification.new do |spec|
   spec.add_dependency("tree_haver", "~> 3.1", ">= 3.1.0")               # ruby >= 3.2.0
   # NOTE: tree-sitter-toml parser must be installed separately via your package manager
   #       e.g., `apt install libtree-sitter-toml-dev` or built from source
+  # A ruby interface for tree-sitter must also be installed (pick ONE):
+  # - ruby_tree_sitter (MRI only; recommended for MRI users)
+  # - tree_stump (Rust-based; MRI, and maybe JRuby)
+  # - ffi (MRI, JRuby, TruffleRuby; utilizes tree_haver's ffi backend)
+  # Alternative: Citrus backend (pure Ruby, no native dependencies):
+  # - citrus + toml-rb gems provide a pure Ruby option
   # ruby_tree_sitter fails to install outside MRI, so it is not a default runtime dependency.
-  # citrus + toml-rb is an alternative pure ruby option
   # spec.add_dependency("ruby_tree_sitter", "~> 2.0")
   # spec.add_dependency("citrus")
   # spec.add_dependency("toml-rb", "~> 4.1")
 
   # Shared merge infrastructure
-  spec.add_dependency("ast-merge", "~> 1.1")                            # ruby >= 3.2.0
+  spec.add_dependency("ast-merge", "~> 2.0", ">= 2.0.1")                # ruby >= 3.2.0
 
   # Utilities
   spec.add_dependency("version_gem", "~> 1.1", ">= 1.1.9")              # ruby >= 2.2.0

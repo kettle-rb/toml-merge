@@ -9,9 +9,14 @@ toml_finder = TreeHaver::GrammarFinder.new(:toml)
 toml_available = toml_finder.available?
 toml_finder.register! if toml_available
 
-# Ensure grammar is available
+# Only warn if the grammar file is actually missing (not just runtime unavailable)
+# When the runtime isn't available, tree-sitter backends just won't be used,
+# which is expected behavior - no need to warn the user.
 unless toml_available
-  warn "WARNING: TOML grammar not available. #{toml_finder.not_found_message}"
+  grammar_path = toml_finder.find_library_path
+  unless grammar_path
+    warn "WARNING: TOML grammar not available. #{toml_finder.not_found_message}"
+  end
 end
 
 require "version_gem"

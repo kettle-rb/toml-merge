@@ -192,7 +192,7 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     end
   end
 
-  describe ".wrap", :toml_backend do
+  describe ".wrap", :toml_parsing do
     let(:toml_source) { "[[servers]]\nname = \"alpha\"" }
     let(:analysis) { Toml::Merge::FileAnalysis.new(toml_source) }
 

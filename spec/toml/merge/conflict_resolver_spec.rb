@@ -436,7 +436,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
     end
   end
 
-  describe "template preference for leaf nodes", :toml_backend do
+  describe "template preference for leaf nodes", :toml_parsing do
     let(:template_values) do
       <<~TOML
         name = "template-name"
@@ -470,7 +470,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
     end
   end
 
-  describe "match_refiner with custom refiner", :toml_backend do
+  describe "match_refiner with custom refiner", :toml_parsing do
     let(:template_with_key) do
       <<~TOML
         [old_section]
@@ -538,7 +538,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
     end
   end
 
-  describe "unknown node types", :toml_backend do
+  describe "unknown node types", :toml_parsing do
     it "handles nodes gracefully through DebugLogger" do
       template_analysis = Toml::Merge::FileAnalysis.new(template_content)
       dest_analysis = Toml::Merge::FileAnalysis.new(dest_content)

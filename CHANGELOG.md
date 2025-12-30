@@ -32,6 +32,11 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Changed
 
+- **Dependency tags**: Refactored to use shared `TreeHaver::RSpec::DependencyTags` from tree_haver gem
+  - All dependency detection is now centralized in tree_haver
+  - Use `require "tree_haver/rspec"` for shared RSpec configuration
+  - `TomlMergeDependencies` is now an alias to `TreeHaver::RSpec::DependencyTags`
+  - Enables `TOML_MERGE_DEBUG=1` for dependency summary output
 - **FileAnalysis**: Error handling now follows the standard pattern
   - Parse errors are collected but not re-raised from FileAnalysis
   - `valid?` returns false when there are errors or no AST
@@ -79,6 +84,10 @@ Please file a bug if you notice a violation of semantic versioning.
 ### Removed
 
 ### Fixed
+
+- No longer warns about missing TOML grammar when the grammar file exists but tree-sitter runtime is unavailable
+  - This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)
+  - Warning now only appears when the grammar file is actually missing
 
 ### Security
 

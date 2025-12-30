@@ -281,7 +281,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
-  describe "#fallthrough_node?", :toml_backend do
+  describe "#fallthrough_node?", :toml_parsing do
     let(:simple_toml) { "key = \"value\"" }
     subject(:analysis) { described_class.new(simple_toml) }
 
@@ -303,7 +303,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
-  describe "error handling", :toml_backend do
+  describe "error handling", :toml_parsing do
     it "handles TreeHaver::NotAvailable gracefully" do
       allow(TreeHaver).to receive(:parser_for).and_raise(TreeHaver::NotAvailable.new("No parser available"))
 
@@ -328,7 +328,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
-  describe "with parse errors", :toml_backend do
+  describe "with parse errors", :toml_parsing do
     let(:invalid_toml) { "key = " }
 
     it "collects parse errors" do

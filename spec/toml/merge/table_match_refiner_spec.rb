@@ -89,7 +89,7 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       expect(result).to be_empty
     end
 
-    context "with real parsed TOML nodes", :toml_backend do
+    context "with real parsed TOML nodes", :toml_parsing do
       let(:template_toml) do
         <<~TOML
           [server]
@@ -139,7 +139,7 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       end
     end
 
-    context "with different table names", :toml_backend do
+    context "with different table names", :toml_parsing do
       let(:template_toml) do
         <<~TOML
           [alpha]
@@ -184,7 +184,7 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     end
   end
 
-  describe "similarity scoring", :toml_backend do
+  describe "similarity scoring", :toml_parsing do
     subject(:refiner) { described_class.new(threshold: 0.3) }
 
     let(:similar_template) do
@@ -268,7 +268,7 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     end
   end
 
-  describe "key overlap", :toml_backend do
+  describe "key overlap", :toml_parsing do
     subject(:refiner) { described_class.new }
 
     let(:table_with_keys) do
