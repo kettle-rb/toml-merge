@@ -35,10 +35,7 @@ jobs:
     env:
       # $BUNDLE_GEMFILE must be set at job level, so it is set for all steps
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}.gemfile
-      # tree-sitter library paths for JRuby/TruffleRuby compatibility
-      LD_LIBRARY_PATH: "/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib"
-      TREE_SITTER_RUNTIME_LIB: "/usr/lib/x86_64-linux-gnu/libtree-sitter.so.0"
-      TREE_SITTER_TOML_PATH: "/usr/local/lib/libtree-sitter-toml.so"
+      # Note: LD_LIBRARY_PATH and TREE_SITTER_TOML_PATH are set by ts-grammar-action
     strategy:
       matrix:
         include:
@@ -71,15 +68,14 @@ jobs:
         if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
         uses: actions/checkout@v6
 
-      - name: Set up Java
+      - name: Install tree-sitter and toml grammar
         if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
-        uses: actions/setup-java@v5
+        uses: kettle-rb/ts-grammar-action@main
         with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Install tree-sitter dependencies (Ubuntu)
-        run: .github/scripts/ubuntu/setup-tree-sitter.sh
+          grammar-toml: true
+          # Install jtreesitter for JRuby's Java backend
+          setup-jtreesitter: ${{ startsWith(matrix.ruby, 'jruby') }}
+          java-version: "23"
 
       - name: Setup Ruby & RubyGems
         if: ${{ !env.ACT || (! startsWith(matrix.ruby, 'jruby') && !startsWith(matrix.ruby, 'truffleruby')) }}
