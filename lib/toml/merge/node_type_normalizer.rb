@@ -289,4 +289,3 @@ module Toml
     end
   end
 end
-

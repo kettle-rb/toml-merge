@@ -138,7 +138,7 @@ template = <<~TOML
   [package]
   name = "my-app"
   version = "1.0.0"
-  
+
   [dependencies]
   serde = "1.0"
 TOML
@@ -148,7 +148,7 @@ destination = <<~TOML
   name = "my-app"
   version = "2.0.0"
   authors = ["Custom Author"]
-  
+
   [dev-dependencies]
   tokio = "1.0"
 TOML
@@ -376,7 +376,7 @@ template = <<~TOML
   [package]
   name = "my-app"
   version = "1.0.0"
-  
+
   [dependencies]
   serde = "1.0"
   tokio = "1.0"
@@ -388,7 +388,7 @@ destination = <<~TOML
   name = "my-app"
   version = "2.0.0"
   authors = ["Custom Author"]
-  
+
   [dev-dependencies]
   criterion = "0.5"
 TOML

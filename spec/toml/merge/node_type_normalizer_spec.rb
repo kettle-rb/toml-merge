@@ -145,11 +145,6 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
   end
 
   describe ".register_backend" do
-    after do
-      # Clean up the test backend registration
-      # Note: In real code, you might want a way to unregister backends
-    end
-
     it "allows registering new backends" do
       described_class.register_backend(:test_backend, {
         my_table: :table,
@@ -210,4 +205,3 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     end
   end
 end
-

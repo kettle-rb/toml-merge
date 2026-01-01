@@ -114,34 +114,33 @@ module Toml
       private
 
       def parse_toml
-        begin
-          # Use TreeHaver's high-level API - it handles:
-          # - Grammar auto-discovery (tree-sitter or Citrus)
-          # - Backend selection
-          # - Fallback to Citrus if tree-sitter unavailable
-          parser = TreeHaver.parser_for(:toml,
-            library_path: @parser_path,
-            citrus_config: {
-              gem_name: "toml-rb",
-              grammar_const: "TomlRB::Document",
-            },
-          )
+        # Use TreeHaver's high-level API - it handles:
+        # - Grammar auto-discovery (tree-sitter or Citrus)
+        # - Backend selection
+        # - Fallback to Citrus if tree-sitter unavailable
+        parser = TreeHaver.parser_for(
+          :toml,
+          library_path: @parser_path,
+          citrus_config: {
+            gem_name: "toml-rb",
+            grammar_const: "TomlRB::Document",
+          },
+        )
 
-          @ast = parser.parse(@source)
+        @ast = parser.parse(@source)
 
-          # Check for parse errors in the tree
-          if @ast&.root_node&.has_error?
-            collect_parse_errors(@ast.root_node)
-            # Don't raise here - let SmartMergerBase detect via valid? check
-            # This is consistent with how other FileAnalysis classes handle parse errors
-          end
-        rescue TreeHaver::NotAvailable => e
-          @errors << e.message
-          @ast = nil
-        rescue StandardError => e
-          @errors << e unless @errors.include?(e)
-          @ast = nil
+        # Check for parse errors in the tree
+        if @ast&.root_node&.has_error?
+          collect_parse_errors(@ast.root_node)
+          # Don't raise here - let SmartMergerBase detect via valid? check
+          # This is consistent with how other FileAnalysis classes handle parse errors
         end
+      rescue TreeHaver::NotAvailable => e
+        @errors << e.message
+        @ast = nil
+      rescue StandardError => e
+        @errors << e unless @errors.include?(e)
+        @ast = nil
       end
 
       def collect_parse_errors(node)

@@ -64,7 +64,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: false,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -81,7 +81,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :template,
         add_template_only_nodes: false,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -112,7 +112,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: true,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -138,7 +138,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: false,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -163,7 +163,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: false,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -193,7 +193,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: true,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -226,7 +226,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         preference: :destination,
         add_template_only_nodes: false,
         match_refiner: Toml::Merge::TableMatchRefiner.new,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -257,7 +257,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: false,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -278,7 +278,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           dest_analysis,
           preference: :destination,
           add_template_only_nodes: false,
-          )
+        )
 
         resolver.resolve(result)
 
@@ -296,7 +296,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           dest_analysis,
           preference: :destination,
           add_template_only_nodes: false,
-          )
+        )
 
         resolver.resolve(result)
 
@@ -315,7 +315,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           dest_analysis,
           preference: :template,
           add_template_only_nodes: false,
-          )
+        )
 
         resolver.resolve(result)
 
@@ -345,7 +345,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           dest_analysis,
           preference: :destination,
           add_template_only_nodes: true,
-          )
+        )
 
         resolver.resolve(result)
 
@@ -380,7 +380,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           preference: :destination,
           add_template_only_nodes: false,
           match_refiner: refiner,
-          )
+        )
 
         resolver.resolve(result)
 
@@ -423,7 +423,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: true,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -461,7 +461,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :template,
         add_template_only_nodes: false,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -512,7 +512,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         preference: :destination,
         add_template_only_nodes: false,
         match_refiner: match_refiner,
-        )
+      )
 
       resolver.resolve(result)
 
@@ -532,7 +532,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         preference: :destination,
         add_template_only_nodes: false,
         match_refiner: match_refiner,
-        )
+      )
 
       expect { resolver.resolve(result) }.not_to raise_error
     end
@@ -549,7 +549,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         dest_analysis,
         preference: :destination,
         add_template_only_nodes: false,
-        )
+      )
 
       # Should not raise - unknown types are logged via DebugLogger
       expect { resolver.resolve(result) }.not_to raise_error
@@ -564,7 +564,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
         preference: :destination,
         add_template_only_nodes: false,
         match_refiner: nil,
-        )
+      )
     end
 
     let(:template_analysis) { instance_double(Toml::Merge::FileAnalysis, line_at: nil) }
@@ -584,12 +584,12 @@ RSpec.describe Toml::Merge::ConflictResolver do
           :destination,
           Toml::Merge::MergeResult::DECISION_KEPT_DEST,
           dest_analysis,
-          )
+        )
 
         expect(Toml::Merge::DebugLogger).to have_received(:debug).with(
           "Unknown node type",
           {node_type: "Object"},
-          )
+        )
       end
     end
 
@@ -607,7 +607,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           preference: :destination,
           add_template_only_nodes: false,
           match_refiner: match_refiner,
-          )
+        )
 
         t_node = instance_double(Toml::Merge::NodeWrapper)
         d_node = instance_double(Toml::Merge::NodeWrapper)
@@ -622,7 +622,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           [d_node],
           {[:table, "a"] => [{node: t_node}]},
           {[:table, "a"] => [{node: d_node}]},
-          )
+        )
 
         expect(matches).to eq({})
       end
@@ -646,7 +646,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           dest_analysis_real,
           preference: :destination,
           add_template_only_nodes: false,
-          )
+        )
 
         resolver_with_real.send(
           :merge_matched_nodes,
@@ -655,7 +655,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           template_analysis_real,
           dest_analysis_real,
           result,
-          )
+        )
 
         expect(result.content).to include("host = \"production\"")
       end
@@ -675,7 +675,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           dest_analysis_real,
           preference: :template,
           add_template_only_nodes: false,
-          )
+        )
 
         resolver_with_real.send(
           :merge_matched_nodes,
@@ -684,7 +684,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
           template_analysis_real,
           dest_analysis_real,
           result,
-          )
+        )
 
         expect(result.content).to include("host = \"template\"")
       end

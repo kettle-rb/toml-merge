@@ -236,6 +236,8 @@ RSpec.describe Toml::Merge::FileAnalysis do
   end
 
   describe "with array of tables" do
+    subject(:analysis) { described_class.new(array_toml) }
+
     let(:array_toml) do
       <<~TOML
         [[servers]]
@@ -245,8 +247,6 @@ RSpec.describe Toml::Merge::FileAnalysis do
         name = "beta"
       TOML
     end
-
-    subject(:analysis) { described_class.new(array_toml) }
 
     it "parses array of tables" do
       expect(analysis.valid?).to be true
@@ -262,13 +262,13 @@ RSpec.describe Toml::Merge::FileAnalysis do
   end
 
   describe "with inline tables" do
+    subject(:analysis) { described_class.new(inline_toml) }
+
     let(:inline_toml) do
       <<~TOML
         config = { debug = true, level = 3 }
       TOML
     end
-
-    subject(:analysis) { described_class.new(inline_toml) }
 
     it "parses inline tables" do
       expect(analysis.valid?).to be true
@@ -282,8 +282,9 @@ RSpec.describe Toml::Merge::FileAnalysis do
   end
 
   describe "#fallthrough_node?", :toml_parsing do
-    let(:simple_toml) { "key = \"value\"" }
     subject(:analysis) { described_class.new(simple_toml) }
+
+    let(:simple_toml) { "key = \"value\"" }
 
     it "returns true for NodeWrapper instances" do
       root = analysis.root_node

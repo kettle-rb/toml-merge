@@ -41,9 +41,9 @@ RSpec.describe Toml::Merge::NodeWrapper do
         %i[start_point end_point].include?(meth)
       end
       allow(node_with_invalid_lines).to receive_messages(
-                                          start_point: double(row: 5, column: 0),
-                                          end_point: double(row: 2, column: 10),
-                                          )
+        start_point: double(row: 5, column: 0),
+        end_point: double(row: 2, column: 10),
+      )
 
       wrapper = described_class.new(node_with_invalid_lines, lines: ["line1", "line2", "line3", "line4", "line5", "line6"])
       expect(wrapper.start_line).to eq(6) # 5 + 1
@@ -56,7 +56,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
         type: "pair",
         start_point: double(row: 0, column: 0),
         end_point: double(row: 0, column: 1),
-        )
+      )
 
       wrapper = described_class.new(node, lines: ["a = 1"], source: nil)
       expect(wrapper.source).to eq("a = 1")
@@ -816,5 +816,3 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 end
-
-
