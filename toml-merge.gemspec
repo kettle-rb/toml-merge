@@ -82,7 +82,7 @@ Gem::Specification.new do |spec|
   spec.executables = []
 
   # Parser and AST infrastructure
-  spec.add_dependency("tree_haver", "~> 3.1", ">= 3.1.0")               # ruby >= 3.2.0
+  spec.add_dependency("tree_haver", "~> 3.2", ">= 3.2.2")               # ruby >= 3.2.0
   # NOTE: tree-sitter-toml parser must be installed separately via your package manager
   #       e.g., `apt install libtree-sitter-toml-dev` or built from source
   # A ruby interface for tree-sitter must also be installed (pick ONE):
@@ -97,7 +97,7 @@ Gem::Specification.new do |spec|
   # spec.add_dependency("toml-rb", "~> 4.1")
 
   # Shared merge infrastructure
-  spec.add_dependency("ast-merge", "~> 2.0", ">= 2.0.1")                # ruby >= 3.2.0
+  spec.add_dependency("ast-merge", "~> 2.0", ">= 2.0.6")                # ruby >= 3.2.0
 
   # Utilities
   spec.add_dependency("version_gem", "~> 1.1", ">= 1.1.9")              # ruby >= 2.2.0
