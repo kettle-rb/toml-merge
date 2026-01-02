@@ -69,10 +69,12 @@
   <dl>
     <dt>Inherits:</dt>
     <dd>
-      <span class="inheritName">Object</span>
+      <span class="inheritName">Ast::Merge::NodeWrapperBase</span>
       
         <ul class="fullTree">
           <li>Object</li>
+          
+            <li class="next">Ast::Merge::NodeWrapperBase</li>
           
             <li class="next">Toml::Merge::NodeWrapper</li>
           
@@ -104,6 +106,20 @@
     <p>Wraps tree-sitter nodes with comment associations, line information, and signatures.<br />
 This provides a unified interface for working with TOML AST nodes during merging.</p>
 
+<p>Inherits common functionality from Ast::Merge::NodeWrapperBase:</p>
+<ul>
+  <li>Source context (lines, source, comments)</li>
+  <li>Line info extraction</li>
+  <li>Basic methods: #type, #text, #signature</li>
+</ul>
+
+<p>Adds TOML-specific functionality:</p>
+<ul>
+  <li>Backend awareness for Citrus/tree-sitter normalization</li>
+  <li>Type predicates using NodeTypeNormalizer</li>
+  <li>Structural normalization for Citrus backend (pairs as siblings)</li>
+</ul>
+
 
   </div>
 </div>
@@ -119,11 +135,18 @@ This provides a unified interface for working with TOML AST nodes during merging
       <pre class="example code"><code><span class='id identifier rubyid_parser'>parser</span> <span class='op'>=</span> <span class='const'>TreeHaver</span><span class='op'>::</span><span class='const'>Parser</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span>
 <span class='id identifier rubyid_parser'>parser</span><span class='period'>.</span><span class='id identifier rubyid_language'>language</span> <span class='op'>=</span> <span class='const'>TreeHaver</span><span class='op'>::</span><span class='const'>Language</span><span class='period'>.</span><span class='id identifier rubyid_toml'>toml</span>
 <span class='id identifier rubyid_tree'>tree</span> <span class='op'>=</span> <span class='id identifier rubyid_parser'>parser</span><span class='period'>.</span><span class='id identifier rubyid_parse'>parse</span><span class='lparen'>(</span><span class='id identifier rubyid_source'>source</span><span class='rparen'>)</span>
-<span class='id identifier rubyid_wrapper'>wrapper</span> <span class='op'>=</span> <span class='const'>NodeWrapper</span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Toml::Merge::NodeWrapper#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_tree'>tree</span><span class='period'>.</span><span class='id identifier rubyid_root_node'>root_node</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='id identifier rubyid_source'>source</span><span class='period'>.</span><span class='id identifier rubyid_lines'>lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='id identifier rubyid_source'>source</span><span class='rparen'>)</span>
+<span class='id identifier rubyid_wrapper'>wrapper</span> <span class='op'>=</span> <span class='const'>NodeWrapper</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='id identifier rubyid_tree'>tree</span><span class='period'>.</span><span class='id identifier rubyid_root_node'>root_node</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='id identifier rubyid_source'>source</span><span class='period'>.</span><span class='id identifier rubyid_lines'>lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='id identifier rubyid_source'>source</span><span class='rparen'>)</span>
 <span class='id identifier rubyid_wrapper'>wrapper</span><span class='period'>.</span><span class='id identifier rubyid_signature'>signature</span> <span class='comment'># =&gt; [:table, &quot;section&quot;]</span></code></pre>
     
   </div>
 
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li>Ast::Merge::NodeWrapperBase</li>
+    
+  </ul>
 
 </div>
 
@@ -135,7 +158,7 @@ This provides a unified interface for working with TOML AST nodes during merging
       <li class="public ">
   <span class="summary_signature">
     
-      <a href="#end_line-instance_method" title="#end_line (instance method)">#<strong>end_line</strong>  &#x21d2; Integer </a>
+      <a href="#backend-instance_method" title="#backend (instance method)">#<strong>backend</strong>  &#x21d2; Symbol </a>
     
 
     
@@ -154,7 +177,7 @@ This provides a unified interface for working with TOML AST nodes during merging
   
 
   
-    <span class="summary_desc"><div class='inline'><p>End line (1-based).</p>
+    <span class="summary_desc"><div class='inline'><p>The backend used for parsing.</p>
 </div></span>
   
 </li>
@@ -163,7 +186,7 @@ This provides a unified interface for working with TOML AST nodes during merging
       <li class="public ">
   <span class="summary_signature">
     
-      <a href="#inline_comment-instance_method" title="#inline_comment (instance method)">#<strong>inline_comment</strong>  &#x21d2; Hash<sup>?</sup> </a>
+      <a href="#document_root-instance_method" title="#document_root (instance method)">#<strong>document_root</strong>  &#x21d2; TreeHaver::Node<sup>?</sup> </a>
     
 
     
@@ -182,147 +205,7 @@ This provides a unified interface for working with TOML AST nodes during merging
   
 
   
-    <span class="summary_desc"><div class='inline'><p>Inline/trailing comment on the same line.</p>
-</div></span>
-  
-</li>
-
-    
-      <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#leading_comments-instance_method" title="#leading_comments (instance method)">#<strong>leading_comments</strong>  &#x21d2; Array&lt;Hash&gt; </a>
-    
-
-    
-  </span>
-  
-  
-  
-    
-      <span class="note title readonly">readonly</span>
-    
-    
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Leading comments associated with this node.</p>
-</div></span>
-  
-</li>
-
-    
-      <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#lines-instance_method" title="#lines (instance method)">#<strong>lines</strong>  &#x21d2; Array&lt;String&gt; </a>
-    
-
-    
-  </span>
-  
-  
-  
-    
-      <span class="note title readonly">readonly</span>
-    
-    
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Source lines.</p>
-</div></span>
-  
-</li>
-
-    
-      <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#node-instance_method" title="#node (instance method)">#<strong>node</strong>  &#x21d2; TreeHaver::Node </a>
-    
-
-    
-  </span>
-  
-  
-  
-    
-      <span class="note title readonly">readonly</span>
-    
-    
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>The wrapped tree-sitter node.</p>
-</div></span>
-  
-</li>
-
-    
-      <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#source-instance_method" title="#source (instance method)">#<strong>source</strong>  &#x21d2; String </a>
-    
-
-    
-  </span>
-  
-  
-  
-    
-      <span class="note title readonly">readonly</span>
-    
-    
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>The original source string.</p>
-</div></span>
-  
-</li>
-
-    
-      <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#start_line-instance_method" title="#start_line (instance method)">#<strong>start_line</strong>  &#x21d2; Integer </a>
-    
-
-    
-  </span>
-  
-  
-  
-    
-      <span class="note title readonly">readonly</span>
-    
-    
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Start line (1-based).</p>
+    <span class="summary_desc"><div class='inline'><p>The document root node for sibling lookups.</p>
 </div></span>
   
 </li>
@@ -344,7 +227,7 @@ This provides a unified interface for working with TOML AST nodes during merging
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#wrap-class_method" title="wrap (class method)">.<strong>wrap</strong>(node, lines, source: nil, leading_comments: [], inline_comment: nil)  &#x21d2; NodeWrapper<sup>?</sup> </a>
+      <a href="#wrap-class_method" title="wrap (class method)">.<strong>wrap</strong>(node, lines, source: nil, leading_comments: [], inline_comment: nil, backend: :tree_sitter_toml)  &#x21d2; NodeWrapper<sup>?</sup> </a>
     
 
     
@@ -460,29 +343,6 @@ This provides a unified interface for working with TOML AST nodes during merging
 
   
     <span class="summary_desc"><div class='inline'><p>Get the canonical (normalized) type for this node.</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#children-instance_method" title="#children (instance method)">#<strong>children</strong>  &#x21d2; Array&lt;NodeWrapper&gt; </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Get children wrapped as NodeWrappers.</p>
 </div></span>
   
 </li>
@@ -629,6 +489,29 @@ This provides a unified interface for working with TOML AST nodes during merging
         <li class="public ">
   <span class="summary_signature">
     
+      <a href="#effective_end_line-instance_method" title="#effective_end_line (instance method)">#<strong>effective_end_line</strong>  &#x21d2; Integer<sup>?</sup> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Get the effective end line for this node, accounting for Citrus backend.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
       <a href="#elements-instance_method" title="#elements (instance method)">#<strong>elements</strong>  &#x21d2; Array&lt;NodeWrapper&gt; </a>
     
 
@@ -675,31 +558,6 @@ This provides a unified interface for working with TOML AST nodes during merging
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#initialize-instance_method" title="#initialize (instance method)">#<strong>initialize</strong>(node, lines:, source: nil, leading_comments: [], inline_comment: nil)  &#x21d2; NodeWrapper </a>
-    
-
-    
-  </span>
-  
-  
-    <span class="note title constructor">constructor</span>
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>A new instance of NodeWrapper.</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
       <a href="#inline_table%3F-instance_method" title="#inline_table? (instance method)">#<strong>inline_table?</strong>  &#x21d2; Boolean </a>
     
 
@@ -715,29 +573,6 @@ This provides a unified interface for working with TOML AST nodes during merging
 
   
     <span class="summary_desc"><div class='inline'><p>Check if this is a TOML inline table.</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#inspect-instance_method" title="#inspect (instance method)">#<strong>inspect</strong>  &#x21d2; String </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>String representation for debugging.</p>
 </div></span>
   
 </li>
@@ -792,29 +627,6 @@ This provides a unified interface for working with TOML AST nodes during merging
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#leaf%3F-instance_method" title="#leaf? (instance method)">#<strong>leaf?</strong>  &#x21d2; Boolean </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Check if this node is a leaf (no mergeable children).</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
       <a href="#mergeable_children-instance_method" title="#mergeable_children (instance method)">#<strong>mergeable_children</strong>  &#x21d2; Array&lt;NodeWrapper&gt; </a>
     
 
@@ -830,29 +642,6 @@ This provides a unified interface for working with TOML AST nodes during merging
 
   
     <span class="summary_desc"><div class='inline'><p>Get mergeable children - the semantically meaningful children for tree merging For tables, returns pairs.</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#node_text-instance_method" title="#node_text (instance method)">#<strong>node_text</strong>(ts_node)  &#x21d2; String </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Extract text from a tree-sitter node using byte positions.</p>
 </div></span>
   
 </li>
@@ -930,7 +719,7 @@ This provides a unified interface for working with TOML AST nodes during merging
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#signature-instance_method" title="#signature (instance method)">#<strong>signature</strong>  &#x21d2; Array<sup>?</sup> </a>
+      <a href="#process_additional_options-instance_method" title="#process_additional_options (instance method)">#<strong>process_additional_options</strong>(options)  &#x21d2; Object </a>
     
 
     
@@ -944,7 +733,7 @@ This provides a unified interface for working with TOML AST nodes during merging
   
 
   
-    <span class="summary_desc"><div class='inline'><p>Generate a signature for this node for matching purposes.</p>
+    <span class="summary_desc"><div class='inline'><p>Process TOML-specific options (backend, document_root).</p>
 </div></span>
   
 </li>
@@ -1022,52 +811,6 @@ This provides a unified interface for working with TOML AST nodes during merging
         <li class="public ">
   <span class="summary_signature">
     
-      <a href="#text-instance_method" title="#text (instance method)">#<strong>text</strong>  &#x21d2; String </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Get the text content for this node by extracting from source using byte positions.</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
-      <a href="#type-instance_method" title="#type (instance method)">#<strong>type</strong>  &#x21d2; Symbol </a>
-    
-
-    
-  </span>
-  
-  
-  
-  
-  
-  
-  
-
-  
-    <span class="summary_desc"><div class='inline'><p>Get the node type as a symbol.</p>
-</div></span>
-  
-</li>
-
-      
-        <li class="public ">
-  <span class="summary_signature">
-    
       <a href="#type%3F-instance_method" title="#type? (instance method)">#<strong>type?</strong>(type_name)  &#x21d2; Boolean </a>
     
 
@@ -1114,167 +857,17 @@ This provides a unified interface for working with TOML AST nodes during merging
     </ul>
   
 
-<div id="constructor_details" class="method_details_list">
-  <h2>Constructor Details</h2>
-  
-    <div class="method_details first">
-  <h3 class="signature first" id="initialize-instance_method">
-  
-    #<strong>initialize</strong>(node, lines:, source: nil, leading_comments: [], inline_comment: nil)  &#x21d2; <tt><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></tt> 
-  
 
   
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Returns a new instance of NodeWrapper.</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <p class="tag_title">Parameters:</p>
-<ul class="param">
-  
-    <li>
-      
-        <span class='name'>node</span>
-      
-      
-        <span class='type'>(<tt>TreeHaver::Node</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>tree-sitter node to wrap</p>
-</div>
-      
-    </li>
-  
-    <li>
-      
-        <span class='name'>lines</span>
-      
-      
-        <span class='type'>(<tt>Array&lt;String&gt;</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>Source lines for content extraction</p>
-</div>
-      
-    </li>
-  
-    <li>
-      
-        <span class='name'>source</span>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-        <em class="default">(defaults to: <tt>nil</tt>)</em>
-      
-      
-        &mdash;
-        <div class='inline'><p>Original source string for byte-based text extraction</p>
-</div>
-      
-    </li>
-  
-    <li>
-      
-        <span class='name'>leading_comments</span>
-      
-      
-        <span class='type'>(<tt>Array&lt;Hash&gt;</tt>)</span>
-      
-      
-        <em class="default">(defaults to: <tt>[]</tt>)</em>
-      
-      
-        &mdash;
-        <div class='inline'><p>Comments before this node</p>
-</div>
-      
-    </li>
-  
-    <li>
-      
-        <span class='name'>inline_comment</span>
-      
-      
-        <span class='type'>(<tt>Hash</tt>, <tt>nil</tt>)</span>
-      
-      
-        <em class="default">(defaults to: <tt>nil</tt>)</em>
-      
-      
-        &mdash;
-        <div class='inline'><p>Inline comment on the node’s line</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-57
-58
-59
-60
-61
-62
-63
-64
-65
-66
-67
-68
-69
-70</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 57</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='id identifier rubyid_node'>node</span><span class='comma'>,</span> <span class='label'>lines:</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>leading_comments:</span> <span class='lbracket'>[</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='label'>inline_comment:</span> <span class='kw'>nil</span><span class='rparen'>)</span>
-  <span class='ivar'>@node</span> <span class='op'>=</span> <span class='id identifier rubyid_node'>node</span>
-  <span class='ivar'>@lines</span> <span class='op'>=</span> <span class='id identifier rubyid_lines'>lines</span>
-  <span class='ivar'>@source</span> <span class='op'>=</span> <span class='id identifier rubyid_source'>source</span> <span class='op'>||</span> <span class='id identifier rubyid_lines'>lines</span><span class='period'>.</span><span class='id identifier rubyid_join'>join</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>\n</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
-  <span class='ivar'>@leading_comments</span> <span class='op'>=</span> <span class='id identifier rubyid_leading_comments'>leading_comments</span>
-  <span class='ivar'>@inline_comment</span> <span class='op'>=</span> <span class='id identifier rubyid_inline_comment'>inline_comment</span>
-
-  <span class='comment'># Extract line information from the tree-sitter node (0-indexed to 1-indexed)
-</span>  <span class='ivar'>@start_line</span> <span class='op'>=</span> <span class='id identifier rubyid_node'>node</span><span class='period'>.</span><span class='id identifier rubyid_start_point'>start_point</span><span class='period'>.</span><span class='id identifier rubyid_row'>row</span> <span class='op'>+</span> <span class='int'>1</span> <span class='kw'>if</span> <span class='id identifier rubyid_node'>node</span><span class='period'>.</span><span class='id identifier rubyid_respond_to?'>respond_to?</span><span class='lparen'>(</span><span class='symbol'>:start_point</span><span class='rparen'>)</span>
-  <span class='ivar'>@end_line</span> <span class='op'>=</span> <span class='id identifier rubyid_node'>node</span><span class='period'>.</span><span class='id identifier rubyid_end_point'>end_point</span><span class='period'>.</span><span class='id identifier rubyid_row'>row</span> <span class='op'>+</span> <span class='int'>1</span> <span class='kw'>if</span> <span class='id identifier rubyid_node'>node</span><span class='period'>.</span><span class='id identifier rubyid_respond_to?'>respond_to?</span><span class='lparen'>(</span><span class='symbol'>:end_point</span><span class='rparen'>)</span>
-
-  <span class='comment'># Handle edge case where end_line might be before start_line
-</span>  <span class='ivar'>@end_line</span> <span class='op'>=</span> <span class='ivar'>@start_line</span> <span class='kw'>if</span> <span class='ivar'>@start_line</span> <span class='op'>&amp;&amp;</span> <span class='ivar'>@end_line</span> <span class='op'>&amp;&amp;</span> <span class='ivar'>@end_line</span> <span class='op'>&lt;</span> <span class='ivar'>@start_line</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-  
-</div>
-
   <div id="instance_attr_details" class="attr_details">
     <h2>Instance Attribute Details</h2>
     
       
       <span id=""></span>
       <div class="method_details first">
-  <h3 class="signature first" id="end_line-instance_method">
+  <h3 class="signature first" id="backend-instance_method">
   
-    #<strong>end_line</strong>  &#x21d2; <tt>Integer</tt>  <span class="extras">(readonly)</span>
+    #<strong>backend</strong>  &#x21d2; <tt>Symbol</tt>  <span class="extras">(readonly)</span>
   
 
   
@@ -1282,7 +875,7 @@ This provides a unified interface for working with TOML AST nodes during merging
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>Returns End line (1-based).</p>
+    <p>Returns The backend used for parsing.</p>
 
 
   </div>
@@ -1295,12 +888,12 @@ This provides a unified interface for working with TOML AST nodes during merging
     <li>
       
       
-        <span class='type'>(<tt>Integer</tt>)</span>
+        <span class='type'>(<tt>Symbol</tt>)</span>
       
       
       
         &mdash;
-        <div class='inline'><p>End line (1-based)</p>
+        <div class='inline'><p>The backend used for parsing</p>
 </div>
       
     </li>
@@ -1313,15 +906,15 @@ This provides a unified interface for working with TOML AST nodes during merging
       <pre class="lines">
 
 
-47
-48
-49</pre>
+52
+53
+54</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 47</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 52</span>
 
-<span class='kw'>def</span> <span class='id identifier rubyid_end_line'>end_line</span>
-  <span class='ivar'>@end_line</span>
+<span class='kw'>def</span> <span class='id identifier rubyid_backend'>backend</span>
+  <span class='ivar'>@backend</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -1331,9 +924,9 @@ This provides a unified interface for working with TOML AST nodes during merging
       
       <span id=""></span>
       <div class="method_details ">
-  <h3 class="signature " id="inline_comment-instance_method">
+  <h3 class="signature " id="document_root-instance_method">
   
-    #<strong>inline_comment</strong>  &#x21d2; <tt>Hash</tt><sup>?</sup>  <span class="extras">(readonly)</span>
+    #<strong>document_root</strong>  &#x21d2; <tt>TreeHaver::Node</tt><sup>?</sup>  <span class="extras">(readonly)</span>
   
 
   
@@ -1341,7 +934,7 @@ This provides a unified interface for working with TOML AST nodes during merging
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>Returns Inline/trailing comment on the same line.</p>
+    <p>Returns The document root node for sibling lookups.</p>
 
 
   </div>
@@ -1354,12 +947,12 @@ This provides a unified interface for working with TOML AST nodes during merging
     <li>
       
       
-        <span class='type'>(<tt>Hash</tt>, <tt>nil</tt>)</span>
+        <span class='type'>(<tt>TreeHaver::Node</tt>, <tt>nil</tt>)</span>
       
       
       
         &mdash;
-        <div class='inline'><p>Inline/trailing comment on the same line</p>
+        <div class='inline'><p>The document root node for sibling lookups</p>
 </div>
       
     </li>
@@ -1372,310 +965,15 @@ This provides a unified interface for working with TOML AST nodes during merging
       <pre class="lines">
 
 
-41
-42
-43</pre>
+55
+56
+57</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 41</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 55</span>
 
-<span class='kw'>def</span> <span class='id identifier rubyid_inline_comment'>inline_comment</span>
-  <span class='ivar'>@inline_comment</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id=""></span>
-      <div class="method_details ">
-  <h3 class="signature " id="leading_comments-instance_method">
-  
-    #<strong>leading_comments</strong>  &#x21d2; <tt>Array&lt;Hash&gt;</tt>  <span class="extras">(readonly)</span>
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Returns Leading comments associated with this node.</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Array&lt;Hash&gt;</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>Leading comments associated with this node</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-35
-36
-37</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 35</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_leading_comments'>leading_comments</span>
-  <span class='ivar'>@leading_comments</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id=""></span>
-      <div class="method_details ">
-  <h3 class="signature " id="lines-instance_method">
-  
-    #<strong>lines</strong>  &#x21d2; <tt>Array&lt;String&gt;</tt>  <span class="extras">(readonly)</span>
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Returns Source lines.</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Array&lt;String&gt;</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>Source lines</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-50
-51
-52</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 50</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_lines'>lines</span>
-  <span class='ivar'>@lines</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id=""></span>
-      <div class="method_details ">
-  <h3 class="signature " id="node-instance_method">
-  
-    #<strong>node</strong>  &#x21d2; <tt>TreeHaver::Node</tt>  <span class="extras">(readonly)</span>
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Returns The wrapped tree-sitter node.</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>TreeHaver::Node</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>The wrapped tree-sitter node</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-32
-33
-34</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 32</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_node'>node</span>
-  <span class='ivar'>@node</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id=""></span>
-      <div class="method_details ">
-  <h3 class="signature " id="source-instance_method">
-  
-    #<strong>source</strong>  &#x21d2; <tt>String</tt>  <span class="extras">(readonly)</span>
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Returns The original source string.</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>The original source string</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-38
-39
-40</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 38</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_source'>source</span>
-  <span class='ivar'>@source</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      
-      <span id=""></span>
-      <div class="method_details ">
-  <h3 class="signature " id="start_line-instance_method">
-  
-    #<strong>start_line</strong>  &#x21d2; <tt>Integer</tt>  <span class="extras">(readonly)</span>
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Returns Start line (1-based).</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Integer</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>Start line (1-based)</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-44
-45
-46</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 44</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_start_line'>start_line</span>
-  <span class='ivar'>@start_line</span>
+<span class='kw'>def</span> <span class='id identifier rubyid_document_root'>document_root</span>
+  <span class='ivar'>@document_root</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -1692,7 +990,7 @@ This provides a unified interface for working with TOML AST nodes during merging
       <div class="method_details first">
   <h3 class="signature first" id="wrap-class_method">
   
-    .<strong>wrap</strong>(node, lines, source: nil, leading_comments: [], inline_comment: nil)  &#x21d2; <tt><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></tt><sup>?</sup> 
+    .<strong>wrap</strong>(node, lines, source: nil, leading_comments: [], inline_comment: nil, backend: :tree_sitter_toml)  &#x21d2; <tt><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></tt><sup>?</sup> 
   
 
   
@@ -1790,6 +1088,23 @@ This provides a unified interface for working with TOML AST nodes during merging
       
     </li>
   
+    <li>
+      
+        <span class='name'>backend</span>
+      
+      
+        <span class='type'>(<tt>Symbol</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>:tree_sitter_toml</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>The backend used for parsing (:tree_sitter_toml or :citrus_toml)</p>
+</div>
+      
+    </li>
+  
 </ul>
 
 <p class="tag_title">Returns:</p>
@@ -1816,19 +1131,33 @@ This provides a unified interface for working with TOML AST nodes during merging
       <pre class="lines">
 
 
-24
-25
-26
-27
-28</pre>
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 24</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 37</span>
 
-<span class='kw'>def</span> <span class='id identifier rubyid_wrap'>wrap</span><span class='lparen'>(</span><span class='id identifier rubyid_node'>node</span><span class='comma'>,</span> <span class='id identifier rubyid_lines'>lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>leading_comments:</span> <span class='lbracket'>[</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='label'>inline_comment:</span> <span class='kw'>nil</span><span class='rparen'>)</span>
+<span class='kw'>def</span> <span class='id identifier rubyid_wrap'>wrap</span><span class='lparen'>(</span><span class='id identifier rubyid_node'>node</span><span class='comma'>,</span> <span class='id identifier rubyid_lines'>lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>leading_comments:</span> <span class='lbracket'>[</span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='label'>inline_comment:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>backend:</span> <span class='symbol'>:tree_sitter_toml</span><span class='rparen'>)</span>
   <span class='kw'>return</span> <span class='kw'>if</span> <span class='id identifier rubyid_node'>node</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
 
-  <span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='id identifier rubyid_node'>node</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='id identifier rubyid_lines'>lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='id identifier rubyid_source'>source</span><span class='comma'>,</span> <span class='label'>leading_comments:</span> <span class='id identifier rubyid_leading_comments'>leading_comments</span><span class='comma'>,</span> <span class='label'>inline_comment:</span> <span class='id identifier rubyid_inline_comment'>inline_comment</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span>
+    <span class='id identifier rubyid_node'>node</span><span class='comma'>,</span>
+    <span class='label'>lines:</span> <span class='id identifier rubyid_lines'>lines</span><span class='comma'>,</span>
+    <span class='label'>source:</span> <span class='id identifier rubyid_source'>source</span><span class='comma'>,</span>
+    <span class='label'>leading_comments:</span> <span class='id identifier rubyid_leading_comments'>leading_comments</span><span class='comma'>,</span>
+    <span class='label'>inline_comment:</span> <span class='id identifier rubyid_inline_comment'>inline_comment</span><span class='comma'>,</span>
+    <span class='label'>backend:</span> <span class='id identifier rubyid_backend'>backend</span><span class='comma'>,</span>
+  <span class='rparen'>)</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -1879,12 +1208,12 @@ This provides a unified interface for working with TOML AST nodes during merging
       <pre class="lines">
 
 
-121
-122
-123</pre>
+99
+100
+101</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 121</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 99</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_array?'>array?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:array</span>
@@ -1933,12 +1262,12 @@ Uses NodeTypeNormalizer for backend-agnostic type checking.</p>
       <pre class="lines">
 
 
-109
-110
-111</pre>
+87
+88
+89</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 109</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 87</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_array_of_tables?'>array_of_tables?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:array_of_tables</span>
@@ -1986,12 +1315,12 @@ Uses NodeTypeNormalizer for backend-agnostic type checking.</p>
       <pre class="lines">
 
 
-145
-146
-147</pre>
+123
+124
+125</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 145</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 123</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_boolean?'>boolean?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:boolean</span>
@@ -2039,80 +1368,15 @@ Uses NodeTypeNormalizer for backend-agnostic type checking.</p>
       <pre class="lines">
 
 
-88
-89
-90</pre>
+66
+67
+68</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 88</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 66</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_canonical_type'>canonical_type</span>
-  <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='rparen'>)</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="children-instance_method">
-  
-    #<strong>children</strong>  &#x21d2; <tt>Array&lt;<span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span>&gt;</tt> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Get children wrapped as NodeWrappers</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Array&lt;<span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span>&gt;</tt>)</span>
-      
-      
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-255
-256
-257
-258
-259
-260
-261
-262
-263</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 255</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_children'>children</span>
-  <span class='kw'>return</span> <span class='lbracket'>[</span><span class='rbracket'>]</span> <span class='kw'>unless</span> <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_respond_to?'>respond_to?</span><span class='lparen'>(</span><span class='symbol'>:each</span><span class='rparen'>)</span>
-
-  <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
-  <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_child'>child</span><span class='op'>|</span>
-    <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Toml::Merge::NodeWrapper#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='ivar'>@source</span><span class='rparen'>)</span>
-  <span class='kw'>end</span>
-  <span class='id identifier rubyid_result'>result</span>
+  <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='comma'>,</span> <span class='ivar'>@backend</span><span class='rparen'>)</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -2158,14 +1422,14 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-314
-315
-316
-317
-318</pre>
+302
+303
+304
+305
+306</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 314</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 302</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_closing_line'>closing_line</span>
   <span class='kw'>return</span> <span class='kw'>unless</span> <span class='id identifier rubyid_container?'>container?</span> <span class='op'>&amp;&amp;</span> <span class='ivar'>@end_line</span>
@@ -2215,12 +1479,12 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-157
-158
-159</pre>
+135
+136
+137</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 157</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 135</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_comment?'>comment?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:comment</span>
@@ -2268,12 +1532,12 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-292
-293
-294</pre>
+286
+287
+288</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 292</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 286</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_container?'>container?</span>
   <span class='id identifier rubyid_table?'>table?</span> <span class='op'>||</span> <span class='id identifier rubyid_array_of_tables?'>array_of_tables?</span> <span class='op'>||</span> <span class='id identifier rubyid_inline_table?'>inline_table?</span> <span class='op'>||</span> <span class='id identifier rubyid_array?'>array?</span> <span class='op'>||</span> <span class='id identifier rubyid_document?'>document?</span>
@@ -2294,7 +1558,13 @@ For tables, this is the last line of content before the next table or EOF</p>
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>Get the content for this node from source lines</p>
+    <p>Get the content for this node from source lines.</p>
+
+<p>Handles structural differences between backends:</p>
+<ul>
+  <li>Tree-sitter: table nodes include pairs, so start_line..end_line covers everything</li>
+  <li>Citrus: table nodes only include header, so we extend to include associated pairs</li>
+</ul>
 
 
   </div>
@@ -2321,19 +1591,27 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-337
-338
-339
-340
-341</pre>
+315
+316
+317
+318
+319
+320
+321
+322
+323</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 337</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 315</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_content'>content</span>
-  <span class='kw'>return</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>unless</span> <span class='ivar'>@start_line</span> <span class='op'>&amp;&amp;</span> <span class='ivar'>@end_line</span>
+  <span class='kw'>return</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>unless</span> <span class='ivar'>@start_line</span>
 
-  <span class='lparen'>(</span><span class='ivar'>@start_line</span><span class='op'>..</span><span class='ivar'>@end_line</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_ln'>ln</span><span class='op'>|</span> <span class='ivar'>@lines</span><span class='lbracket'>[</span><span class='id identifier rubyid_ln'>ln</span> <span class='op'>-</span> <span class='int'>1</span><span class='rbracket'>]</span> <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_compact'>compact</span><span class='period'>.</span><span class='id identifier rubyid_join'>join</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>\n</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='comment'># For tables with Citrus backend, extend end_line to include pairs
+</span>  <span class='id identifier rubyid_effective_end'>effective_end</span> <span class='op'>=</span> <span class='id identifier rubyid_effective_end_line'>effective_end_line</span>
+  <span class='kw'>return</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>unless</span> <span class='id identifier rubyid_effective_end'>effective_end</span>
+
+  <span class='lparen'>(</span><span class='ivar'>@start_line</span><span class='op'>..</span><span class='id identifier rubyid_effective_end'>effective_end</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_ln'>ln</span><span class='op'>|</span> <span class='ivar'>@lines</span><span class='lbracket'>[</span><span class='id identifier rubyid_ln'>ln</span> <span class='op'>-</span> <span class='int'>1</span><span class='rbracket'>]</span> <span class='rbrace'>}</span><span class='period'>.</span><span class='id identifier rubyid_compact'>compact</span><span class='period'>.</span><span class='id identifier rubyid_join'>join</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>\n</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -2378,12 +1656,12 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-163
-164
-165</pre>
+141
+142
+143</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 163</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 141</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_datetime?'>datetime?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:datetime</span>
@@ -2431,15 +1709,91 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-232
-233
-234</pre>
+147
+148
+149</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 232</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 147</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_document?'>document?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:document</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="effective_end_line-instance_method">
+  
+    #<strong>effective_end_line</strong>  &#x21d2; <tt>Integer</tt><sup>?</sup> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Get the effective end line for this node, accounting for Citrus backend.<br />
+For Citrus tables, this extends to the line before the next table.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Integer</tt>, <tt>nil</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 328</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_effective_end_line'>effective_end_line</span>
+  <span class='kw'>return</span> <span class='ivar'>@end_line</span> <span class='kw'>if</span> <span class='op'>!</span><span class='lparen'>(</span><span class='id identifier rubyid_table?'>table?</span> <span class='op'>||</span> <span class='id identifier rubyid_array_of_tables?'>array_of_tables?</span><span class='rparen'>)</span> <span class='op'>||</span> <span class='ivar'>@document_root</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+
+  <span class='comment'># Check if we have pairs as children (tree-sitter structure)
+</span>  <span class='id identifier rubyid_child_pairs'>child_pairs</span> <span class='op'>=</span> <span class='id identifier rubyid_collect_child_pairs'>collect_child_pairs</span>
+  <span class='kw'>return</span> <span class='ivar'>@end_line</span> <span class='kw'>if</span> <span class='id identifier rubyid_child_pairs'>child_pairs</span><span class='period'>.</span><span class='id identifier rubyid_any?'>any?</span>
+
+  <span class='comment'># Citrus structure: find the last pair that belongs to us
+</span>  <span class='id identifier rubyid_sibling_pairs'>sibling_pairs</span> <span class='op'>=</span> <span class='id identifier rubyid_collect_sibling_pairs_for_table'>collect_sibling_pairs_for_table</span>
+  <span class='kw'>return</span> <span class='ivar'>@end_line</span> <span class='kw'>if</span> <span class='id identifier rubyid_sibling_pairs'>sibling_pairs</span><span class='period'>.</span><span class='id identifier rubyid_empty?'>empty?</span>
+
+  <span class='comment'># Return the end line of the last pair
+</span>  <span class='id identifier rubyid_sibling_pairs'>sibling_pairs</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:end_line</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_compact'>compact</span><span class='period'>.</span><span class='id identifier rubyid_max'>max</span> <span class='op'>||</span> <span class='ivar'>@end_line</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -2484,6 +1838,12 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
+232
+233
+234
+235
+236
+237
 238
 239
 240
@@ -2500,7 +1860,7 @@ For tables, this is the last line of content before the next table or EOF</p>
 251</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 238</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 232</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_elements'>elements</span>
   <span class='kw'>return</span> <span class='lbracket'>[</span><span class='rbracket'>]</span> <span class='kw'>unless</span> <span class='id identifier rubyid_array?'>array?</span>
@@ -2512,7 +1872,13 @@ For tables, this is the last line of content before the next table or EOF</p>
 </span>    <span class='kw'>next</span> <span class='kw'>if</span> <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>==</span> <span class='symbol'>:comment</span>
     <span class='kw'>next</span> <span class='kw'>if</span> <span class='qsymbols_beg'>%i[</span><span class='tstring_content'>comma</span><span class='words_sep'> </span><span class='tstring_content'>bracket_open</span><span class='words_sep'> </span><span class='tstring_content'>bracket_close</span><span class='tstring_end'>]</span></span><span class='period'>.</span><span class='id identifier rubyid_include?'>include?</span><span class='lparen'>(</span><span class='id identifier rubyid_child_canonical'>child_canonical</span><span class='rparen'>)</span>
 
-    <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Toml::Merge::NodeWrapper#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='ivar'>@source</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span>
+      <span class='id identifier rubyid_child'>child</span><span class='comma'>,</span>
+      <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span>
+      <span class='label'>source:</span> <span class='ivar'>@source</span><span class='comma'>,</span>
+      <span class='label'>backend:</span> <span class='ivar'>@backend</span><span class='comma'>,</span>
+      <span class='label'>document_root:</span> <span class='ivar'>@document_root</span><span class='comma'>,</span>
+    <span class='rparen'>)</span>
   <span class='kw'>end</span>
   <span class='id identifier rubyid_result'>result</span>
 <span class='kw'>end</span></pre>
@@ -2559,12 +1925,12 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-139
-140
-141</pre>
+117
+118
+119</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 139</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 117</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_float?'>float?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:float</span>
@@ -2612,68 +1978,15 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-115
-116
-117</pre>
+93
+94
+95</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 115</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 93</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_inline_table?'>inline_table?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:inline_table</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="inspect-instance_method">
-  
-    #<strong>inspect</strong>  &#x21d2; <tt>String</tt> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>String representation for debugging</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-345
-346
-347</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 345</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_inspect'>inspect</span>
-  <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>#&lt;</span><span class='embexpr_beg'>#{</span><span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='embexpr_end'>}</span><span class='tstring_content'> type=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='embexpr_end'>}</span><span class='tstring_content'> lines=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@start_line</span><span class='embexpr_end'>}</span><span class='tstring_content'>..</span><span class='embexpr_beg'>#{</span><span class='ivar'>@end_line</span><span class='embexpr_end'>}</span><span class='tstring_content'>&gt;</span><span class='tstring_end'>&quot;</span></span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -2718,12 +2031,12 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-133
-134
-135</pre>
+111
+112
+113</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 133</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 111</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_integer?'>integer?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:integer</span>
@@ -2771,30 +2084,30 @@ For tables, this is the last line of content before the next table or EOF</p>
       <pre class="lines">
 
 
-184
-185
-186
-187
-188
-189
-190
-191
-192
-193
-194
-195
-196
-197</pre>
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 184</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 168</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_key_name'>key_name</span>
   <span class='kw'>return</span> <span class='kw'>unless</span> <span class='id identifier rubyid_pair?'>pair?</span>
 
   <span class='comment'># In TOML, pair has key children (bare_key, quoted_key, or dotted_key)
 </span>  <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_child'>child</span><span class='op'>|</span>
-    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='comma'>,</span> <span class='ivar'>@backend</span><span class='rparen'>)</span>
     <span class='kw'>if</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_key_type?'><span class='object_link'><a href="NodeTypeNormalizer.html#key_type%3F-class_method" title="Toml::Merge::NodeTypeNormalizer.key_type? (method)">key_type?</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child_canonical'>child_canonical</span><span class='rparen'>)</span>
       <span class='id identifier rubyid_key_text'>key_text</span> <span class='op'>=</span> <span class='id identifier rubyid_node_text'>node_text</span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='rparen'>)</span>
       <span class='comment'># Remove surrounding quotes if present
@@ -2802,59 +2115,6 @@ For tables, this is the last line of content before the next table or EOF</p>
     <span class='kw'>end</span>
   <span class='kw'>end</span>
   <span class='kw'>nil</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="leaf?-instance_method">
-  
-    #<strong>leaf?</strong>  &#x21d2; <tt>Boolean</tt> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Check if this node is a leaf (no mergeable children)</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Boolean</tt>)</span>
-      
-      
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-298
-299
-300</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 298</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_leaf?'>leaf?</span>
-  <span class='op'>!</span><span class='id identifier rubyid_container?'>container?</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -2901,6 +2161,18 @@ For other node types, returns empty array (leaf nodes).</p>
       <pre class="lines">
 
 
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
 269
 270
 271
@@ -2914,16 +2186,10 @@ For other node types, returns empty array (leaf nodes).</p>
 279
 280
 281
-282
-283
-284
-285
-286
-287
-288</pre>
+282</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 269</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 257</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_mergeable_children'>mergeable_children</span>
   <span class='kw'>case</span> <span class='id identifier rubyid_canonical_type'>canonical_type</span>
@@ -2938,88 +2204,18 @@ For other node types, returns empty array (leaf nodes).</p>
       <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='rparen'>)</span>
       <span class='kw'>next</span> <span class='kw'>if</span> <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>==</span> <span class='symbol'>:comment</span>
 
-      <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Toml::Merge::NodeWrapper#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='ivar'>@source</span><span class='rparen'>)</span>
+      <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span>
+        <span class='id identifier rubyid_child'>child</span><span class='comma'>,</span>
+        <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span>
+        <span class='label'>source:</span> <span class='ivar'>@source</span><span class='comma'>,</span>
+        <span class='label'>backend:</span> <span class='ivar'>@backend</span><span class='comma'>,</span>
+        <span class='label'>document_root:</span> <span class='ivar'>@document_root</span><span class='comma'>,</span>
+      <span class='rparen'>)</span>
     <span class='kw'>end</span>
     <span class='id identifier rubyid_result'>result</span>
   <span class='kw'>else</span>
     <span class='lbracket'>[</span><span class='rbracket'>]</span>
   <span class='kw'>end</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="node_text-instance_method">
-  
-    #<strong>node_text</strong>(ts_node)  &#x21d2; <tt>String</tt> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Extract text from a tree-sitter node using byte positions</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  <p class="tag_title">Parameters:</p>
-<ul class="param">
-  
-    <li>
-      
-        <span class='name'>ts_node</span>
-      
-      
-        <span class='type'>(<tt>TreeHaver::Node</tt>)</span>
-      
-      
-      
-        &mdash;
-        <div class='inline'><p>The tree-sitter node</p>
-</div>
-      
-    </li>
-  
-</ul>
-
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-329
-330
-331
-332
-333</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 329</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_node_text'>node_text</span><span class='lparen'>(</span><span class='id identifier rubyid_ts_node'>ts_node</span><span class='rparen'>)</span>
-  <span class='kw'>return</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>unless</span> <span class='id identifier rubyid_ts_node'>ts_node</span><span class='period'>.</span><span class='id identifier rubyid_respond_to?'>respond_to?</span><span class='lparen'>(</span><span class='symbol'>:start_byte</span><span class='rparen'>)</span> <span class='op'>&amp;&amp;</span> <span class='id identifier rubyid_ts_node'>ts_node</span><span class='period'>.</span><span class='id identifier rubyid_respond_to?'>respond_to?</span><span class='lparen'>(</span><span class='symbol'>:end_byte</span><span class='rparen'>)</span>
-
-  <span class='ivar'>@source</span><span class='lbracket'>[</span><span class='id identifier rubyid_ts_node'>ts_node</span><span class='period'>.</span><span class='id identifier rubyid_start_byte'>start_byte</span><span class='op'>...</span><span class='id identifier rubyid_ts_node'>ts_node</span><span class='period'>.</span><span class='id identifier rubyid_end_byte'>end_byte</span><span class='rbracket'>]</span> <span class='op'>||</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -3064,15 +2260,15 @@ For other node types, returns empty array (leaf nodes).</p>
       <pre class="lines">
 
 
-304
-305
-306
-307
-308
-309</pre>
+292
+293
+294
+295
+296
+297</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 304</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 292</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_opening_line'>opening_line</span>
   <span class='kw'>return</span> <span class='kw'>unless</span> <span class='ivar'>@start_line</span>
@@ -3123,12 +2319,12 @@ For other node types, returns empty array (leaf nodes).</p>
       <pre class="lines">
 
 
-151
-152
-153</pre>
+129
+130
+131</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 151</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 129</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_pair?'>pair?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:pair</span>
@@ -3149,7 +2345,17 @@ For other node types, returns empty array (leaf nodes).</p>
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>Get key-value pairs from a table or inline_table</p>
+    <p>Get key-value pairs from a table or inline_table.</p>
+
+<p>Handles structural differences between backends:</p>
+<ul>
+  <li>Tree-sitter: pairs are children of the table node</li>
+  <li>Citrus: pairs are siblings at document level (table only contains header)</li>
+</ul>
+
+<p>For Citrus backend, when no pair children are found, we look for sibling<br />
+pairs in the document that belong to this table (pairs after this table’s<br />
+header but before the next table).</p>
 
 
   </div>
@@ -3176,6 +2382,7 @@ For other node types, returns empty array (leaf nodes).</p>
       <pre class="lines">
 
 
+216
 217
 218
 219
@@ -3190,19 +2397,20 @@ For other node types, returns empty array (leaf nodes).</p>
 228</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 217</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 216</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_pairs'>pairs</span>
-  <span class='kw'>return</span> <span class='lbracket'>[</span><span class='rbracket'>]</span> <span class='kw'>unless</span> <span class='id identifier rubyid_table?'>table?</span> <span class='op'>||</span> <span class='id identifier rubyid_inline_table?'>inline_table?</span> <span class='op'>||</span> <span class='id identifier rubyid_document?'>document?</span>
+  <span class='kw'>return</span> <span class='lbracket'>[</span><span class='rbracket'>]</span> <span class='kw'>unless</span> <span class='id identifier rubyid_table?'>table?</span> <span class='op'>||</span> <span class='id identifier rubyid_inline_table?'>inline_table?</span> <span class='op'>||</span> <span class='id identifier rubyid_document?'>document?</span> <span class='op'>||</span> <span class='id identifier rubyid_array_of_tables?'>array_of_tables?</span>
 
-  <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
-  <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_child'>child</span><span class='op'>|</span>
-    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='rparen'>)</span>
-    <span class='kw'>next</span> <span class='kw'>unless</span> <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>==</span> <span class='symbol'>:pair</span>
+  <span class='comment'># First, try to find pairs as direct children (tree-sitter structure)
+</span>  <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='id identifier rubyid_collect_child_pairs'>collect_child_pairs</span>
+  <span class='kw'>return</span> <span class='id identifier rubyid_result'>result</span> <span class='kw'>if</span> <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_any?'>any?</span>
 
-    <span class='id identifier rubyid_result'>result</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Toml::Merge::NodeWrapper#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='ivar'>@source</span><span class='rparen'>)</span>
-  <span class='kw'>end</span>
-  <span class='id identifier rubyid_result'>result</span>
+  <span class='comment'># For Citrus backend: pairs are siblings, not children
+</span>  <span class='comment'># Look for pairs in document that belong to this table
+</span>  <span class='kw'>return</span> <span class='lbracket'>[</span><span class='rbracket'>]</span> <span class='kw'>if</span> <span class='ivar'>@document_root</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span> <span class='op'>||</span> <span class='op'>!</span><span class='lparen'>(</span><span class='id identifier rubyid_table?'>table?</span> <span class='op'>||</span> <span class='id identifier rubyid_array_of_tables?'>array_of_tables?</span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_collect_sibling_pairs_for_table'>collect_sibling_pairs_for_table</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -3210,9 +2418,9 @@ For other node types, returns empty array (leaf nodes).</p>
 </div>
     
       <div class="method_details ">
-  <h3 class="signature " id="signature-instance_method">
+  <h3 class="signature " id="process_additional_options-instance_method">
   
-    #<strong>signature</strong>  &#x21d2; <tt>Array</tt><sup>?</sup> 
+    #<strong>process_additional_options</strong>(options)  &#x21d2; <tt>Object</tt> 
   
 
   
@@ -3220,31 +2428,32 @@ For other node types, returns empty array (leaf nodes).</p>
   
 </h3><div class="docstring">
   <div class="discussion">
-    <p>Generate a signature for this node for matching purposes.<br />
-Signatures are used to identify corresponding nodes between template and destination.</p>
+    <p>Process TOML-specific options (backend, document_root)</p>
 
 
   </div>
 </div>
 <div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
   
     <li>
       
+        <span class='name'>options</span>
       
-        <span class='type'>(<tt>Array</tt>, <tt>nil</tt>)</span>
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
       
       
       
         &mdash;
-        <div class='inline'><p>Signature array or nil if not signaturable</p>
+        <div class='inline'><p>Additional options</p>
 </div>
       
     </li>
   
 </ul>
+
 
 </div><table class="source_code">
   <tr>
@@ -3252,15 +2461,17 @@ Signatures are used to identify corresponding nodes between template and destina
       <pre class="lines">
 
 
-76
-77
-78</pre>
+59
+60
+61
+62</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 76</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 59</span>
 
-<span class='kw'>def</span> <span class='id identifier rubyid_signature'>signature</span>
-  <span class='id identifier rubyid_compute_signature'>compute_signature</span><span class='lparen'>(</span><span class='ivar'>@node</span><span class='rparen'>)</span>
+<span class='kw'>def</span> <span class='id identifier rubyid_process_additional_options'>process_additional_options</span><span class='lparen'>(</span><span class='id identifier rubyid_options'>options</span><span class='rparen'>)</span>
+  <span class='ivar'>@backend</span> <span class='op'>=</span> <span class='id identifier rubyid_options'>options</span><span class='period'>.</span><span class='id identifier rubyid_fetch'>fetch</span><span class='lparen'>(</span><span class='symbol'>:backend</span><span class='comma'>,</span> <span class='symbol'>:tree_sitter_toml</span><span class='rparen'>)</span>
+  <span class='ivar'>@document_root</span> <span class='op'>=</span> <span class='id identifier rubyid_options'>options</span><span class='lbracket'>[</span><span class='symbol'>:document_root</span><span class='rbracket'>]</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -3305,12 +2516,12 @@ Signatures are used to identify corresponding nodes between template and destina
       <pre class="lines">
 
 
-127
-128
-129</pre>
+105
+106
+107</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 127</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 105</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_string?'>string?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:string</span>
@@ -3358,12 +2569,12 @@ Signatures are used to identify corresponding nodes between template and destina
       <pre class="lines">
 
 
-102
-103
-104</pre>
+80
+81
+82</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 102</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 80</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_table?'>table?</span>
   <span class='id identifier rubyid_canonical_type'>canonical_type</span> <span class='op'>==</span> <span class='symbol'>:table</span>
@@ -3411,139 +2622,33 @@ Signatures are used to identify corresponding nodes between template and destina
       <pre class="lines">
 
 
-169
-170
-171
-172
-173
-174
-175
-176
-177
-178
-179
-180</pre>
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 169</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 153</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_table_name'>table_name</span>
   <span class='kw'>return</span> <span class='kw'>unless</span> <span class='id identifier rubyid_table?'>table?</span> <span class='op'>||</span> <span class='id identifier rubyid_array_of_tables?'>array_of_tables?</span>
 
   <span class='comment'># Find the dotted_key or bare_key child that represents the table name
 </span>  <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_child'>child</span><span class='op'>|</span>
-    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='comma'>,</span> <span class='ivar'>@backend</span><span class='rparen'>)</span>
     <span class='kw'>if</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_key_type?'><span class='object_link'><a href="NodeTypeNormalizer.html#key_type%3F-class_method" title="Toml::Merge::NodeTypeNormalizer.key_type? (method)">key_type?</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child_canonical'>child_canonical</span><span class='rparen'>)</span>
       <span class='kw'>return</span> <span class='id identifier rubyid_node_text'>node_text</span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='rparen'>)</span>
     <span class='kw'>end</span>
   <span class='kw'>end</span>
   <span class='kw'>nil</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="text-instance_method">
-  
-    #<strong>text</strong>  &#x21d2; <tt>String</tt> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Get the text content for this node by extracting from source using byte positions</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>String</tt>)</span>
-      
-      
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-322
-323
-324</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 322</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_text'>text</span>
-  <span class='id identifier rubyid_node_text'>node_text</span><span class='lparen'>(</span><span class='ivar'>@node</span><span class='rparen'>)</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="type-instance_method">
-  
-    #<strong>type</strong>  &#x21d2; <tt>Symbol</tt> 
-  
-
-  
-
-  
-</h3><div class="docstring">
-  <div class="discussion">
-    <p>Get the node type as a symbol</p>
-
-
-  </div>
-</div>
-<div class="tags">
-  
-<p class="tag_title">Returns:</p>
-<ul class="return">
-  
-    <li>
-      
-      
-        <span class='type'>(<tt>Symbol</tt>)</span>
-      
-      
-      
-    </li>
-  
-</ul>
-
-</div><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-82
-83
-84</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 82</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_type'>type</span>
-  <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span>
 <span class='kw'>end</span></pre>
     </td>
   </tr>
@@ -3607,13 +2712,13 @@ Signatures are used to identify corresponding nodes between template and destina
       <pre class="lines">
 
 
-95
-96
-97
-98</pre>
+73
+74
+75
+76</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 95</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 73</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_type?'>type?</span><span class='lparen'>(</span><span class='id identifier rubyid_type_name'>type_name</span><span class='rparen'>)</span>
   <span class='id identifier rubyid_type_sym'>type_sym</span> <span class='op'>=</span> <span class='id identifier rubyid_type_name'>type_name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span>
@@ -3662,33 +2767,45 @@ Signatures are used to identify corresponding nodes between template and destina
       <pre class="lines">
 
 
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
 201
 202
-203
-204
-205
-206
-207
-208
-209
-210
-211
-212
-213</pre>
+203</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 201</span>
+      <pre class="code"><span class="info file"># File 'lib/toml/merge/node_wrapper.rb', line 185</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_value_node'>value_node</span>
   <span class='kw'>return</span> <span class='kw'>unless</span> <span class='id identifier rubyid_pair?'>pair?</span>
 
   <span class='ivar'>@node</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_child'>child</span><span class='op'>|</span>
-    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_canonical_type'><span class='object_link'><a href="NodeTypeNormalizer.html#canonical_type-class_method" title="Toml::Merge::NodeTypeNormalizer.canonical_type (method)">canonical_type</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='period'>.</span><span class='id identifier rubyid_type'>type</span><span class='comma'>,</span> <span class='ivar'>@backend</span><span class='rparen'>)</span>
     <span class='comment'># Skip keys and equals sign, get the value
 </span>    <span class='kw'>next</span> <span class='kw'>if</span> <span class='const'><span class='object_link'><a href="NodeTypeNormalizer.html" title="Toml::Merge::NodeTypeNormalizer (module)">NodeTypeNormalizer</a></span></span><span class='period'>.</span><span class='id identifier rubyid_key_type?'><span class='object_link'><a href="NodeTypeNormalizer.html#key_type%3F-class_method" title="Toml::Merge::NodeTypeNormalizer.key_type? (method)">key_type?</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child_canonical'>child_canonical</span><span class='rparen'>)</span>
     <span class='kw'>next</span> <span class='kw'>if</span> <span class='id identifier rubyid_child_canonical'>child_canonical</span> <span class='op'>==</span> <span class='symbol'>:equals</span>
 
-    <span class='kw'>return</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Toml::Merge::NodeWrapper#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_child'>child</span><span class='comma'>,</span> <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span> <span class='label'>source:</span> <span class='ivar'>@source</span><span class='rparen'>)</span>
+    <span class='kw'>return</span> <span class='const'><span class='object_link'><a href="" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span>
+      <span class='id identifier rubyid_child'>child</span><span class='comma'>,</span>
+      <span class='label'>lines:</span> <span class='ivar'>@lines</span><span class='comma'>,</span>
+      <span class='label'>source:</span> <span class='ivar'>@source</span><span class='comma'>,</span>
+      <span class='label'>backend:</span> <span class='ivar'>@backend</span><span class='comma'>,</span>
+      <span class='label'>document_root:</span> <span class='ivar'>@document_root</span><span class='comma'>,</span>
+    <span class='rparen'>)</span>
   <span class='kw'>end</span>
   <span class='kw'>nil</span>
 <span class='kw'>end</span></pre>
@@ -3702,7 +2819,7 @@ Signatures are used to identify corresponding nodes between template and destina
 </div>
 
       <div id="footer">
-  Generated on Thu Jan  1 17:08:06 2026 by
+  Generated on Fri Jan  2 00:12:49 2026 by
   <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
   0.9.38 (ruby-4.0.0).
 </div>

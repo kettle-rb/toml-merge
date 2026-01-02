@@ -20,6 +20,25 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.0.1] - 2026-01-02
+
+- TAG: [v2.0.1][2.0.1t]
+- COVERAGE: 100.00% -- 77/77 lines in 1 files
+- BRANCH COVERAGE: 86.11% -- 31/36 branches in 1 files
+- 96.81% documented
+
+### Added
+
 - `Backends` module with constants for backend selection
   - `Backends::TREE_SITTER` (`:tree_sitter_toml`) - Native tree-sitter parser
   - `Backends::CITRUS` (`:citrus_toml`) - Pure Ruby toml-rb parser
@@ -127,7 +146,6 @@ Please file a bug if you notice a violation of semantic versioning.
   - This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)
   - Warning now only appears when the grammar file is actually missing
 
-
 ## [1.0.0] - 2025-12-19
 
 - TAG: [v1.0.0][1.0.0t]
@@ -145,7 +163,9 @@ Please file a bug if you notice a violation of semantic versioning.
   - Can force Citrus backend via `TREE_HAVER_BACKEND=citrus` environment variable
 - Added graceful error handling when neither tree-sitter-toml nor toml-rb are available
 
-[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...v2.0.1
+[2.0.1t]: https://github.com/kettle-rb/toml-merge/releases/tag/v2.0.1
 [2.0.0]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...v2.0.0
 [2.0.0t]: https://github.com/kettle-rb/toml-merge/releases/tag/v2.0.0
 [1.0.0]: https://github.com/kettle-rb/toml-merge/compare/772a5f5802ce518f2e2c83a561eb583ed634bac4...v1.0.0
