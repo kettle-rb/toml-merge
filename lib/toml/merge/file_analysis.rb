@@ -79,8 +79,13 @@ module Toml
         return unless valid?
 
         root = @ast.root_node
-        NodeWrapper.new(root, lines: @lines, source: @source, backend: @backend,
-          document_root: root)
+        NodeWrapper.new(
+          root,
+          lines: @lines,
+          source: @source,
+          backend: @backend,
+          document_root: root,
+        )
       end
 
       # Get a hash mapping signatures to nodes
@@ -102,8 +107,13 @@ module Toml
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless NodeTypeNormalizer.table_type?(canonical_type)
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
-            document_root: root)
+          result << NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: root,
+          )
         end
         result
       end
@@ -119,8 +129,13 @@ module Toml
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless canonical_type == :pair
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
-            document_root: root)
+          result << NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: root,
+          )
         end
         result
       end
@@ -204,8 +219,13 @@ module Toml
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next if canonical_type == :comment
 
-          wrapper = NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
-            document_root: root)
+          wrapper = NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: root,
+          )
           next unless wrapper.start_line && wrapper.end_line
 
           result << wrapper

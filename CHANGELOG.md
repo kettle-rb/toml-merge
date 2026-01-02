@@ -50,6 +50,12 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Changed
 
+- **NodeWrapper**: Now inherits from `Ast::Merge::NodeWrapperBase`
+  - Removes ~80 lines of duplicated code (initialization, line extraction, basic methods)
+  - Uses `process_additional_options` hook for TOML-specific options (`backend`, `document_root`)
+  - Keeps TOML-specific type predicates using `NodeTypeNormalizer`
+  - Keeps Citrus structural normalization logic for `#pairs`, `#content`, `#effective_end_line`
+  - Adds `#node_wrapper?` method for distinguishing from `NodeTyping::Wrapper`
 - **citrus_toml mappings**: Updated to match actual Citrus/toml-rb node types
   - `table_array` → `:array_of_tables` (Citrus produces `:table_array`, not `:table_array_element`)
   - `keyvalue` → `:pair` (Citrus produces `:keyvalue`, not `:pair`)

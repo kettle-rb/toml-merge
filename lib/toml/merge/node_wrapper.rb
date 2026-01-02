@@ -5,13 +5,25 @@ module Toml
     # Wraps tree-sitter nodes with comment associations, line information, and signatures.
     # This provides a unified interface for working with TOML AST nodes during merging.
     #
+    # Inherits common functionality from Ast::Merge::NodeWrapperBase:
+    # - Source context (lines, source, comments)
+    # - Line info extraction
+    # - Basic methods: #type, #text, #signature
+    #
+    # Adds TOML-specific functionality:
+    # - Backend awareness for Citrus/tree-sitter normalization
+    # - Type predicates using NodeTypeNormalizer
+    # - Structural normalization for Citrus backend (pairs as siblings)
+    #
     # @example Basic usage
     #   parser = TreeHaver::Parser.new
     #   parser.language = TreeHaver::Language.toml
     #   tree = parser.parse(source)
     #   wrapper = NodeWrapper.new(tree.root_node, lines: source.lines, source: source)
     #   wrapper.signature # => [:table, "section"]
-    class NodeWrapper
+    #
+    # @see Ast::Merge::NodeWrapperBase
+    class NodeWrapper < Ast::Merge::NodeWrapperBase
       class << self
         # Wrap a tree-sitter node, returning nil for nil input.
         #
@@ -36,70 +48,17 @@ module Toml
         end
       end
 
-      # @return [TreeHaver::Node] The wrapped tree-sitter node
-      attr_reader :node
-
-      # @return [Array<Hash>] Leading comments associated with this node
-      attr_reader :leading_comments
-
-      # @return [String] The original source string
-      attr_reader :source
-
-      # @return [Hash, nil] Inline/trailing comment on the same line
-      attr_reader :inline_comment
-
-      # @return [Integer] Start line (1-based)
-      attr_reader :start_line
-
-      # @return [Integer] End line (1-based)
-      attr_reader :end_line
-
-      # @return [Array<String>] Source lines
-      attr_reader :lines
-
       # @return [Symbol] The backend used for parsing
       attr_reader :backend
 
       # @return [TreeHaver::Node, nil] The document root node for sibling lookups
       attr_reader :document_root
 
-      # @param node [TreeHaver::Node] tree-sitter node to wrap
-      # @param lines [Array<String>] Source lines for content extraction
-      # @param source [String] Original source string for byte-based text extraction
-      # @param leading_comments [Array<Hash>] Comments before this node
-      # @param inline_comment [Hash, nil] Inline comment on the node's line
-      # @param backend [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
-      # @param document_root [TreeHaver::Node, nil] The document root for sibling lookups (Citrus normalization)
-      def initialize(node, lines:, source: nil, leading_comments: [], inline_comment: nil,
-        backend: :tree_sitter_toml, document_root: nil)
-        @node = node
-        @lines = lines
-        @source = source || lines.join("\n")
-        @leading_comments = leading_comments
-        @inline_comment = inline_comment
-        @backend = backend
-        @document_root = document_root
-
-        # Extract line information from the tree-sitter node (0-indexed to 1-indexed)
-        @start_line = node.start_point.row + 1 if node.respond_to?(:start_point)
-        @end_line = node.end_point.row + 1 if node.respond_to?(:end_point)
-
-        # Handle edge case where end_line might be before start_line
-        @end_line = @start_line if @start_line && @end_line && @end_line < @start_line
-      end
-
-      # Generate a signature for this node for matching purposes.
-      # Signatures are used to identify corresponding nodes between template and destination.
-      #
-      # @return [Array, nil] Signature array or nil if not signaturable
-      def signature
-        compute_signature(@node)
-      end
-
-      # Get the node type as a symbol
-      # @return [Symbol]
-      def type
-        @node.type.to_sym
+      # Process TOML-specific options (backend, document_root)
+      # @param options [Hash] Additional options
+      def process_additional_options(options)
+        @backend = options.fetch(:backend, :tree_sitter_toml)
+        @document_root = options[:document_root]
       end
 
       # Get the canonical (normalized) type for this node
@@ -183,6 +142,12 @@ module Toml
         canonical_type == :datetime
       end
 
+      # Check if this is the document root
+      # @return [Boolean]
+      def document?
+        canonical_type == :document
+      end
+
       # Get the table name (header) if this is a table
       # @return [String, nil]
       def table_name
@@ -226,8 +191,13 @@ module Toml
           next if NodeTypeNormalizer.key_type?(child_canonical)
           next if child_canonical == :equals
 
-          return NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
-            document_root: @document_root)
+          return NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: @document_root,
+          )
         end
         nil
       end
@@ -252,15 +222,9 @@ module Toml
 
         # For Citrus backend: pairs are siblings, not children
         # Look for pairs in document that belong to this table
-        return [] unless @document_root && (table? || array_of_tables?)
+        return [] if @document_root.nil? || !(table? || array_of_tables?)
 
         collect_sibling_pairs_for_table
-      end
-
-      # Check if this is the document root
-      # @return [Boolean]
-      def document?
-        canonical_type == :document
       end
 
       # Get array elements if this is an array
@@ -275,19 +239,13 @@ module Toml
           next if child_canonical == :comment
           next if %i[comma bracket_open bracket_close].include?(child_canonical)
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source)
-        end
-        result
-      end
-
-      # Get children wrapped as NodeWrappers
-      # @return [Array<NodeWrapper>]
-      def children
-        return [] unless @node.respond_to?(:each)
-
-        result = []
-        @node.each do |child|
-          result << NodeWrapper.new(child, lines: @lines, source: @source)
+          result << NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: @document_root,
+          )
         end
         result
       end
@@ -309,7 +267,13 @@ module Toml
             child_canonical = NodeTypeNormalizer.canonical_type(child.type)
             next if child_canonical == :comment
 
-            result << NodeWrapper.new(child, lines: @lines, source: @source)
+            result << NodeWrapper.new(
+              child,
+              lines: @lines,
+              source: @source,
+              backend: @backend,
+              document_root: @document_root,
+            )
           end
           result
         else
@@ -321,12 +285,6 @@ module Toml
       # @return [Boolean]
       def container?
         table? || array_of_tables? || inline_table? || array? || document?
-      end
-
-      # Check if this node is a leaf (no mergeable children)
-      # @return [Boolean]
-      def leaf?
-        !container?
       end
 
       # Get the opening line for a table (the line with [table_name])
@@ -345,21 +303,6 @@ module Toml
         return unless container? && @end_line
 
         @lines[@end_line - 1]
-      end
-
-      # Get the text content for this node by extracting from source using byte positions
-      # @return [String]
-      def text
-        node_text(@node)
-      end
-
-      # Extract text from a tree-sitter node using byte positions
-      # @param ts_node [TreeHaver::Node] The tree-sitter node
-      # @return [String]
-      def node_text(ts_node)
-        return "" unless ts_node.respond_to?(:start_byte) && ts_node.respond_to?(:end_byte)
-
-        @source[ts_node.start_byte...ts_node.end_byte] || ""
       end
 
       # Get the content for this node from source lines.
@@ -383,7 +326,7 @@ module Toml
       # For Citrus tables, this extends to the line before the next table.
       # @return [Integer, nil]
       def effective_end_line
-        return @end_line unless (table? || array_of_tables?) && @document_root
+        return @end_line if !(table? || array_of_tables?) || @document_root.nil?
 
         # Check if we have pairs as children (tree-sitter structure)
         child_pairs = collect_child_pairs
@@ -397,13 +340,18 @@ module Toml
         sibling_pairs.map(&:end_line).compact.max || @end_line
       end
 
-      # String representation for debugging
-      # @return [String]
-      def inspect
-        "#<#{self.class.name} type=#{@node.type} lines=#{@start_line}..#{@end_line}>"
-      end
+      protected
 
-      private
+      # Override wrap_child to use Toml::Merge::NodeWrapper with proper options
+      def wrap_child(child)
+        NodeWrapper.new(
+          child,
+          lines: @lines,
+          source: @source,
+          backend: @backend,
+          document_root: @document_root,
+        )
+      end
 
       def compute_signature(node)
         # Use canonical type for signature generation
@@ -459,6 +407,8 @@ module Toml
         end
       end
 
+      private
+
       def extract_inline_table_keys(inline_table_node)
         keys = []
         inline_table_node.each do |child|
@@ -486,8 +436,13 @@ module Toml
           child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless child_canonical == :pair
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
-            document_root: @document_root)
+          result << NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: @document_root,
+          )
         end
         result
       end
@@ -517,13 +472,18 @@ module Toml
           next unless sibling_start
 
           # Pair must be after our header
-          next unless sibling_start > my_start
+          next if sibling_start <= my_start
 
           # Pair must be before the next table (if there is one)
           next if next_table_start && sibling_start >= next_table_start
 
-          result << NodeWrapper.new(sibling, lines: @lines, source: @source, backend: @backend,
-            document_root: @document_root)
+          result << NodeWrapper.new(
+            sibling,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: @document_root,
+          )
         end
 
         result
@@ -533,7 +493,7 @@ module Toml
       # Returns nil if this is the last table.
       # @return [Integer, nil]
       def find_next_table_start_line
-        return nil unless @document_root
+        return unless @document_root
 
         my_start = @start_line
         next_table_start = nil
@@ -544,7 +504,7 @@ module Toml
 
           sibling_start = sibling.respond_to?(:start_point) ? sibling.start_point.row + 1 : nil
           next unless sibling_start
-          next unless sibling_start > my_start
+          next if sibling_start <= my_start
 
           # Found a table after us - track the closest one
           if next_table_start.nil? || sibling_start < next_table_start
