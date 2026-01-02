@@ -79,9 +79,14 @@ module Toml
       # @param source [Symbol] Source of the node
       # @param analysis [FileAnalysis] Analysis for accessing source lines
       def add_node(node, decision:, source:, analysis:)
-        return unless node.start_line && node.end_line
+        return unless node.start_line
 
-        (node.start_line..node.end_line).each do |line_num|
+        # Use effective_end_line for tables to include associated pairs on Citrus backend
+        # (Citrus has flat structure where pairs are siblings, not children of tables)
+        end_line = node.respond_to?(:effective_end_line) ? node.effective_end_line : node.end_line
+        return unless end_line
+
+        (node.start_line..end_line).each do |line_num|
           line = analysis.line_at(line_num)
           next unless line
 

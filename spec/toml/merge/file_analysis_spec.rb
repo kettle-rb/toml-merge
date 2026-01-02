@@ -320,7 +320,10 @@ RSpec.describe Toml::Merge::FileAnalysis do
       expect(analysis.errors).not_to be_empty
     end
 
-    it "handles invalid parser path gracefully" do
+    # NOTE: This test only applies to tree-sitter backend.
+    # Citrus backend is pure Ruby and ignores parser_path.
+    # Use :not_citrus_backend to skip when TREE_HAVER_BACKEND=citrus
+    it "handles invalid parser path gracefully", :not_citrus_backend do
       analysis = described_class.new("key = \"value\"", parser_path: "/nonexistent/path/to/parser.so")
       expect(analysis.valid?).to be false
       expect(analysis.errors).not_to be_empty

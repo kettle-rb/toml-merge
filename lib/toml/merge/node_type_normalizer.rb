@@ -18,8 +18,8 @@ module Toml
     # ## Backends
     #
     # Currently supports:
-    # - `:tree_sitter_toml` - tree-sitter-toml grammar (via ruby_tree_sitter, tree_stump, FFI)
-    # - `:citrus_toml` - toml-rb gem with Citrus parser
+    # - `:tree_sitter` - tree-sitter-toml grammar (via ruby_tree_sitter, tree_stump, FFI)
+    # - `:citrus` - toml-rb gem with Citrus parser
     #
     # ## Extensibility
     #
@@ -74,7 +74,8 @@ module Toml
       configure_normalizer(
         # tree-sitter-toml grammar node types
         # Reference: https://github.com/tree-sitter-grammars/tree-sitter-toml
-        tree_sitter_toml: {
+        # All native TreeHaver backends (mri, rust, ffi) use this grammar.
+        tree_sitter: {
           # Document structure
           document: :document,
           table: :table,
@@ -123,7 +124,7 @@ module Toml
         # Citrus/toml-rb backend node types
         # These are produced by TreeHaver's Citrus adapter wrapping toml-rb
         # Verified via examples/map_citrus_node_types.rb script
-        citrus_toml: {
+        citrus: {
           # Document structure
           document: :document,
           table: :table,
@@ -192,23 +193,23 @@ module Toml
 
       class << self
         # Default backend for TOML normalization
-        DEFAULT_BACKEND = :tree_sitter_toml
+        DEFAULT_BACKEND = :tree_sitter
 
         # Get the canonical type for a backend-specific type.
-        # Overrides the shared Normalizer to default to :tree_sitter_toml backend.
+        # Overrides the shared Normalizer to default to :tree_sitter backend.
         #
         # @param backend_type [Symbol, String, nil] The backend's node type
-        # @param backend [Symbol] The backend identifier (defaults to :tree_sitter_toml)
+        # @param backend [Symbol] The backend identifier (defaults to :tree_sitter)
         # @return [Symbol, nil] Canonical type (or original if no mapping)
         def canonical_type(backend_type, backend = DEFAULT_BACKEND)
           super(backend_type, backend)
         end
 
         # Wrap a node with its canonical type as merge_type.
-        # Overrides the shared Normalizer to default to :tree_sitter_toml backend.
+        # Overrides the shared Normalizer to default to :tree_sitter backend.
         #
         # @param node [Object] The backend node to wrap (must respond to #type)
-        # @param backend [Symbol] The backend identifier (defaults to :tree_sitter_toml)
+        # @param backend [Symbol] The backend identifier (defaults to :tree_sitter)
         # @return [Ast::Merge::NodeTyping::Wrapper] Wrapped node with canonical merge_type
         def wrap(node, backend = DEFAULT_BACKEND)
           super(node, backend)

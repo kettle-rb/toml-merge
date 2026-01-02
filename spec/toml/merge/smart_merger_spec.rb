@@ -124,11 +124,9 @@ RSpec.describe Toml::Merge::SmartMerger do
       expect(merger.send(:default_freeze_token)).to eq("toml-merge")
     end
 
-    it "builds full analysis options with backend and signature_generator" do
+    it "builds full analysis options with signature_generator" do
       merger.instance_variable_set(:@signature_generator, :some_generator)
-      merger.instance_variable_set(:@requested_backend, :auto)
       expect(merger.send(:build_full_analysis_options)).to eq({
-        backend: :auto,
         signature_generator: :some_generator,
       })
     end

@@ -9,37 +9,55 @@ module TomlParsingHelper
   def parse_toml(source, node_type: nil)
     return unless toml_available?
 
-    # Use TreeHaver's unified interface - handles tree-sitter and Citrus fallback
-    parser = TreeHaver::Parser.new
-    parser.language = TreeHaver::Language.toml
-    tree = parser.parse(source)
-
-    return if tree.nil? || tree.root_node.nil?
+    # Use FileAnalysis to get proper backend detection
+    analysis = Toml::Merge::FileAnalysis.new(source)
+    return unless analysis.valid?
 
     lines = source.lines.map(&:chomp)
+    root = analysis.ast.root_node
+    backend = analysis.backend
 
     if node_type
-      # Find the first child of the specified type
-      node = find_node_by_type(tree.root_node, node_type)
+      # Find the first child of the specified type (checking both raw and canonical types)
+      node = find_node_by_type(root, node_type, backend)
       return unless node
 
-      Toml::Merge::NodeWrapper.new(node, lines: lines, source: source)
+      Toml::Merge::NodeWrapper.new(
+        node,
+        lines: lines,
+        source: source,
+        backend: backend,
+        document_root: root,
+      )
     else
       # Return root document wrapper
-      Toml::Merge::NodeWrapper.new(tree.root_node, lines: lines, source: source)
+      Toml::Merge::NodeWrapper.new(
+        root,
+        lines: lines,
+        source: source,
+        backend: backend,
+        document_root: root,
+      )
     end
   end
 
   # Find the first node of a specific type in the tree
+  # Checks both raw type and canonical type for cross-backend compatibility
   #
   # @param node [TreeHaver::Node] Node to search
-  # @param type [String] Type to find
+  # @param type [String] Type to find (raw or canonical)
+  # @param backend [Symbol] Backend for type normalization
   # @return [TreeHaver::Node, nil]
-  def find_node_by_type(node, type)
-    return node if node.type.to_s == type
+  def find_node_by_type(node, type, backend = nil)
+    type_sym = type.to_sym
+    node_type_sym = node.type.to_sym
+    canonical = backend ? Toml::Merge::NodeTypeNormalizer.canonical_type(node_type_sym, backend) : node_type_sym
+
+    # Match on either raw type or canonical type
+    return node if node_type_sym == type_sym || canonical == type_sym
 
     node.each do |child|
-      result = find_node_by_type(child, type)
+      result = find_node_by_type(child, type, backend)
       return result if result
     end
 

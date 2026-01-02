@@ -6,16 +6,23 @@ module Toml
     # Orchestrates parsing, analysis, and conflict resolution.
     #
     # Extends SmartMergerBase with backend-agnostic parsing via tree_haver.
-    # Supports both tree-sitter-toml and Citrus/toml-rb backends.
+    # Supports both tree-sitter and Citrus/toml-rb backends (auto-selected by TreeHaver).
     #
     # @example Basic usage
     #   merger = SmartMerger.new(template_content, dest_content)
     #   result = merger.merge
     #   File.write("merged.toml", result.output)
     #
-    # @example With specific backend
-    #   merger = SmartMerger.new(template, dest, backend: Backends::CITRUS)
+    # @example Force Citrus backend via environment
+    #   # Set TREE_HAVER_BACKEND=citrus before requiring toml/merge
+    #   merger = SmartMerger.new(template, dest)
     #   result = merger.merge
+    #
+    # @example Force Citrus backend via TreeHaver
+    #   TreeHaver.with_backend(:citrus) do
+    #     merger = SmartMerger.new(template, dest)
+    #     result = merger.merge
+    #   end
     #
     # @example With options
     #   merger = SmartMerger.new(template, dest,
@@ -30,17 +37,13 @@ module Toml
     #   merger = SmartMerger.new(template, dest,
     #     regions: [{ detector: SomeDetector.new, merger_class: SomeMerger }])
     class SmartMerger < ::Ast::Merge::SmartMergerBase
-      # @return [Symbol] The backend being used (:tree_sitter_toml, :citrus_toml)
+      # @return [Symbol] The AST format being used (:tree_sitter or :citrus)
       attr_reader :backend
 
       # Creates a new SmartMerger
       #
       # @param template_content [String] Template TOML content
       # @param dest_content [String] Destination TOML content
-      # @param backend [Symbol] Backend to use for parsing:
-      #   - `:tree_sitter_toml` - Use tree-sitter-toml (native parser)
-      #   - `:citrus_toml` - Use Citrus/toml-rb (pure Ruby parser)
-      #   - `:auto` (default) - Auto-detect available backend
       # @param signature_generator [Proc, nil] Custom signature generator
       # @param preference [Symbol, Hash] :destination, :template, or per-type Hash
       # @param add_template_only_nodes [Boolean] Whether to add nodes only found in template
@@ -51,10 +54,12 @@ module Toml
       # @param node_typing [Hash{Symbol,String => #call}, nil] Node typing configuration
       #   for per-node-type merge preferences
       # @param options [Hash] Additional options for forward compatibility
+      #
+      # @note To force a specific backend, use TreeHaver.with_backend or TREE_HAVER_BACKEND env var.
+      #   TreeHaver handles backend selection, auto-detection, and fallback.
       def initialize(
         template_content,
         dest_content,
-        backend: Backends::AUTO,
         signature_generator: nil,
         preference: :destination,
         add_template_only_nodes: false,
@@ -65,9 +70,6 @@ module Toml
         node_typing: nil,
         **options
       )
-        Backends.validate!(backend)
-        @requested_backend = backend
-
         super(
           template_content,
           dest_content,
@@ -79,11 +81,10 @@ module Toml
           regions: regions,
           region_placeholder: region_placeholder,
           node_typing: node_typing,
-          backend: backend,
           **options
         )
 
-        # Capture the resolved backend from template analysis
+        # Capture the resolved backend from template analysis (for NodeTypeNormalizer)
         @backend = @template_analysis.backend
       end
 
@@ -162,11 +163,10 @@ module Toml
 
       private
 
-      # TOML FileAnalysis accepts signature_generator and backend
+      # TOML FileAnalysis accepts signature_generator
       def build_full_analysis_options
         {
           signature_generator: @signature_generator,
-          backend: @requested_backend,
         }
       end
     end

@@ -18,7 +18,7 @@ module Toml
       # @return [Array] Parse errors if any
       attr_reader :errors
 
-      # @return [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
+      # @return [Symbol] The backend used for parsing (:tree_sitter or :citrus)
       attr_reader :backend
 
       class << self
@@ -33,19 +33,20 @@ module Toml
       # Initialize file analysis
       #
       # @param source [String] TOML source code to analyze
-      # @param backend [Symbol] Backend to use (:tree_sitter_toml, :citrus_toml, :auto)
+      # @param source [String] TOML source code to analyze
       # @param signature_generator [Proc, nil] Custom signature generator
       # @param parser_path [String, nil] Path to tree-sitter-toml parser library
       # @param options [Hash] Additional options (forward compatibility - freeze_token, node_typing, etc.)
-      def initialize(source, backend: Backends::AUTO, signature_generator: nil, parser_path: nil, **options)
-        Backends.validate!(backend)
-        @requested_backend = backend
+      #
+      # @note To force a specific backend, use TreeHaver.with_backend or TREE_HAVER_BACKEND env var.
+      #   TreeHaver handles backend selection, auto-detection, and fallback.
+      def initialize(source, signature_generator: nil, parser_path: nil, **options)
         @source = source
         @lines = source.lines.map(&:chomp)
         @signature_generator = signature_generator
         @parser_path = parser_path || self.class.find_parser_path
         @errors = []
-        @backend = :tree_sitter_toml  # Default, will be updated during parsing
+        @backend = :tree_sitter  # Default, will be updated during parsing
         # **options captures any additional parameters (e.g., freeze_token, node_typing) for forward compatibility
 
         # Parse the TOML
@@ -119,15 +120,41 @@ module Toml
       end
 
       # Get all top-level key-value pairs (not in tables)
+      #
+      # For tree-sitter backend: pairs are nested under tables, so root-level
+      # pairs are direct children of the document.
+      #
+      # For Citrus backend: ALL pairs are siblings at document level (flat structure).
+      # We must filter to only include pairs that appear BEFORE the first table header.
+      #
       # @return [Array<NodeWrapper>]
       def root_pairs
         return [] unless valid?
 
         result = []
         root = @ast.root_node
+
+        # Find the line number of the first table (if any)
+        first_table_line = nil
+        root.each do |child|
+          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
+          if NodeTypeNormalizer.table_type?(canonical_type)
+            child_line = child.respond_to?(:start_point) ? child.start_point.row + 1 : nil
+            if child_line && (first_table_line.nil? || child_line < first_table_line)
+              first_table_line = child_line
+            end
+          end
+        end
+
         root.each do |child|
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless canonical_type == :pair
+
+          # For Citrus backend, only include pairs before the first table
+          if first_table_line
+            child_line = child.respond_to?(:start_point) ? child.start_point.row + 1 : nil
+            next if child_line && child_line >= first_table_line
+          end
 
           result << NodeWrapper.new(
             child,
@@ -143,33 +170,19 @@ module Toml
       private
 
       def parse_toml
-        # Use TreeHaver's high-level API - it handles:
-        # - Grammar auto-discovery (tree-sitter or Citrus)
-        # - Backend selection based on @requested_backend
-        # - Fallback to Citrus if tree-sitter unavailable (when :auto)
-        parser_options = {
-          library_path: @parser_path,
-          citrus_config: {
-            gem_name: "toml-rb",
-            grammar_const: "TomlRB::Document",
-          },
-        }
-
-        # If a specific backend was requested (not :auto), force it
-        if @requested_backend != Backends::AUTO
-          parser_options[:backend] = (@requested_backend == Backends::CITRUS) ? :citrus : :mri
-        end
+        # TreeHaver handles everything:
+        # - Backend selection (via TREE_HAVER_BACKEND env or TreeHaver.backend)
+        # - Grammar auto-discovery
+        # - Fallback to Citrus if tree-sitter unavailable
+        # - CITRUS_DEFAULTS already includes toml configuration
+        parser_options = {}
+        parser_options[:library_path] = @parser_path if @parser_path
 
         parser = TreeHaver.parser_for(:toml, **parser_options)
 
-        # Detect which backend was used
-        @backend = if parser.respond_to?(:backend)
-          (parser.backend == :citrus) ? :citrus_toml : :tree_sitter_toml
-        elsif defined?(TreeHaver::Backends::Citrus) && parser.is_a?(TreeHaver::Backends::Citrus::Parser)
-          :citrus_toml
-        else
-          :tree_sitter_toml
-        end
+        # For NodeTypeNormalizer, we only care: is it Citrus or tree-sitter format?
+        # All native backends (mri, rust, ffi, java) produce tree-sitter AST format.
+        @backend = (parser.backend == :citrus) ? :citrus : :tree_sitter
 
         @ast = parser.parse(@source)
 
@@ -189,6 +202,7 @@ module Toml
         @errors << e unless @errors.include?(e)
         @ast = nil
       end
+
 
       def collect_parse_errors(node)
         # Collect ERROR and MISSING nodes from the tree

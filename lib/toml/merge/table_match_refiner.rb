@@ -90,7 +90,9 @@ module Toml
       def table_node?(node)
         return false unless node.respond_to?(:type)
 
-        canonical = NodeTypeNormalizer.canonical_type(node.type)
+        # Use node's backend if available (NodeWrapper), otherwise default
+        backend = node.respond_to?(:backend) ? node.backend : nil
+        canonical = backend ? NodeTypeNormalizer.canonical_type(node.type, backend) : NodeTypeNormalizer.canonical_type(node.type)
         NodeTypeNormalizer.table_type?(canonical)
       end
 

@@ -99,6 +99,143 @@ When `replace_string_in_file` fails with "Could not find matching text":
 - `vendor/prism-merge/` - Ruby/Prism-specific merge implementation
 - `vendor/*/` - Other format-specific merge implementations (markly-merge, json-merge, etc.)
 
+## TreeHaver Backend Handling
+
+**CRITICAL**: TreeHaver handles ALL backend selection, fallback, and detection. Do NOT duplicate this logic in *-merge gems.
+
+### What TreeHaver Provides
+
+1. **Backend Selection** (via `TreeHaver.backend` or `TREE_HAVER_BACKEND` env var):
+   - `:auto` (default) - Auto-selects best available backend
+   - `:mri` - MRI Ruby with ruby_tree_sitter C extension
+   - `:rust` - Rust extension via tree_stump
+   - `:ffi` - FFI bindings to libtree-sitter
+   - `:citrus` - Pure Ruby Citrus PEG parser (fallback for TruffleRuby/JRuby)
+
+2. **Built-in Citrus Defaults** (`TreeHaver::CITRUS_DEFAULTS`):
+   ```ruby
+   CITRUS_DEFAULTS = {
+     toml: {
+       gem_name: "toml-rb",
+       grammar_const: "TomlRB::Document",
+       require_path: "toml-rb",
+     },
+   }.freeze
+   ```
+   This means toml-merge does NOT need to provide `citrus_config` to `parser_for`.
+
+3. **Auto-detection and Fallback**:
+   - On MRI: Prefers MRI → Rust → FFI → Citrus
+   - On JRuby: Prefers Java → FFI → Citrus
+   - On TruffleRuby: Uses Citrus (no native extensions available)
+
+4. **Thread-local Backend Context** (`TreeHaver.with_backend`):
+   ```ruby
+   TreeHaver.with_backend(:citrus) do
+     parser = TreeHaver.parser_for(:toml)
+     # parser uses Citrus backend
+   end
+   ```
+
+5. **Backend Detection from Parser**:
+   ```ruby
+   parser = TreeHaver.parser_for(:toml)
+   parser.backend  # => :mri, :citrus, etc.
+   ```
+
+### How to Use TreeHaver in *-merge Gems
+
+✅ **CORRECT** - Let TreeHaver handle everything:
+```ruby
+def parse_content
+  # TreeHaver handles backend selection, citrus config, and fallback
+  parser = TreeHaver.parser_for(:toml, library_path: @parser_path)
+  
+  # For NodeTypeNormalizer, we only care: tree-sitter or Citrus AST format?
+  # All native backends (mri, rust, ffi, java) produce tree-sitter AST format.
+  @backend = (parser.backend == :citrus) ? :citrus : :tree_sitter
+  
+  @ast = parser.parse(@source)
+end
+```
+
+**To force a specific backend**, users should use TreeHaver directly:
+```ruby
+# Option 1: Environment variable
+ENV["TREE_HAVER_BACKEND"] = "citrus"
+
+# Option 2: Global setting
+TreeHaver.backend = :citrus
+
+# Option 3: Thread-local block
+TreeHaver.with_backend(:citrus) do
+  merger = Toml::Merge::SmartMerger.new(template, dest)
+  merger.merge
+end
+```
+
+❌ **WRONG** - Do NOT add backend selection to *-merge gems:
+```ruby
+# DON'T add backend: parameter to SmartMerger or FileAnalysis
+def initialize(source, backend: :auto)  # WRONG!
+
+# DON'T hardcode specific backends like :mri
+backend_to_use = :mri  # WRONG! Breaks JRuby, TruffleRuby
+
+# DON'T duplicate TreeHaver's backend selection logic
+if tree_sitter_available?  # WRONG!
+  # ...
+end
+```
+
+### Backend-Specific Node Type Normalization
+
+Different backends produce different AST structures. The `NodeTypeNormalizer` maps backend-specific types to canonical types:
+
+```ruby
+# TreeHaver tree-sitter backends (mri, rust, ffi) produce:
+#   :table_array_element -> canonical :array_of_tables
+#   :pair -> canonical :pair
+
+# TreeHaver Citrus backend produces:
+#   :table_array -> canonical :array_of_tables
+#   :keyvalue -> canonical :pair
+```
+
+**ALWAYS pass the backend when calling `canonical_type`**:
+```ruby
+# Get canonical type for current backend
+# @backend is :tree_sitter or :citrus (matches NodeTypeNormalizer mapping keys)
+canonical = NodeTypeNormalizer.canonical_type(node.type, @backend)
+```
+
+### Structural Differences Between Backends
+
+**Tree-sitter structure** (hierarchical):
+```
+document
+├── table [server]
+│   ├── pair: host = "localhost"
+│   └── pair: port = 8080
+└── table [database]
+    └── pair: name = "mydb"
+```
+
+**Citrus structure** (flat):
+```
+document
+├── table [server]
+├── pair: host = "localhost"    # sibling, not child!
+├── pair: port = 8080           # sibling, not child!
+├── table [database]
+└── pair: name = "mydb"         # sibling, not child!
+```
+
+NodeWrapper handles this via:
+- `collect_child_pairs` - For tree-sitter (pairs as children)
+- `collect_sibling_pairs_for_table` - For Citrus (pairs as siblings)
+- `effective_end_line` - Extends table end to include sibling pairs
+
 ## API Conventions
 
 ### Forward Compatibility with **options

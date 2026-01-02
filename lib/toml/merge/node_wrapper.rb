@@ -32,9 +32,9 @@ module Toml
         # @param source [String, nil] Original source string
         # @param leading_comments [Array<Hash>] Comments before this node
         # @param inline_comment [Hash, nil] Inline comment on the node's line
-        # @param backend [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
+        # @param backend [Symbol] The backend used for parsing (:tree_sitter or :citrus)
         # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
-        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil, backend: :tree_sitter_toml)
+        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil, backend: :tree_sitter)
           return if node.nil?
 
           new(
@@ -57,7 +57,7 @@ module Toml
       # Process TOML-specific options (backend, document_root)
       # @param options [Hash] Additional options
       def process_additional_options(options)
-        @backend = options.fetch(:backend, :tree_sitter_toml)
+        @backend = options.fetch(:backend, :tree_sitter)
         @document_root = options[:document_root]
       end
 
@@ -157,7 +157,8 @@ module Toml
         @node.each do |child|
           child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           if NodeTypeNormalizer.key_type?(child_canonical)
-            return node_text(child)
+            # Strip whitespace (Citrus backend includes trailing space in key nodes)
+            return node_text(child)&.strip
           end
         end
         nil
@@ -173,8 +174,9 @@ module Toml
           child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           if NodeTypeNormalizer.key_type?(child_canonical)
             key_text = node_text(child)
-            # Remove surrounding quotes if present
-            return key_text&.gsub(/\A["']|["']\z/, "")
+            # Remove surrounding quotes if present, and strip whitespace
+            # (Citrus backend includes trailing space in key nodes)
+            return key_text&.gsub(/\A["']|["']\z/, "")&.strip
           end
         end
         nil
@@ -187,9 +189,9 @@ module Toml
 
         @node.each do |child|
           child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
-          # Skip keys and equals sign, get the value
+          # Skip keys, equals sign, whitespace, and unknown (Citrus uses these for delimiters)
           next if NodeTypeNormalizer.key_type?(child_canonical)
-          next if child_canonical == :equals
+          next if %i[equals whitespace unknown space].include?(child_canonical)
 
           return NodeWrapper.new(
             child,
@@ -228,25 +230,17 @@ module Toml
       end
 
       # Get array elements if this is an array
+      #
+      # Handles structural differences between backends:
+      # - Tree-sitter: values are direct children of array node
+      # - Citrus: values are nested inside array_elements container
+      #
       # @return [Array<NodeWrapper>]
       def elements
         return [] unless array?
 
         result = []
-        @node.each do |child|
-          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
-          # Skip punctuation and comments
-          next if child_canonical == :comment
-          next if %i[comma bracket_open bracket_close].include?(child_canonical)
-
-          result << NodeWrapper.new(
-            child,
-            lines: @lines,
-            source: @source,
-            backend: @backend,
-            document_root: @document_root,
-          )
-        end
+        collect_array_elements(@node, result)
         result
       end
 
@@ -264,7 +258,7 @@ module Toml
           # Return top-level pairs and tables
           result = []
           @node.each do |child|
-            child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+            child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
             next if child_canonical == :comment
 
             result << NodeWrapper.new(
@@ -355,7 +349,8 @@ module Toml
 
       def compute_signature(node)
         # Use canonical type for signature generation
-        canonical = NodeTypeNormalizer.canonical_type(node.type)
+        # Pass @backend to ensure correct type mapping for Citrus vs tree-sitter
+        canonical = NodeTypeNormalizer.canonical_type(node.type, @backend)
 
         case canonical
         when :document
@@ -380,7 +375,7 @@ module Toml
         when :array
           # Arrays identified by their length
           elements_count = 0
-          node.each { |c| elements_count += 1 unless %i[comment comma bracket_open bracket_close].include?(NodeTypeNormalizer.canonical_type(c.type)) }
+          node.each { |c| elements_count += 1 unless %i[comment comma bracket_open bracket_close].include?(NodeTypeNormalizer.canonical_type(c.type, @backend)) }
           [:array, elements_count]
         when :string
           # Strings identified by their content
@@ -411,20 +406,55 @@ module Toml
 
       def extract_inline_table_keys(inline_table_node)
         keys = []
-        inline_table_node.each do |child|
-          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
-          next unless child_canonical == :pair
+        collect_inline_table_keys_recursive(inline_table_node, keys)
+        keys
+      end
 
-          child.each do |pair_child|
-            pair_child_canonical = NodeTypeNormalizer.canonical_type(pair_child.type)
-            if NodeTypeNormalizer.key_type?(pair_child_canonical)
-              key_text = node_text(pair_child)&.gsub(/\A["']|["']\z/, "")
-              keys << key_text if key_text
-              break
+      # Recursively collect keys from inline table, handling both tree-sitter and Citrus structures.
+      #
+      # Tree-sitter inline_table structure:
+      #   inline_table -> pair -> bare_key (direct children)
+      #
+      # Citrus inline_table structure:
+      #   inline_table -> optional -> keyvalue -> keyvalue -> stripped_key -> key -> bare_key
+      #   With repeat and unknown nodes containing additional key-values
+      #
+      def collect_inline_table_keys_recursive(node, keys)
+        node.each do |child|
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
+          child_type_raw = child.type.to_sym
+
+          # For Citrus: recurse into container nodes that hold pairs/keys
+          # For tree-sitter: only recurse into pairs
+          if @backend == :citrus
+            if %i[optional repeat keyvalue unknown].include?(child_type_raw)
+              collect_inline_table_keys_recursive(child, keys)
+              next
+            end
+          else
+            # Tree-sitter: pairs contain keys directly
+            if child_canonical == :pair
+              child.each do |pair_child|
+                pair_child_canonical = NodeTypeNormalizer.canonical_type(pair_child.type, @backend)
+                if NodeTypeNormalizer.key_type?(pair_child_canonical)
+                  key_text = node_text(pair_child)&.gsub(/\A["']|["']\z/, "")&.strip
+                  keys << key_text if key_text && !key_text.empty?
+                  break
+                end
+              end
+              next
             end
           end
+
+          # Skip whitespace and punctuation
+          next if %i[whitespace space brace_open brace_close comma].include?(child_canonical)
+
+          # Found a key node - extract the key text (Citrus path)
+          if NodeTypeNormalizer.key_type?(child_canonical)
+            key_text = node_text(child)&.gsub(/\A["']|["']\z/, "")&.strip
+            keys << key_text if key_text && !key_text.empty?
+          end
         end
-        keys
       end
 
       # Collect pairs that are direct children of this node.
@@ -513,6 +543,41 @@ module Toml
         end
 
         next_table_start
+      end
+
+      # Recursively collect array elements, handling Citrus's nested structure.
+      #
+      # Citrus array structure:
+      #   array -> array_elements -> array_elements -> decimal_integer + repeat
+      #   repeat -> indent -> decimal_integer (for each subsequent element)
+      #
+      # @param node [Object] Node to collect elements from
+      # @param result [Array<NodeWrapper>] Array to append elements to
+      def collect_array_elements(node, result)
+        node.each do |child|
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
+          child_type_raw = child.type.to_sym
+
+          # For Citrus: recurse into container nodes that hold values
+          if %i[array_elements repeat indent].include?(child_type_raw)
+            collect_array_elements(child, result)
+            next
+          end
+
+          # Skip punctuation, comments, whitespace, and structural nodes
+          next if child_canonical == :comment
+          next if %i[comma bracket_open bracket_close].include?(child_canonical)
+          next if %i[whitespace unknown space array_comments sign].include?(child_canonical)
+
+          # This is an actual value element (integer, string, boolean, etc.)
+          result << NodeWrapper.new(
+            child,
+            lines: @lines,
+            source: @source,
+            backend: @backend,
+            document_root: @document_root,
+          )
+        end
       end
     end
   end

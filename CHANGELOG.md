@@ -20,23 +20,6 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
-## [2.0.1] - 2026-01-02
-
-- TAG: [v2.0.1][2.0.1t]
-- COVERAGE: 100.00% -- 77/77 lines in 1 files
-- BRANCH COVERAGE: 86.11% -- 31/36 branches in 1 files
-- 96.81% documented
-
 ### Added
 
 - `Backends` module with constants for backend selection
@@ -69,6 +52,15 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Changed
 
+- **Backend handling simplified** - Let TreeHaver handle all backend selection:
+  - Removed `backend:` parameter from `SmartMerger` and `FileAnalysis`
+  - Removed `Backends` module entirely (was unused after removing `backend:` parameter)
+  - Users control backend via TreeHaver directly (`TREE_HAVER_BACKEND` env var, `TreeHaver.backend=`, or `TreeHaver.with_backend`)
+  - This ensures compatibility with all TreeHaver backends (mri, rust, ffi, java, citrus)
+- **Backend naming simplified** to align with TreeHaver:
+  - `NodeTypeNormalizer` mappings now keyed by `:tree_sitter` and `:citrus`
+  - All native TreeHaver backends (mri, rust, ffi, java) produce tree-sitter AST format
+- See `.github/COPILOT_INSTRUCTIONS.md` for comprehensive TreeHaver backend documentation
 - **NodeWrapper**: Now inherits from `Ast::Merge::NodeWrapperBase`
   - Removes ~80 lines of duplicated code (initialization, line extraction, basic methods)
   - Uses `process_additional_options` hook for TOML-specific options (`backend`, `document_root`)
@@ -134,8 +126,31 @@ Please file a bug if you notice a violation of semantic versioning.
   - Environment variable `TREE_SITTER_TOML_PATH` is still supported via TreeHaver
   - This enables support for multiple tree-sitter backends (MRI, Rust, FFI, Java) and Citrus fallback
 
+### Deprecated
+
+### Removed
+
+- **Load-time grammar registration** - TreeHaver's `parser_for` now handles grammar discovery
+  and registration automatically. Removed manual `GrammarFinder` calls and warnings from
+  `lib/toml/merge.rb`.
+
 ### Fixed
 
+- **Citrus backend normalization improvements** for TruffleRuby compatibility:
+  - `NodeWrapper#key_name` now strips whitespace from key text (Citrus includes trailing spaces)
+  - `NodeWrapper#table_name` now strips whitespace from table header text
+  - `NodeWrapper#extract_inline_table_keys` now recursively handles Citrus's deeply nested
+    structure (`inline_table -> optional -> keyvalue -> keyvalue -> stripped_key -> key -> bare_key`)
+  - `NodeWrapper#elements` now recursively handles Citrus's array structure where elements
+    are nested in `array_elements -> repeat -> indent -> decimal_integer` chains
+  - Both methods now correctly extract all values instead of just the first one
+  - `NodeWrapper#value_node` now skips Citrus internal nodes (`whitespace`, `unknown`, `space`)
+  - All `NodeTypeNormalizer.canonical_type()` calls now pass `@backend` parameter for correct type mapping
+  - `FileAnalysis#root_pairs` now correctly filters pairs to only include those BEFORE the first table
+    (Citrus has flat AST structure where all pairs are document siblings)
+  - `MergeResult#add_node` now uses `effective_end_line` to include table pairs on Citrus backend
+  - `TableMatchRefiner#table_node?` now uses node's backend for correct type checking
+  - Test helper `parse_toml` now uses `FileAnalysis` for proper backend detection
 - `NodeTypeNormalizer.canonical_type` now defaults to `:tree_sitter_toml` backend when no backend is specified
   - Added `DEFAULT_BACKEND` constant and overrode `canonical_type` and `wrap` methods
   - Fixes issue where calling `canonical_type(:table_array_element)` without a backend argument would passthrough instead of mapping to `:array_of_tables`
@@ -145,6 +160,8 @@ Please file a bug if you notice a violation of semantic versioning.
 - No longer warns about missing TOML grammar when the grammar file exists but tree-sitter runtime is unavailable
   - This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)
   - Warning now only appears when the grammar file is actually missing
+
+### Security
 
 ## [1.0.0] - 2025-12-19
 
