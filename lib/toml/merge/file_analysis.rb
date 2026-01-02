@@ -157,7 +157,10 @@ module Toml
           # Don't raise here - let SmartMergerBase detect via valid? check
           # This is consistent with how other FileAnalysis classes handle parse errors
         end
-      rescue TreeHaver::NotAvailable => e
+      rescue TreeHaver::Error => e
+        # TreeHaver::Error inherits from Exception, not StandardError.
+        # This also catches TreeHaver::NotAvailable (subclass of Error).
+        # Catch parse errors from Citrus backend and other TreeHaver errors.
         @errors << e.message
         @ast = nil
       rescue StandardError => e

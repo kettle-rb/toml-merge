@@ -51,6 +51,10 @@ Please file a bug if you notice a violation of semantic versioning.
   - Added all Citrus-specific datetime types: `local_date`, `local_time`, `local_datetime`, `offset_datetime`
   - Added Citrus-specific boolean types: `true`, `false`
   - Added whitespace types: `space`, `line_break`, `indent`, `repeat`
+- **FileAnalysis error handling**: Now rescues `TreeHaver::Error` instead of `TreeHaver::NotAvailable`
+  - `TreeHaver::Error` inherits from `Exception`, not `StandardError`
+  - `TreeHaver::NotAvailable` is a subclass of `TreeHaver::Error`, so it's also caught
+  - Fixes parse error handling on TruffleRuby where Citrus backend raises `TreeHaver::Error`
 - **Dependency tags**: Refactored to use shared `TreeHaver::RSpec::DependencyTags` from tree_haver gem
   - All dependency detection is now centralized in tree_haver
   - Use `require "tree_haver/rspec"` for shared RSpec configuration
