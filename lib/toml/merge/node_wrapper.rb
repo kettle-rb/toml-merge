@@ -431,19 +431,17 @@ module Toml
               collect_inline_table_keys_recursive(child, keys)
               next
             end
-          else
+          elsif child_canonical == :pair
             # Tree-sitter: pairs contain keys directly
-            if child_canonical == :pair
-              child.each do |pair_child|
-                pair_child_canonical = NodeTypeNormalizer.canonical_type(pair_child.type, @backend)
-                if NodeTypeNormalizer.key_type?(pair_child_canonical)
-                  key_text = node_text(pair_child)&.gsub(/\A["']|["']\z/, "")&.strip
-                  keys << key_text if key_text && !key_text.empty?
-                  break
-                end
+            child.each do |pair_child|
+              pair_child_canonical = NodeTypeNormalizer.canonical_type(pair_child.type, @backend)
+              if NodeTypeNormalizer.key_type?(pair_child_canonical)
+                key_text = node_text(pair_child)&.gsub(/\A["']|["']\z/, "")&.strip
+                keys << key_text if key_text && !key_text.empty?
+                break
               end
-              next
             end
+            next
           end
 
           # Skip whitespace and punctuation

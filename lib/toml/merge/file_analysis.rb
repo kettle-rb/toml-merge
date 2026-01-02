@@ -203,7 +203,6 @@ module Toml
         @ast = nil
       end
 
-
       def collect_parse_errors(node)
         # Collect ERROR and MISSING nodes from the tree
         if node.type.to_s == "ERROR" || node.missing?
