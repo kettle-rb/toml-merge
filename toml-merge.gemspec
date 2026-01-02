@@ -97,7 +97,7 @@ Gem::Specification.new do |spec|
   # spec.add_dependency("toml-rb", "~> 4.1")
 
   # Shared merge infrastructure
-  spec.add_dependency("ast-merge", "~> 2.0", ">= 2.0.6")                # ruby >= 3.2.0
+  spec.add_dependency("ast-merge", "~> 2.0", ">= 2.0.7")                # ruby >= 3.2.0
 
   # Utilities
   spec.add_dependency("version_gem", "~> 1.1", ">= 1.1.9")              # ruby >= 2.2.0

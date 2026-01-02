@@ -85,6 +85,12 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Fixed
 
+- `NodeTypeNormalizer.canonical_type` now defaults to `:tree_sitter_toml` backend when no backend is specified
+  - Added `DEFAULT_BACKEND` constant and overrode `canonical_type` and `wrap` methods
+  - Fixes issue where calling `canonical_type(:table_array_element)` without a backend argument would passthrough instead of mapping to `:array_of_tables`
+  - Value type predicates (`string?`, `integer?`, `float?`, `boolean?`, `array?`, `inline_table?`, `datetime?`) now work correctly
+- Consolidated duplicate `describe` blocks in spec files (`file_analysis_spec.rb`, `merge_result_spec.rb`, `node_wrapper_spec.rb`)
+- Fixed lint violations: added missing expectations to tests, used safe navigation where appropriate
 - No longer warns about missing TOML grammar when the grammar file exists but tree-sitter runtime is unavailable
   - This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)
   - Warning now only appears when the grammar file is actually missing

@@ -90,6 +90,19 @@ RSpec.describe Toml::Merge::FileAnalysis do
       expect(tables.size).to eq(2) # server and database
       expect(tables.all? { |t| t.table? || t.array_of_tables? }).to be true
     end
+
+    it "returns an array of table NodeWrappers" do
+      tables = analysis.tables
+      expect(tables).to be_an(Array)
+      expect(tables.length).to eq(2)
+    end
+
+    it "returns only table nodes" do
+      tables = analysis.tables
+      tables.each do |table|
+        expect(table.table? || table.array_of_tables?).to be true
+      end
+    end
   end
 
   describe "#fallthrough_node?" do
@@ -144,23 +157,6 @@ RSpec.describe Toml::Merge::FileAnalysis do
       allow(analysis).to receive(:generate_signature).with(wrapper).and_return(nil)
 
       expect(analysis.signature_map).to eq({})
-    end
-  end
-
-  describe "#tables" do
-    subject(:analysis) { described_class.new(valid_toml) }
-
-    it "returns an array of table NodeWrappers" do
-      tables = analysis.tables
-      expect(tables).to be_an(Array)
-      expect(tables.length).to eq(2)
-    end
-
-    it "returns only table nodes" do
-      tables = analysis.tables
-      tables.each do |table|
-        expect(table.table? || table.array_of_tables?).to be true
-      end
     end
   end
 

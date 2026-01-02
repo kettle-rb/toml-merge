@@ -80,6 +80,14 @@ RSpec.describe Toml::Merge::MergeResult do
       result.add_blank_line(decision: :added, source: :merged)
       expect(result.line_count).to eq(1)
     end
+
+    it "adds a blank line with default decision/source" do
+      expect { result.add_blank_line }.to change(result, :line_count).by(1)
+      # A single blank line is tracked internally but renders as empty content
+      expect(result.content).to eq("")
+      # merged_lines should increment by default branch
+      expect(result.statistics[:merged_lines]).to eq(1)
+    end
   end
 
   describe "#add_node", :toml_parsing do
@@ -195,16 +203,6 @@ RSpec.describe Toml::Merge::MergeResult do
 
     it "defines DECISION_FREEZE_BLOCK" do
       expect(described_class::DECISION_FREEZE_BLOCK).not_to be_nil
-    end
-  end
-
-  describe "#add_blank_line" do
-    it "adds a blank line with default decision/source" do
-      expect { result.add_blank_line }.to change(result, :line_count).by(1)
-      # A single blank line is tracked internally but renders as empty content
-      expect(result.content).to eq("")
-      # merged_lines should increment by default branch
-      expect(result.statistics[:merged_lines]).to eq(1)
     end
   end
 end

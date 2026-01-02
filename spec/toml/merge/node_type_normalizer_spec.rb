@@ -2,7 +2,51 @@
 
 RSpec.describe Toml::Merge::NodeTypeNormalizer do
   describe ".canonical_type" do
-    context "with tree-sitter-toml types" do
+    # These tests only use the mapping hash - no actual parsing needed
+    context "with default backend (tree_sitter_toml)" do
+      it "uses tree_sitter_toml when no backend specified" do
+        # table_array_element is mapped in tree_sitter_toml, so this proves default is used
+        expect(described_class.canonical_type(:table_array_element)).to eq(:array_of_tables)
+      end
+
+      it "normalizes table_array_element to array_of_tables" do
+        expect(described_class.canonical_type(:table_array_element)).to eq(:array_of_tables)
+        expect(described_class.canonical_type("table_array_element")).to eq(:array_of_tables)
+      end
+
+      it "preserves table type" do
+        expect(described_class.canonical_type(:table)).to eq(:table)
+      end
+
+      it "normalizes all string types to :string" do
+        expect(described_class.canonical_type(:basic_string)).to eq(:string)
+        expect(described_class.canonical_type(:literal_string)).to eq(:string)
+        expect(described_class.canonical_type(:multiline_basic_string)).to eq(:string)
+        expect(described_class.canonical_type(:multiline_literal_string)).to eq(:string)
+      end
+
+      it "normalizes datetime types to :datetime" do
+        expect(described_class.canonical_type(:offset_date_time)).to eq(:datetime)
+        expect(described_class.canonical_type(:local_date_time)).to eq(:datetime)
+        expect(described_class.canonical_type(:local_date)).to eq(:datetime)
+        expect(described_class.canonical_type(:local_time)).to eq(:datetime)
+      end
+
+      it "preserves other types" do
+        expect(described_class.canonical_type(:pair)).to eq(:pair)
+        expect(described_class.canonical_type(:integer)).to eq(:integer)
+        expect(described_class.canonical_type(:float)).to eq(:float)
+        expect(described_class.canonical_type(:boolean)).to eq(:boolean)
+        expect(described_class.canonical_type(:array)).to eq(:array)
+        expect(described_class.canonical_type(:inline_table)).to eq(:inline_table)
+      end
+
+      it "passes through unknown types" do
+        expect(described_class.canonical_type(:unknown_type)).to eq(:unknown_type)
+      end
+    end
+
+    context "with explicit tree_sitter_toml backend" do
       it "normalizes table_array_element to array_of_tables" do
         expect(described_class.canonical_type(:table_array_element, :tree_sitter_toml)).to eq(:array_of_tables)
         expect(described_class.canonical_type("table_array_element", :tree_sitter_toml)).to eq(:array_of_tables)
@@ -40,28 +84,50 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       end
     end
 
-    context "with citrus_toml types" do
+    context "with citrus_toml backend (non-default)" do
       it "normalizes table_array_element to array_of_tables" do
         expect(described_class.canonical_type(:table_array_element, :citrus_toml)).to eq(:array_of_tables)
       end
 
-      it "preserves common types" do
+      it "preserves table type" do
         expect(described_class.canonical_type(:table, :citrus_toml)).to eq(:table)
-        expect(described_class.canonical_type(:pair, :citrus_toml)).to eq(:pair)
+      end
+
+      it "preserves string type (citrus uses direct :string)" do
         expect(described_class.canonical_type(:string, :citrus_toml)).to eq(:string)
+      end
+
+      it "normalizes datetime types to :datetime" do
+        expect(described_class.canonical_type(:datetime, :citrus_toml)).to eq(:datetime)
+        expect(described_class.canonical_type(:date, :citrus_toml)).to eq(:datetime)
+        expect(described_class.canonical_type(:time, :citrus_toml)).to eq(:datetime)
+      end
+
+      it "preserves other types" do
+        expect(described_class.canonical_type(:pair, :citrus_toml)).to eq(:pair)
         expect(described_class.canonical_type(:integer, :citrus_toml)).to eq(:integer)
+        expect(described_class.canonical_type(:float, :citrus_toml)).to eq(:float)
+        expect(described_class.canonical_type(:boolean, :citrus_toml)).to eq(:boolean)
+        expect(described_class.canonical_type(:array, :citrus_toml)).to eq(:array)
+        expect(described_class.canonical_type(:inline_table, :citrus_toml)).to eq(:inline_table)
+      end
+
+      it "passes through unknown types" do
+        expect(described_class.canonical_type(:unknown_type, :citrus_toml)).to eq(:unknown_type)
       end
     end
 
     context "with nil input" do
-      it "returns nil" do
+      it "returns nil with default backend" do
         expect(described_class.canonical_type(nil)).to be_nil
       end
-    end
 
-    context "with default backend" do
-      it "uses tree_sitter_toml as default" do
-        expect(described_class.canonical_type(:table_array_element)).to eq(:array_of_tables)
+      it "returns nil with explicit tree_sitter_toml backend" do
+        expect(described_class.canonical_type(nil, :tree_sitter_toml)).to be_nil
+      end
+
+      it "returns nil with citrus_toml backend" do
+        expect(described_class.canonical_type(nil, :citrus_toml)).to be_nil
       end
     end
   end
@@ -76,6 +142,11 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       expect(described_class.table_type?(:pair)).to be false
       expect(described_class.table_type?(:string)).to be false
       expect(described_class.table_type?(:document)).to be false
+    end
+
+    it "accepts string input" do
+      expect(described_class.table_type?("table")).to be true
+      expect(described_class.table_type?("array_of_tables")).to be true
     end
   end
 
@@ -95,6 +166,11 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       expect(described_class.value_type?(:pair)).to be false
       expect(described_class.value_type?(:document)).to be false
     end
+
+    it "accepts string input" do
+      expect(described_class.value_type?("string")).to be true
+      expect(described_class.value_type?("integer")).to be true
+    end
   end
 
   describe ".key_type?" do
@@ -107,6 +183,11 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     it "returns false for non-key types" do
       expect(described_class.key_type?(:pair)).to be false
       expect(described_class.key_type?(:string)).to be false
+    end
+
+    it "accepts string input" do
+      expect(described_class.key_type?("bare_key")).to be true
+      expect(described_class.key_type?("quoted_key")).to be true
     end
   end
 
@@ -123,6 +204,11 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       expect(described_class.container_type?(:pair)).to be false
       expect(described_class.container_type?(:string)).to be false
       expect(described_class.container_type?(:integer)).to be false
+    end
+
+    it "accepts string input" do
+      expect(described_class.container_type?("document")).to be true
+      expect(described_class.container_type?("table")).to be true
     end
   end
 
@@ -142,6 +228,11 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     it "returns false for unregistered backends" do
       expect(described_class.backend_registered?(:unknown_backend)).to be false
     end
+
+    it "accepts string input" do
+      expect(described_class.backend_registered?("tree_sitter_toml")).to be true
+      expect(described_class.backend_registered?("citrus_toml")).to be true
+    end
   end
 
   describe ".register_backend" do
@@ -158,10 +249,19 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
   end
 
   describe ".mappings_for" do
-    it "returns mappings for registered backends" do
+    it "returns mappings for tree_sitter_toml backend" do
       mappings = described_class.mappings_for(:tree_sitter_toml)
       expect(mappings).to be_a(Hash)
       expect(mappings[:table_array_element]).to eq(:array_of_tables)
+      expect(mappings[:basic_string]).to eq(:string)
+      expect(mappings[:local_date]).to eq(:datetime)
+    end
+
+    it "returns mappings for citrus_toml backend" do
+      mappings = described_class.mappings_for(:citrus_toml)
+      expect(mappings).to be_a(Hash)
+      expect(mappings[:table_array_element]).to eq(:array_of_tables)
+      expect(mappings[:date]).to eq(:datetime)
     end
 
     it "returns nil for unregistered backends" do
@@ -187,21 +287,62 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     end
   end
 
-  describe ".wrap", :toml_parsing do
-    let(:toml_source) { "[[servers]]\nname = \"alpha\"" }
-    let(:analysis) { Toml::Merge::FileAnalysis.new(toml_source) }
+  describe ".wrap" do
+    # Tests with mock nodes don't need any tags - pure Ruby logic
+    let(:mock_node) { double("Node", type: :table_array_element) }
 
-    it "wraps a node with canonical merge_type" do
-      # Get a table_array_element node
-      tables = analysis.tables
-      next if tables.empty?
+    context "with default backend" do
+      it "wraps a node with canonical merge_type using default backend" do
+        wrapped = described_class.wrap(mock_node)
 
-      table_node = tables.first.node
-      wrapped = described_class.wrap(table_node)
+        expect(wrapped).to respond_to(:merge_type)
+        expect(wrapped.merge_type).to eq(:array_of_tables)
+        expect(wrapped).to respond_to(:unwrap)
+        expect(wrapped.unwrap).to eq(mock_node)
+      end
+    end
 
-      expect(wrapped).to respond_to(:merge_type)
-      expect(wrapped.merge_type).to eq(:array_of_tables)
-      expect(wrapped).to respond_to(:unwrap)
+    context "with explicit tree_sitter_toml backend" do
+      it "wraps a node with canonical merge_type" do
+        wrapped = described_class.wrap(mock_node, :tree_sitter_toml)
+
+        expect(wrapped.merge_type).to eq(:array_of_tables)
+      end
+    end
+
+    context "with citrus_toml backend" do
+      let(:citrus_node) { double("CitrusNode", type: :table_array_element) }
+
+      it "wraps a node with canonical merge_type using citrus backend" do
+        wrapped = described_class.wrap(citrus_node, :citrus_toml)
+
+        expect(wrapped.merge_type).to eq(:array_of_tables)
+        expect(wrapped.unwrap).to eq(citrus_node)
+      end
+
+      it "handles citrus-specific datetime type" do
+        date_node = double("DateNode", type: :date)
+        wrapped = described_class.wrap(date_node, :citrus_toml)
+
+        expect(wrapped.merge_type).to eq(:datetime)
+      end
+    end
+
+    # This test requires actual TOML parsing - use :toml_parsing tag
+    context "with real parsed nodes", :toml_parsing do
+      let(:toml_source) { "[[servers]]\nname = \"alpha\"" }
+      let(:analysis) { Toml::Merge::FileAnalysis.new(toml_source) }
+
+      it "wraps a parsed node with canonical merge_type" do
+        tables = analysis.tables
+        skip "No tables parsed (parser may not support array of tables)" if tables.empty?
+
+        table_node = tables.first.node
+        wrapped = described_class.wrap(table_node)
+
+        expect(wrapped).to respond_to(:merge_type)
+        expect(wrapped.merge_type).to eq(:array_of_tables)
+      end
     end
   end
 end

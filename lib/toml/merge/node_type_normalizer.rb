@@ -165,6 +165,29 @@ module Toml
       )
 
       class << self
+        # Default backend for TOML normalization
+        DEFAULT_BACKEND = :tree_sitter_toml
+
+        # Get the canonical type for a backend-specific type.
+        # Overrides the shared Normalizer to default to :tree_sitter_toml backend.
+        #
+        # @param backend_type [Symbol, String, nil] The backend's node type
+        # @param backend [Symbol] The backend identifier (defaults to :tree_sitter_toml)
+        # @return [Symbol, nil] Canonical type (or original if no mapping)
+        def canonical_type(backend_type, backend = DEFAULT_BACKEND)
+          super(backend_type, backend)
+        end
+
+        # Wrap a node with its canonical type as merge_type.
+        # Overrides the shared Normalizer to default to :tree_sitter_toml backend.
+        #
+        # @param node [Object] The backend node to wrap (must respond to #type)
+        # @param backend [Symbol] The backend identifier (defaults to :tree_sitter_toml)
+        # @return [Ast::Merge::NodeTyping::Wrapper] Wrapped node with canonical merge_type
+        def wrap(node, backend = DEFAULT_BACKEND)
+          super(node, backend)
+        end
+
         # Check if a type is a table type (regular or array of tables)
         #
         # @param type [Symbol, String] The type to check

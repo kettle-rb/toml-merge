@@ -406,13 +406,29 @@ RSpec.describe Toml::Merge::NodeWrapper do
       TOML
     end
 
-    let(:analysis) { Toml::Merge::FileAnalysis.new(datetime_toml) }
+    let(:datetime_with_time_toml) do
+      <<~TOML
+        created_at = 2025-12-24T10:30:00Z
+      TOML
+    end
 
-    it "identifies datetime values" do
+    let(:analysis) { Toml::Merge::FileAnalysis.new(datetime_toml) }
+    let(:datetime_analysis) { Toml::Merge::FileAnalysis.new(datetime_with_time_toml) }
+
+    it "identifies date values" do
       date_pair = analysis.root_pairs.find { |p| p.key_name == "date_val" }
       value = date_pair&.value_node
       # The datetime? predicate should work if the backend supports datetime types
       expect(value).not_to be_nil if date_pair
+    end
+
+    it "identifies datetime values with time component" do
+      pair = datetime_analysis.root_pairs.find { |p| p.key_name == "created_at" }
+      value = pair&.value_node
+      if value
+        # The type should be datetime or something datetime-like
+        expect(value.datetime?).to be(true).or be(false)
+      end
     end
   end
 
@@ -430,10 +446,9 @@ RSpec.describe Toml::Merge::NodeWrapper do
       # The root_node children may include comments
       root = analysis.root_node
       children = root.children
-      # Check that comment? method works without error
+      # Check that comment? method works without error and returns boolean
       children.each do |child|
-        # Just verify the method works
-        child.comment?
+        expect(child.comment?).to be(true).or be(false)
       end
     end
   end
@@ -447,7 +462,15 @@ RSpec.describe Toml::Merge::NodeWrapper do
       TOML
     end
 
+    let(:root_pairs_toml) do
+      <<~TOML
+        title = "My Config"
+        version = 1
+      TOML
+    end
+
     let(:analysis) { Toml::Merge::FileAnalysis.new(table_toml) }
+    let(:root_pairs_analysis) { Toml::Merge::FileAnalysis.new(root_pairs_toml) }
 
     it "returns opening_line for a table" do
       table = analysis.tables.first
@@ -470,6 +493,21 @@ RSpec.describe Toml::Merge::NodeWrapper do
         expect(pair.opening_line).to be_nil
       end
     end
+
+    it "returns opening line for table with skip guard" do
+      table = analysis.tables.first
+      skip "No table found" unless table
+      opening = table.opening_line
+      expect(opening).to include("[server]") if opening
+    end
+
+    it "returns nil for non-container nodes" do
+      pair = root_pairs_analysis.root_pairs.first
+      skip "No pair found" unless pair
+      value = pair.value_node
+      skip "No value node" unless value
+      expect(value.opening_line).to be_nil if value.leaf?
+    end
   end
 
   describe "#leaf? and #container?", :toml_parsing do
@@ -486,7 +524,7 @@ RSpec.describe Toml::Merge::NodeWrapper do
     it "identifies pair values as leaves" do
       pair = analysis.root_pairs.first
       value = pair&.value_node
-      if value && value.string?
+      if value&.string?
         expect(value.leaf?).to be true
         expect(value.container?).to be false
       end
@@ -583,25 +621,6 @@ RSpec.describe Toml::Merge::NodeWrapper do
     end
   end
 
-  describe "#datetime?", :toml_parsing do
-    let(:datetime_toml) do
-      <<~TOML
-        created_at = 2025-12-24T10:30:00Z
-      TOML
-    end
-
-    let(:analysis) { Toml::Merge::FileAnalysis.new(datetime_toml) }
-
-    it "identifies datetime values" do
-      pair = analysis.root_pairs.find { |p| p.key_name == "created_at" }
-      value = pair&.value_node
-      if value
-        # The type should be datetime or something datetime-like
-        expect(value.datetime?).to be(true).or be(false)
-      end
-    end
-  end
-
   describe "signature generation for all types", :toml_parsing do
     let(:comprehensive_toml) do
       <<~TOML
@@ -691,41 +710,6 @@ RSpec.describe Toml::Merge::NodeWrapper do
         sig = comment_child.signature
         expect(sig.first).to eq(:comment)
       end
-    end
-  end
-
-  describe "#opening_line and #closing_line", :toml_parsing do
-    let(:table_toml) do
-      <<~TOML
-        [server]
-        host = "localhost"
-        port = 8080
-      TOML
-    end
-
-    let(:root_pairs_toml) do
-      <<~TOML
-        title = "My Config"
-        version = 1
-      TOML
-    end
-
-    let(:analysis) { Toml::Merge::FileAnalysis.new(table_toml) }
-    let(:root_pairs_analysis) { Toml::Merge::FileAnalysis.new(root_pairs_toml) }
-
-    it "returns opening line for table" do
-      table = analysis.tables.first
-      skip "No table found" unless table
-      opening = table.opening_line
-      expect(opening).to include("[server]") if opening
-    end
-
-    it "returns nil for non-container nodes" do
-      pair = root_pairs_analysis.root_pairs.first
-      skip "No pair found" unless pair
-      value = pair.value_node
-      skip "No value node" unless value
-      expect(value.opening_line).to be_nil if value.leaf?
     end
   end
 
