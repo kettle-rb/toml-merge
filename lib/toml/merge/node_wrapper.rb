@@ -60,20 +60,25 @@ module Toml
       # @return [Symbol] The backend used for parsing
       attr_reader :backend
 
+      # @return [TreeHaver::Node, nil] The document root node for sibling lookups
+      attr_reader :document_root
+
       # @param node [TreeHaver::Node] tree-sitter node to wrap
       # @param lines [Array<String>] Source lines for content extraction
       # @param source [String] Original source string for byte-based text extraction
       # @param leading_comments [Array<Hash>] Comments before this node
       # @param inline_comment [Hash, nil] Inline comment on the node's line
       # @param backend [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
+      # @param document_root [TreeHaver::Node, nil] The document root for sibling lookups (Citrus normalization)
       def initialize(node, lines:, source: nil, leading_comments: [], inline_comment: nil,
-        backend: :tree_sitter_toml)
+        backend: :tree_sitter_toml, document_root: nil)
         @node = node
         @lines = lines
         @source = source || lines.join("\n")
         @leading_comments = leading_comments
         @inline_comment = inline_comment
         @backend = backend
+        @document_root = document_root
 
         # Extract line information from the tree-sitter node (0-indexed to 1-indexed)
         @start_line = node.start_point.row + 1 if node.respond_to?(:start_point)
@@ -221,24 +226,35 @@ module Toml
           next if NodeTypeNormalizer.key_type?(child_canonical)
           next if child_canonical == :equals
 
-          return NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
+          return NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
+            document_root: @document_root)
         end
         nil
       end
 
-      # Get key-value pairs from a table or inline_table
+      # Get key-value pairs from a table or inline_table.
+      #
+      # Handles structural differences between backends:
+      # - Tree-sitter: pairs are children of the table node
+      # - Citrus: pairs are siblings at document level (table only contains header)
+      #
+      # For Citrus backend, when no pair children are found, we look for sibling
+      # pairs in the document that belong to this table (pairs after this table's
+      # header but before the next table).
+      #
       # @return [Array<NodeWrapper>]
       def pairs
-        return [] unless table? || inline_table? || document?
+        return [] unless table? || inline_table? || document? || array_of_tables?
 
-        result = []
-        @node.each do |child|
-          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
-          next unless child_canonical == :pair
+        # First, try to find pairs as direct children (tree-sitter structure)
+        result = collect_child_pairs
+        return result if result.any?
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source)
-        end
-        result
+        # For Citrus backend: pairs are siblings, not children
+        # Look for pairs in document that belong to this table
+        return [] unless @document_root && (table? || array_of_tables?)
+
+        collect_sibling_pairs_for_table
       end
 
       # Check if this is the document root
@@ -346,12 +362,39 @@ module Toml
         @source[ts_node.start_byte...ts_node.end_byte] || ""
       end
 
-      # Get the content for this node from source lines
+      # Get the content for this node from source lines.
+      #
+      # Handles structural differences between backends:
+      # - Tree-sitter: table nodes include pairs, so start_line..end_line covers everything
+      # - Citrus: table nodes only include header, so we extend to include associated pairs
+      #
       # @return [String]
       def content
-        return "" unless @start_line && @end_line
+        return "" unless @start_line
 
-        (@start_line..@end_line).map { |ln| @lines[ln - 1] }.compact.join("\n")
+        # For tables with Citrus backend, extend end_line to include pairs
+        effective_end = effective_end_line
+        return "" unless effective_end
+
+        (@start_line..effective_end).map { |ln| @lines[ln - 1] }.compact.join("\n")
+      end
+
+      # Get the effective end line for this node, accounting for Citrus backend.
+      # For Citrus tables, this extends to the line before the next table.
+      # @return [Integer, nil]
+      def effective_end_line
+        return @end_line unless (table? || array_of_tables?) && @document_root
+
+        # Check if we have pairs as children (tree-sitter structure)
+        child_pairs = collect_child_pairs
+        return @end_line if child_pairs.any?
+
+        # Citrus structure: find the last pair that belongs to us
+        sibling_pairs = collect_sibling_pairs_for_table
+        return @end_line if sibling_pairs.empty?
+
+        # Return the end line of the last pair
+        sibling_pairs.map(&:end_line).compact.max || @end_line
       end
 
       # String representation for debugging
@@ -432,6 +475,84 @@ module Toml
           end
         end
         keys
+      end
+
+      # Collect pairs that are direct children of this node.
+      # This is the standard tree-sitter structure.
+      # @return [Array<NodeWrapper>]
+      def collect_child_pairs
+        result = []
+        @node.each do |child|
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
+          next unless child_canonical == :pair
+
+          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
+            document_root: @document_root)
+        end
+        result
+      end
+
+      # Collect pairs from document siblings that belong to this table.
+      # Used for Citrus backend where pairs are siblings, not children.
+      #
+      # A pair belongs to this table if:
+      # - It appears after this table's header line
+      # - It appears before the next table's header line (or end of document)
+      #
+      # @return [Array<NodeWrapper>]
+      def collect_sibling_pairs_for_table
+        result = []
+        my_start = @start_line
+        return result unless my_start
+
+        # Find the next table's start line (to know where our pairs end)
+        next_table_start = find_next_table_start_line
+
+        # Iterate through document children to find pairs in our range
+        @document_root.each do |sibling|
+          sibling_canonical = NodeTypeNormalizer.canonical_type(sibling.type, @backend)
+          next unless sibling_canonical == :pair
+
+          sibling_start = sibling.respond_to?(:start_point) ? sibling.start_point.row + 1 : nil
+          next unless sibling_start
+
+          # Pair must be after our header
+          next unless sibling_start > my_start
+
+          # Pair must be before the next table (if there is one)
+          next if next_table_start && sibling_start >= next_table_start
+
+          result << NodeWrapper.new(sibling, lines: @lines, source: @source, backend: @backend,
+            document_root: @document_root)
+        end
+
+        result
+      end
+
+      # Find the start line of the next table in the document.
+      # Returns nil if this is the last table.
+      # @return [Integer, nil]
+      def find_next_table_start_line
+        return nil unless @document_root
+
+        my_start = @start_line
+        next_table_start = nil
+
+        @document_root.each do |sibling|
+          sibling_canonical = NodeTypeNormalizer.canonical_type(sibling.type, @backend)
+          next unless NodeTypeNormalizer.table_type?(sibling_canonical)
+
+          sibling_start = sibling.respond_to?(:start_point) ? sibling.start_point.row + 1 : nil
+          next unless sibling_start
+          next unless sibling_start > my_start
+
+          # Found a table after us - track the closest one
+          if next_table_start.nil? || sibling_start < next_table_start
+            next_table_start = sibling_start
+          end
+        end
+
+        next_table_start
       end
     end
   end

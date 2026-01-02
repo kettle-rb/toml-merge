@@ -29,8 +29,15 @@ Please file a bug if you notice a violation of semantic versioning.
   - Follows same pattern as markdown-merge
   - Auto-detects backend by default, or use `backend: Backends::CITRUS` to force pure Ruby
 - `FileAnalysis` now accepts `backend:` parameter and exposes resolved backend via `#backend` attr
-- `NodeWrapper` now accepts `backend:` parameter for correct canonical type resolution
-
+- `NodeWrapper` now accepts `backend:` and `document_root:` parameters for correct normalization
+- **Structural normalization for Citrus backend**: Tree-sitter and Citrus backends produce different AST structures for tables:
+  - Tree-sitter: Table nodes contain pairs as children
+  - Citrus: Table nodes only contain header; pairs are siblings at document level
+  - `NodeWrapper#pairs` now finds associated pairs regardless of AST structure
+  - `NodeWrapper#content` now returns full table content on both backends
+  - `NodeWrapper#effective_end_line` calculates correct end line including pairs
+  - `FileAnalysis` passes `document_root` to all NodeWrappers for sibling lookups
+  - This enables the merge logic to work identically across backends
 - `NodeTypeNormalizer` module for backend-agnostic node type handling
   - Maps backend-specific types (e.g., `table_array_element`) to canonical types (e.g., `array_of_tables`)
   - Supports both `tree_sitter_toml` and `citrus_toml` backends with comprehensive type mappings
@@ -113,6 +120,7 @@ Please file a bug if you notice a violation of semantic versioning.
 - No longer warns about missing TOML grammar when the grammar file exists but tree-sitter runtime is unavailable
   - This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)
   - Warning now only appears when the grammar file is actually missing
+
 
 ## [1.0.0] - 2025-12-19
 

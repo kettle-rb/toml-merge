@@ -78,7 +78,9 @@ module Toml
       def root_node
         return unless valid?
 
-        NodeWrapper.new(@ast.root_node, lines: @lines, source: @source, backend: @backend)
+        root = @ast.root_node
+        NodeWrapper.new(root, lines: @lines, source: @source, backend: @backend,
+          document_root: root)
       end
 
       # Get a hash mapping signatures to nodes
@@ -89,16 +91,19 @@ module Toml
 
       # Get all top-level tables (sections) in the TOML document
       # Uses NodeTypeNormalizer for backend-agnostic type checking.
+      # Passes document_root to enable Citrus backend normalization (pairs as siblings).
       # @return [Array<NodeWrapper>]
       def tables
         return [] unless valid?
 
         result = []
-        @ast.root_node.each do |child|
+        root = @ast.root_node
+        root.each do |child|
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless NodeTypeNormalizer.table_type?(canonical_type)
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
+          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
+            document_root: root)
         end
         result
       end
@@ -109,11 +114,13 @@ module Toml
         return [] unless valid?
 
         result = []
-        @ast.root_node.each do |child|
+        root = @ast.root_node
+        root.each do |child|
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless canonical_type == :pair
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
+          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
+            document_root: root)
         end
         result
       end
@@ -191,12 +198,14 @@ module Toml
 
         # Return all root-level nodes (document children)
         # For TOML, this includes tables, array_of_tables, and top-level pairs
+        # Pass document_root to enable Citrus backend normalization (pairs as siblings)
         root.each do |child|
           # Skip comments (handled separately)
           canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next if canonical_type == :comment
 
-          wrapper = NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
+          wrapper = NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend,
+            document_root: root)
           next unless wrapper.start_line && wrapper.end_line
 
           result << wrapper
