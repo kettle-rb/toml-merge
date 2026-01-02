@@ -10,9 +10,6 @@
 
 require "tree_haver/rspec"
 
-# Alias for convenience in existing specs
-TomlMergeDependencies = TreeHaver::RSpec::DependencyTags
-
 # Additional toml-merge specific configuration
 RSpec.configure do |config|
   # Print dependency summary if TOML_MERGE_DEBUG is set

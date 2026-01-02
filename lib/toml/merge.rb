@@ -103,6 +103,7 @@ module Toml
     #   end
     class DestinationParseError < ParseError; end
 
+    autoload :Backends, "toml/merge/backends"
     autoload :DebugLogger, "toml/merge/debug_logger"
     autoload :FileAnalysis, "toml/merge/file_analysis"
     autoload :MergeResult, "toml/merge/merge_result"

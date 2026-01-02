@@ -231,7 +231,9 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
-  describe "with array of tables" do
+  # Array of tables tests work with both tree-sitter and Citrus backends
+  # thanks to correct NodeTypeNormalizer mappings (table_array → :array_of_tables)
+  describe "with array of tables", :toml_parsing do
     subject(:analysis) { described_class.new(array_toml) }
 
     let(:array_toml) do

@@ -121,36 +121,62 @@ module Toml
         }.freeze,
 
         # Citrus/toml-rb backend node types
-        # These are synthesized by tree_haver's Citrus adapter
+        # These are produced by TreeHaver's Citrus adapter wrapping toml-rb
+        # Verified via examples/map_citrus_node_types.rb script
         citrus_toml: {
           # Document structure
           document: :document,
           table: :table,
-          table_array_element: :array_of_tables,  # Citrus adapter uses same name
+          table_array: :array_of_tables,  # Citrus produces :table_array (not :table_array_element)
 
           # Key-value pairs
-          pair: :pair,
+          keyvalue: :pair,  # Citrus produces :keyvalue (not :pair)
+          pair: :pair,      # Keep for compatibility if TreeHaver normalizes
 
           # Key types
           bare_key: :bare_key,
           quoted_key: :quoted_key,
           dotted_key: :dotted_key,
+          key: :bare_key,           # Citrus uses :key wrapper
+          stripped_key: :bare_key,  # Citrus uses :stripped_key wrapper
 
-          # Value types
+          # Value types - Citrus uses more specific type names
           string: :string,
+          basic_string: :string,
+          literal_string: :string,
+          multiline_string: :string,
+          multiline_literal: :string,
           integer: :integer,
+          decimal_integer: :integer,
+          hexadecimal_integer: :integer,
+          octal_integer: :integer,
+          binary_integer: :integer,
           float: :float,
+          fractional_float: :float,
           boolean: :boolean,
+          true: :boolean,
+          false: :boolean,
           array: :array,
           inline_table: :inline_table,
 
-          # Date/time types (may vary based on toml-rb version)
+          # Date/time types - Citrus uses specific names
           datetime: :datetime,
           date: :datetime,
           time: :datetime,
+          local_date: :datetime,
+          local_time: :datetime,
+          local_datetime: :datetime,
+          offset_datetime: :datetime,
+          date_skeleton: :datetime,
+          time_skeleton: :datetime,
 
           # Other
           comment: :comment,
+          space: :whitespace,
+          line_break: :whitespace,
+          indent: :whitespace,
+          repeat: :whitespace,
+          unknown: :unknown,
 
           # Punctuation
           "=": :equals,

@@ -8,4 +8,9 @@ SimpleCov.start do
   track_files "lib/**/*.rb"
   track_files "lib/**/*.rake"
   track_files "exe/*.rb"
+
+  add_filter "/examples/"
+  add_filter "/gemfiles/"
+  add_filter "/spec/"
+  add_filter "/vendor/"
 end

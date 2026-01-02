@@ -85,29 +85,59 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     end
 
     context "with citrus_toml backend (non-default)" do
-      it "normalizes table_array_element to array_of_tables" do
-        expect(described_class.canonical_type(:table_array_element, :citrus_toml)).to eq(:array_of_tables)
+      it "normalizes table_array to array_of_tables" do
+        # Citrus produces :table_array, not :table_array_element
+        expect(described_class.canonical_type(:table_array, :citrus_toml)).to eq(:array_of_tables)
+      end
+
+      it "normalizes keyvalue to pair" do
+        # Citrus produces :keyvalue, not :pair
+        expect(described_class.canonical_type(:keyvalue, :citrus_toml)).to eq(:pair)
       end
 
       it "preserves table type" do
         expect(described_class.canonical_type(:table, :citrus_toml)).to eq(:table)
       end
 
-      it "preserves string type (citrus uses direct :string)" do
+      it "normalizes all string types to :string" do
         expect(described_class.canonical_type(:string, :citrus_toml)).to eq(:string)
+        expect(described_class.canonical_type(:basic_string, :citrus_toml)).to eq(:string)
+        expect(described_class.canonical_type(:literal_string, :citrus_toml)).to eq(:string)
+        expect(described_class.canonical_type(:multiline_string, :citrus_toml)).to eq(:string)
+        expect(described_class.canonical_type(:multiline_literal, :citrus_toml)).to eq(:string)
+      end
+
+      it "normalizes all integer types to :integer" do
+        expect(described_class.canonical_type(:integer, :citrus_toml)).to eq(:integer)
+        expect(described_class.canonical_type(:decimal_integer, :citrus_toml)).to eq(:integer)
+        expect(described_class.canonical_type(:hexadecimal_integer, :citrus_toml)).to eq(:integer)
+        expect(described_class.canonical_type(:octal_integer, :citrus_toml)).to eq(:integer)
+        expect(described_class.canonical_type(:binary_integer, :citrus_toml)).to eq(:integer)
+      end
+
+      it "normalizes float types to :float" do
+        expect(described_class.canonical_type(:float, :citrus_toml)).to eq(:float)
+        expect(described_class.canonical_type(:fractional_float, :citrus_toml)).to eq(:float)
+      end
+
+      it "normalizes boolean types to :boolean" do
+        expect(described_class.canonical_type(:boolean, :citrus_toml)).to eq(:boolean)
+        expect(described_class.canonical_type(:true, :citrus_toml)).to eq(:boolean)
+        expect(described_class.canonical_type(:false, :citrus_toml)).to eq(:boolean)
       end
 
       it "normalizes datetime types to :datetime" do
         expect(described_class.canonical_type(:datetime, :citrus_toml)).to eq(:datetime)
         expect(described_class.canonical_type(:date, :citrus_toml)).to eq(:datetime)
         expect(described_class.canonical_type(:time, :citrus_toml)).to eq(:datetime)
+        expect(described_class.canonical_type(:local_date, :citrus_toml)).to eq(:datetime)
+        expect(described_class.canonical_type(:local_time, :citrus_toml)).to eq(:datetime)
+        expect(described_class.canonical_type(:local_datetime, :citrus_toml)).to eq(:datetime)
+        expect(described_class.canonical_type(:offset_datetime, :citrus_toml)).to eq(:datetime)
       end
 
       it "preserves other types" do
         expect(described_class.canonical_type(:pair, :citrus_toml)).to eq(:pair)
-        expect(described_class.canonical_type(:integer, :citrus_toml)).to eq(:integer)
-        expect(described_class.canonical_type(:float, :citrus_toml)).to eq(:float)
-        expect(described_class.canonical_type(:boolean, :citrus_toml)).to eq(:boolean)
         expect(described_class.canonical_type(:array, :citrus_toml)).to eq(:array)
         expect(described_class.canonical_type(:inline_table, :citrus_toml)).to eq(:inline_table)
       end
@@ -260,7 +290,10 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     it "returns mappings for citrus_toml backend" do
       mappings = described_class.mappings_for(:citrus_toml)
       expect(mappings).to be_a(Hash)
-      expect(mappings[:table_array_element]).to eq(:array_of_tables)
+      # Citrus uses :table_array, not :table_array_element
+      expect(mappings[:table_array]).to eq(:array_of_tables)
+      # Citrus uses :keyvalue, not :pair
+      expect(mappings[:keyvalue]).to eq(:pair)
       expect(mappings[:date]).to eq(:datetime)
     end
 
@@ -311,13 +344,21 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
     end
 
     context "with citrus_toml backend" do
-      let(:citrus_node) { double("CitrusNode", type: :table_array_element) }
+      # Citrus uses :table_array, not :table_array_element
+      let(:citrus_node) { double("CitrusNode", type: :table_array) }
 
       it "wraps a node with canonical merge_type using citrus backend" do
         wrapped = described_class.wrap(citrus_node, :citrus_toml)
 
         expect(wrapped.merge_type).to eq(:array_of_tables)
         expect(wrapped.unwrap).to eq(citrus_node)
+      end
+
+      it "handles citrus-specific keyvalue type" do
+        keyvalue_node = double("KeyvalueNode", type: :keyvalue)
+        wrapped = described_class.wrap(keyvalue_node, :citrus_toml)
+
+        expect(wrapped.merge_type).to eq(:pair)
       end
 
       it "handles citrus-specific datetime type" do

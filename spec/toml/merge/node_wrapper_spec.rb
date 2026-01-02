@@ -226,6 +226,8 @@ RSpec.describe Toml::Merge::NodeWrapper do
       end
     end
 
+    # Array of tables tests work with both tree-sitter and Citrus backends
+    # thanks to correct NodeTypeNormalizer mappings (table_array → :array_of_tables)
     describe "array of tables", :toml_parsing do
       let(:array_analysis) { Toml::Merge::FileAnalysis.new(array_toml) }
 

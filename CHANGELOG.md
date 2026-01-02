@@ -20,24 +20,16 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
-## [2.0.0] - 2026-01-01
-
-- TAG: [v2.0.0][2.0.0t]
-- COVERAGE: 100.00% -- 77/77 lines in 1 files
-- BRANCH COVERAGE: 86.11% -- 31/36 branches in 1 files
-- 96.94% documented
-
-### Added
+- `Backends` module with constants for backend selection
+  - `Backends::TREE_SITTER` (`:tree_sitter_toml`) - Native tree-sitter parser
+  - `Backends::CITRUS` (`:citrus_toml`) - Pure Ruby toml-rb parser
+  - `Backends::AUTO` (`:auto`) - Auto-detect available backend
+  - `Backends.validate!` and `Backends.valid?` for validation
+- `SmartMerger` now accepts `backend:` parameter for explicit backend selection
+  - Follows same pattern as markdown-merge
+  - Auto-detects backend by default, or use `backend: Backends::CITRUS` to force pure Ruby
+- `FileAnalysis` now accepts `backend:` parameter and exposes resolved backend via `#backend` attr
+- `NodeWrapper` now accepts `backend:` parameter for correct canonical type resolution
 
 - `NodeTypeNormalizer` module for backend-agnostic node type handling
   - Maps backend-specific types (e.g., `table_array_element`) to canonical types (e.g., `array_of_tables`)
@@ -51,6 +43,14 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Changed
 
+- **citrus_toml mappings**: Updated to match actual Citrus/toml-rb node types
+  - `table_array` → `:array_of_tables` (Citrus produces `:table_array`, not `:table_array_element`)
+  - `keyvalue` → `:pair` (Citrus produces `:keyvalue`, not `:pair`)
+  - Added all Citrus-specific integer types: `decimal_integer`, `hexadecimal_integer`, `octal_integer`, `binary_integer`
+  - Added all Citrus-specific string types: `basic_string`, `literal_string`, `multiline_string`, `multiline_literal`
+  - Added all Citrus-specific datetime types: `local_date`, `local_time`, `local_datetime`, `offset_datetime`
+  - Added Citrus-specific boolean types: `true`, `false`
+  - Added whitespace types: `space`, `line_break`, `indent`, `repeat`
 - **Dependency tags**: Refactored to use shared `TreeHaver::RSpec::DependencyTags` from tree_haver gem
   - All dependency detection is now centralized in tree_haver
   - Use `require "tree_haver/rspec"` for shared RSpec configuration

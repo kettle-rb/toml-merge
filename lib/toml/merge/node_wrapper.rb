@@ -20,11 +20,19 @@ module Toml
         # @param source [String, nil] Original source string
         # @param leading_comments [Array<Hash>] Comments before this node
         # @param inline_comment [Hash, nil] Inline comment on the node's line
+        # @param backend [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
         # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
-        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil)
+        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil, backend: :tree_sitter_toml)
           return if node.nil?
 
-          new(node, lines: lines, source: source, leading_comments: leading_comments, inline_comment: inline_comment)
+          new(
+            node,
+            lines: lines,
+            source: source,
+            leading_comments: leading_comments,
+            inline_comment: inline_comment,
+            backend: backend,
+          )
         end
       end
 
@@ -49,17 +57,23 @@ module Toml
       # @return [Array<String>] Source lines
       attr_reader :lines
 
+      # @return [Symbol] The backend used for parsing
+      attr_reader :backend
+
       # @param node [TreeHaver::Node] tree-sitter node to wrap
       # @param lines [Array<String>] Source lines for content extraction
       # @param source [String] Original source string for byte-based text extraction
       # @param leading_comments [Array<Hash>] Comments before this node
       # @param inline_comment [Hash, nil] Inline comment on the node's line
-      def initialize(node, lines:, source: nil, leading_comments: [], inline_comment: nil)
+      # @param backend [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
+      def initialize(node, lines:, source: nil, leading_comments: [], inline_comment: nil,
+        backend: :tree_sitter_toml)
         @node = node
         @lines = lines
         @source = source || lines.join("\n")
         @leading_comments = leading_comments
         @inline_comment = inline_comment
+        @backend = backend
 
         # Extract line information from the tree-sitter node (0-indexed to 1-indexed)
         @start_line = node.start_point.row + 1 if node.respond_to?(:start_point)
@@ -86,7 +100,7 @@ module Toml
       # Get the canonical (normalized) type for this node
       # @return [Symbol]
       def canonical_type
-        NodeTypeNormalizer.canonical_type(@node.type)
+        NodeTypeNormalizer.canonical_type(@node.type, @backend)
       end
 
       # Check if this node has a specific type (checks both raw and canonical)
@@ -171,7 +185,7 @@ module Toml
 
         # Find the dotted_key or bare_key child that represents the table name
         @node.each do |child|
-          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           if NodeTypeNormalizer.key_type?(child_canonical)
             return node_text(child)
           end
@@ -186,7 +200,7 @@ module Toml
 
         # In TOML, pair has key children (bare_key, quoted_key, or dotted_key)
         @node.each do |child|
-          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           if NodeTypeNormalizer.key_type?(child_canonical)
             key_text = node_text(child)
             # Remove surrounding quotes if present
@@ -202,12 +216,12 @@ module Toml
         return unless pair?
 
         @node.each do |child|
-          child_canonical = NodeTypeNormalizer.canonical_type(child.type)
+          child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           # Skip keys and equals sign, get the value
           next if NodeTypeNormalizer.key_type?(child_canonical)
           next if child_canonical == :equals
 
-          return NodeWrapper.new(child, lines: @lines, source: @source)
+          return NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
         end
         nil
       end

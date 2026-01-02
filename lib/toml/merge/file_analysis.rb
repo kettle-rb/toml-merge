@@ -18,6 +18,9 @@ module Toml
       # @return [Array] Parse errors if any
       attr_reader :errors
 
+      # @return [Symbol] The backend used for parsing (:tree_sitter_toml or :citrus_toml)
+      attr_reader :backend
+
       class << self
         # Find the parser library path using TreeHaver::GrammarFinder
         #
@@ -30,15 +33,19 @@ module Toml
       # Initialize file analysis
       #
       # @param source [String] TOML source code to analyze
+      # @param backend [Symbol] Backend to use (:tree_sitter_toml, :citrus_toml, :auto)
       # @param signature_generator [Proc, nil] Custom signature generator
       # @param parser_path [String, nil] Path to tree-sitter-toml parser library
       # @param options [Hash] Additional options (forward compatibility - freeze_token, node_typing, etc.)
-      def initialize(source, signature_generator: nil, parser_path: nil, **options)
+      def initialize(source, backend: Backends::AUTO, signature_generator: nil, parser_path: nil, **options)
+        Backends.validate!(backend)
+        @requested_backend = backend
         @source = source
         @lines = source.lines.map(&:chomp)
         @signature_generator = signature_generator
         @parser_path = parser_path || self.class.find_parser_path
         @errors = []
+        @backend = :tree_sitter_toml  # Default, will be updated during parsing
         # **options captures any additional parameters (e.g., freeze_token, node_typing) for forward compatibility
 
         # Parse the TOML
@@ -71,7 +78,7 @@ module Toml
       def root_node
         return unless valid?
 
-        NodeWrapper.new(@ast.root_node, lines: @lines, source: @source)
+        NodeWrapper.new(@ast.root_node, lines: @lines, source: @source, backend: @backend)
       end
 
       # Get a hash mapping signatures to nodes
@@ -88,10 +95,10 @@ module Toml
 
         result = []
         @ast.root_node.each do |child|
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type)
+          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless NodeTypeNormalizer.table_type?(canonical_type)
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source)
+          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
         end
         result
       end
@@ -103,10 +110,10 @@ module Toml
 
         result = []
         @ast.root_node.each do |child|
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type)
+          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless canonical_type == :pair
 
-          result << NodeWrapper.new(child, lines: @lines, source: @source)
+          result << NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
         end
         result
       end
@@ -116,16 +123,31 @@ module Toml
       def parse_toml
         # Use TreeHaver's high-level API - it handles:
         # - Grammar auto-discovery (tree-sitter or Citrus)
-        # - Backend selection
-        # - Fallback to Citrus if tree-sitter unavailable
-        parser = TreeHaver.parser_for(
-          :toml,
+        # - Backend selection based on @requested_backend
+        # - Fallback to Citrus if tree-sitter unavailable (when :auto)
+        parser_options = {
           library_path: @parser_path,
           citrus_config: {
             gem_name: "toml-rb",
             grammar_const: "TomlRB::Document",
           },
-        )
+        }
+
+        # If a specific backend was requested (not :auto), force it
+        if @requested_backend != Backends::AUTO
+          parser_options[:backend] = (@requested_backend == Backends::CITRUS) ? :citrus : :mri
+        end
+
+        parser = TreeHaver.parser_for(:toml, **parser_options)
+
+        # Detect which backend was used
+        @backend = if parser.respond_to?(:backend)
+          (parser.backend == :citrus) ? :citrus_toml : :tree_sitter_toml
+        elsif defined?(TreeHaver::Backends::Citrus) && parser.is_a?(TreeHaver::Backends::Citrus::Parser)
+          :citrus_toml
+        else
+          :tree_sitter_toml
+        end
 
         @ast = parser.parse(@source)
 
@@ -168,10 +190,10 @@ module Toml
         # For TOML, this includes tables, array_of_tables, and top-level pairs
         root.each do |child|
           # Skip comments (handled separately)
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type)
+          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next if canonical_type == :comment
 
-          wrapper = NodeWrapper.new(child, lines: @lines, source: @source)
+          wrapper = NodeWrapper.new(child, lines: @lines, source: @source, backend: @backend)
           next unless wrapper.start_line && wrapper.end_line
 
           result << wrapper

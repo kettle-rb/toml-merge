@@ -5,10 +5,17 @@ module Toml
     # High-level merger for TOML content.
     # Orchestrates parsing, analysis, and conflict resolution.
     #
+    # Extends SmartMergerBase with backend-agnostic parsing via tree_haver.
+    # Supports both tree-sitter-toml and Citrus/toml-rb backends.
+    #
     # @example Basic usage
     #   merger = SmartMerger.new(template_content, dest_content)
     #   result = merger.merge
     #   File.write("merged.toml", result.output)
+    #
+    # @example With specific backend
+    #   merger = SmartMerger.new(template, dest, backend: Backends::CITRUS)
+    #   result = merger.merge
     #
     # @example With options
     #   merger = SmartMerger.new(template, dest,
@@ -23,10 +30,17 @@ module Toml
     #   merger = SmartMerger.new(template, dest,
     #     regions: [{ detector: SomeDetector.new, merger_class: SomeMerger }])
     class SmartMerger < ::Ast::Merge::SmartMergerBase
+      # @return [Symbol] The backend being used (:tree_sitter_toml, :citrus_toml)
+      attr_reader :backend
+
       # Creates a new SmartMerger
       #
       # @param template_content [String] Template TOML content
       # @param dest_content [String] Destination TOML content
+      # @param backend [Symbol] Backend to use for parsing:
+      #   - `:tree_sitter_toml` - Use tree-sitter-toml (native parser)
+      #   - `:citrus_toml` - Use Citrus/toml-rb (pure Ruby parser)
+      #   - `:auto` (default) - Auto-detect available backend
       # @param signature_generator [Proc, nil] Custom signature generator
       # @param preference [Symbol, Hash] :destination, :template, or per-type Hash
       # @param add_template_only_nodes [Boolean] Whether to add nodes only found in template
@@ -40,6 +54,7 @@ module Toml
       def initialize(
         template_content,
         dest_content,
+        backend: Backends::AUTO,
         signature_generator: nil,
         preference: :destination,
         add_template_only_nodes: false,
@@ -50,6 +65,9 @@ module Toml
         node_typing: nil,
         **options
       )
+        Backends.validate!(backend)
+        @requested_backend = backend
+
         super(
           template_content,
           dest_content,
@@ -61,8 +79,12 @@ module Toml
           regions: regions,
           region_placeholder: region_placeholder,
           node_typing: node_typing,
+          backend: backend,
           **options
         )
+
+        # Capture the resolved backend from template analysis
+        @backend = @template_analysis.backend
       end
 
       # Backward-compatible options hash
@@ -140,9 +162,12 @@ module Toml
 
       private
 
-      # TOML FileAnalysis only accepts signature_generator, not freeze_token
+      # TOML FileAnalysis accepts signature_generator and backend
       def build_full_analysis_options
-        {signature_generator: @signature_generator}
+        {
+          signature_generator: @signature_generator,
+          backend: @requested_backend,
+        }
       end
     end
   end
