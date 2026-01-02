@@ -22,6 +22,20 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Changed
 
+- **Test suite now explicitly tests all available backend modes** - Tests previously ran with
+  whatever backend was auto-selected. Now specs explicitly test up to five backend configurations:
+  - `:auto` backend - Tests default user experience (backend-agnostic)
+  - `:mri` backend via `TreeHaver.with_backend(:mri)` - Tests explicit tree-sitter MRI behavior
+  - `:citrus` backend via `TreeHaver.with_backend(:citrus)` - Tests explicit toml-rb behavior
+  - `:rust` backend via `TreeHaver.with_backend(:rust)` - Tests explicit tree-sitter Rust behavior
+  - `:java` backend via `TreeHaver.with_backend(:java)` - Tests explicit tree-sitter Java behavior
+  
+  This ensures consistent behavior is verified across all backends, rather than relying
+  on auto-selection which may vary by platform. Each shared example group is included
+  in all contexts with appropriate dependency tags (`:toml_grammar`, `:toml_rb`,
+  `:toml_parsing`, `:rust_backend`, `:java_backend`). Tests for unavailable backends
+  are automatically skipped.
+
 ### Deprecated
 
 ### Removed

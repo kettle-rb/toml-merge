@@ -22,6 +22,38 @@ RSpec.describe Toml::Merge::SmartMerger do
     TOML
   end
 
+  # Shared examples for invalid TOML error detection
+  # Both backends should raise appropriate errors for malformed TOML
+  shared_examples "invalid template detection" do
+    let(:invalid_template) do
+      <<~TOML
+        [server
+        host = "localhost"
+      TOML
+    end
+
+    it "raises TemplateParseError" do
+      expect {
+        described_class.new(invalid_template, dest_content)
+      }.to raise_error(Toml::Merge::TemplateParseError)
+    end
+  end
+
+  shared_examples "invalid destination detection" do
+    let(:invalid_dest) do
+      <<~TOML
+        [database
+        name = "mydb"
+      TOML
+    end
+
+    it "raises DestinationParseError" do
+      expect {
+        described_class.new(template_content, invalid_dest)
+      }.to raise_error(Toml::Merge::DestinationParseError)
+    end
+  end
+
   describe "#initialize" do
     it "accepts template and destination content" do
       merger = described_class.new(template_content, dest_content)
@@ -38,33 +70,95 @@ RSpec.describe Toml::Merge::SmartMerger do
       expect(merger.options[:add_template_only_nodes]).to be(true)
     end
 
-    context "with invalid template" do
-      let(:invalid_template) do
-        <<~TOML
-          [server
-          host = "localhost"
-        TOML
+    # Test invalid TOML detection with :auto backend (uses whatever is available)
+    # This tests the default behavior most users will experience
+    context "with :auto backend", :toml_parsing do
+      around do |example|
+        original_backend = TreeHaver.backend
+        begin
+          TreeHaver.backend = :auto
+          example.run
+        ensure
+          TreeHaver.backend = original_backend
+        end
       end
 
-      it "raises TemplateParseError" do
-        expect {
-          described_class.new(invalid_template, dest_content)
-        }.to raise_error(Toml::Merge::TemplateParseError)
+      context "with invalid template" do
+        include_examples "invalid template detection"
+      end
+
+      context "with invalid destination" do
+        include_examples "invalid destination detection"
       end
     end
 
-    context "with invalid destination" do
-      let(:invalid_dest) do
-        <<~TOML
-          [database
-          name = "mydb"
-        TOML
+    # Test invalid TOML detection with explicit tree-sitter backend
+    # This ensures native parsing correctly detects errors
+    context "with explicit tree-sitter backend", :toml_grammar do
+      around do |example|
+        # Use :mri to explicitly request tree-sitter (not :auto)
+        TreeHaver.with_backend(:mri) do
+          example.run
+        end
       end
 
-      it "raises DestinationParseError" do
-        expect {
-          described_class.new(template_content, invalid_dest)
-        }.to raise_error(Toml::Merge::DestinationParseError)
+      context "with invalid template" do
+        include_examples "invalid template detection"
+      end
+
+      context "with invalid destination" do
+        include_examples "invalid destination detection"
+      end
+    end
+
+    # Test invalid TOML detection with explicit Citrus backend
+    context "with explicit Citrus backend", :toml_rb do
+      around do |example|
+        TreeHaver.with_backend(:citrus) do
+          example.run
+        end
+      end
+
+      context "with invalid template" do
+        include_examples "invalid template detection"
+      end
+
+      context "with invalid destination" do
+        include_examples "invalid destination detection"
+      end
+    end
+
+    # Test invalid TOML detection with explicit Rust backend
+    context "with explicit Rust backend", :rust_backend, :toml_grammar do
+      around do |example|
+        TreeHaver.with_backend(:rust) do
+          example.run
+        end
+      end
+
+      context "with invalid template" do
+        include_examples "invalid template detection"
+      end
+
+      context "with invalid destination" do
+        include_examples "invalid destination detection"
+      end
+    end
+
+    # Test invalid TOML detection with explicit Java backend
+    context "with explicit Java backend", :java_backend, :toml_grammar do
+      around do |example|
+        TreeHaver.with_backend(:java) do
+          example.run
+        end
+      end
+
+      context "with invalid template" do
+        include_examples "invalid template detection"
+      end
+
+      context "with invalid destination" do
+        include_examples "invalid destination detection"
       end
     end
   end

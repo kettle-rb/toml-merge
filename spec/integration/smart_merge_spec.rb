@@ -50,16 +50,88 @@ RSpec.describe "TOML Smart Merge Integration" do
     let(:invalid_toml) { File.read(File.join(fixtures_path, "invalid.toml")) }
     let(:valid_toml) { "title = \"Valid\"\n" }
 
-    it "raises TemplateParseError for invalid template" do
-      expect {
-        Toml::Merge::SmartMerger.new(invalid_toml, valid_toml)
-      }.to raise_error(Toml::Merge::TemplateParseError)
+    # Shared examples for invalid TOML error detection
+    shared_examples "raises TemplateParseError for invalid template" do
+      it "raises TemplateParseError for invalid template" do
+        expect {
+          Toml::Merge::SmartMerger.new(invalid_toml, valid_toml)
+        }.to raise_error(Toml::Merge::TemplateParseError)
+      end
     end
 
-    it "raises DestinationParseError for invalid destination" do
-      expect {
-        Toml::Merge::SmartMerger.new(valid_toml, invalid_toml)
-      }.to raise_error(Toml::Merge::DestinationParseError)
+    shared_examples "raises DestinationParseError for invalid destination" do
+      it "raises DestinationParseError for invalid destination" do
+        expect {
+          Toml::Merge::SmartMerger.new(valid_toml, invalid_toml)
+        }.to raise_error(Toml::Merge::DestinationParseError)
+      end
+    end
+
+    # Test error handling with :auto backend (uses whatever is available)
+    # This tests the default behavior most users will experience
+    context "with :auto backend", :toml_parsing do
+      around do |example|
+        original_backend = TreeHaver.backend
+        begin
+          TreeHaver.backend = :auto
+          example.run
+        ensure
+          TreeHaver.backend = original_backend
+        end
+      end
+
+      include_examples "raises TemplateParseError for invalid template"
+      include_examples "raises DestinationParseError for invalid destination"
+    end
+
+    # Test error handling with explicit tree-sitter backend
+    # This ensures native parsing correctly detects errors
+    context "with explicit tree-sitter backend", :toml_grammar do
+      around do |example|
+        # Use :mri to explicitly request tree-sitter (not :auto)
+        TreeHaver.with_backend(:mri) do
+          example.run
+        end
+      end
+
+      include_examples "raises TemplateParseError for invalid template"
+      include_examples "raises DestinationParseError for invalid destination"
+    end
+
+    # Test error handling with explicit Citrus backend
+    context "with explicit Citrus backend", :toml_rb do
+      around do |example|
+        TreeHaver.with_backend(:citrus) do
+          example.run
+        end
+      end
+
+      include_examples "raises TemplateParseError for invalid template"
+      include_examples "raises DestinationParseError for invalid destination"
+    end
+
+    # Test error handling with explicit Rust backend
+    context "with explicit Rust backend", :rust_backend, :toml_grammar do
+      around do |example|
+        TreeHaver.with_backend(:rust) do
+          example.run
+        end
+      end
+
+      include_examples "raises TemplateParseError for invalid template"
+      include_examples "raises DestinationParseError for invalid destination"
+    end
+
+    # Test error handling with explicit Java backend
+    context "with explicit Java backend", :java_backend, :toml_grammar do
+      around do |example|
+        TreeHaver.with_backend(:java) do
+          example.run
+        end
+      end
+
+      include_examples "raises TemplateParseError for invalid template"
+      include_examples "raises DestinationParseError for invalid destination"
     end
   end
 end
