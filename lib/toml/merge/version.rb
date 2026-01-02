@@ -5,7 +5,7 @@ module Toml
     # Version information for Toml::Merge
     module Version
       # Current version of the toml-merge gem
-      VERSION = "2.0.1"
+      VERSION = "2.0.0"
     end
     VERSION = Version::VERSION # traditional location
   end
