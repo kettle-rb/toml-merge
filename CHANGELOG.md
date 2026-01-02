@@ -20,6 +20,25 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.0.0] - 2026-01-01
+
+- TAG: [v2.0.0][2.0.0t]
+- COVERAGE: 100.00% -- 77/77 lines in 1 files
+- BRANCH COVERAGE: 86.11% -- 31/36 branches in 1 files
+- 96.94% documented
+
+### Added
+
 - `NodeTypeNormalizer` module for backend-agnostic node type handling
   - Maps backend-specific types (e.g., `table_array_element`) to canonical types (e.g., `array_of_tables`)
   - Supports both `tree_sitter_toml` and `citrus_toml` backends with comprehensive type mappings
@@ -79,10 +98,6 @@ Please file a bug if you notice a violation of semantic versioning.
   - Environment variable `TREE_SITTER_TOML_PATH` is still supported via TreeHaver
   - This enables support for multiple tree-sitter backends (MRI, Rust, FFI, Java) and Citrus fallback
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - `NodeTypeNormalizer.canonical_type` now defaults to `:tree_sitter_toml` backend when no backend is specified
@@ -94,8 +109,6 @@ Please file a bug if you notice a violation of semantic versioning.
 - No longer warns about missing TOML grammar when the grammar file exists but tree-sitter runtime is unavailable
   - This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)
   - Warning now only appears when the grammar file is actually missing
-
-### Security
 
 ## [1.0.0] - 2025-12-19
 
@@ -114,6 +127,8 @@ Please file a bug if you notice a violation of semantic versioning.
   - Can force Citrus backend via `TREE_HAVER_BACKEND=citrus` environment variable
 - Added graceful error handling when neither tree-sitter-toml nor toml-rb are available
 
-[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...v2.0.0
+[2.0.0t]: https://github.com/kettle-rb/toml-merge/releases/tag/v2.0.0
 [1.0.0]: https://github.com/kettle-rb/toml-merge/compare/772a5f5802ce518f2e2c83a561eb583ed634bac4...v1.0.0
 [1.0.0t]: https://github.com/kettle-rb/toml-merge/tags/v1.0.0

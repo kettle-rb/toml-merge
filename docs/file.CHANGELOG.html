@@ -68,7 +68,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 and <a href="https://tom.preston-werner.com/2022/05/23/major-version-numbers-are-not-sacred.html">yes</a>, platform and engine support are part of the <a href="https://github.com/semver/semver/issues/716#issuecomment-869336139">public API</a>.<br>
 Please file a bug if you notice a violation of semantic versioning.</p>
 
-<h2 id="unreleased"><a href="https://github.com/kettle-rb/toml-merge/compare/v1.0.0...HEAD">Unreleased</a></h2>
+<h2 id="unreleased"><a href="https://github.com/kettle-rb/toml-merge/compare/v2.0.0...HEAD">Unreleased</a></h2>
 
 <h3 id="added">Added</h3>
 
@@ -82,6 +82,165 @@ Please file a bug if you notice a violation of semantic versioning.</p>
 
 <h3 id="security">Security</h3>
 
+<h2 id="200---2026-01-01">
+<a href="https://github.com/kettle-rb/toml-merge/compare/v1.0.0...v2.0.0">2.0.0</a> - 2026-01-01</h2>
+
+<ul>
+  <li>TAG: <a href="https://github.com/kettle-rb/toml-merge/releases/tag/v2.0.0">v2.0.0</a>
+</li>
+  <li>COVERAGE: 100.00% – 77/77 lines in 1 files</li>
+  <li>BRANCH COVERAGE: 86.11% – 31/36 branches in 1 files</li>
+  <li>96.94% documented</li>
+</ul>
+
+<h3 id="added-1">Added</h3>
+
+<ul>
+  <li>
+<code>NodeTypeNormalizer</code> module for backend-agnostic node type handling
+    <ul>
+      <li>Maps backend-specific types (e.g., <code>table_array_element</code>) to canonical types (e.g., <code>array_of_tables</code>)</li>
+      <li>Supports both <code>tree_sitter_toml</code> and <code>citrus_toml</code> backends with comprehensive type mappings</li>
+      <li>Provides helper methods: <code>table_type?</code>, <code>value_type?</code>, <code>key_type?</code>, <code>container_type?</code>
+</li>
+      <li>Extensible via <code>register_backend</code> for custom TOML parsers</li>
+      <li>Follows the same pattern as <code>markdown-merge</code>’s <code>NodeTypeNormalizer</code>
+</li>
+    </ul>
+  </li>
+  <li>
+<code>NodeWrapper#canonical_type</code> method returns the normalized type for a node</li>
+  <li>Comprehensive test suite for <code>NodeTypeNormalizer</code> with 26 new specs</li>
+  <li>
+<code>spec/support/dependency_tags.rb</code> for conditional test execution based on backend availability</li>
+</ul>
+
+<h3 id="changed-1">Changed</h3>
+
+<ul>
+  <li>
+<strong>Dependency tags</strong>: Refactored to use shared <code>TreeHaver::RSpec::DependencyTags</code> from tree_haver gem
+    <ul>
+      <li>All dependency detection is now centralized in tree_haver</li>
+      <li>Use <code>require "tree_haver/rspec"</code> for shared RSpec configuration</li>
+      <li>
+<code>TomlMergeDependencies</code> is now an alias to <code>TreeHaver::RSpec::DependencyTags</code>
+</li>
+      <li>Enables <code>TOML_MERGE_DEBUG=1</code> for dependency summary output</li>
+    </ul>
+  </li>
+  <li>
+<strong>FileAnalysis</strong>: Error handling now follows the standard pattern
+    <ul>
+      <li>Parse errors are collected but not re-raised from FileAnalysis</li>
+      <li>
+<code>valid?</code> returns false when there are errors or no AST</li>
+      <li>SmartMergerBase handles raising the appropriate parse error</li>
+      <li>Consistent with json-merge, jsonc-merge, and bash-merge implementations</li>
+    </ul>
+  </li>
+  <li>
+<strong>SmartMerger</strong>: Added <code>**options</code> for forward compatibility
+    <ul>
+      <li>Accepts additional options that may be added to base class in future</li>
+      <li>Passes all options through to <code>SmartMergerBase</code>
+</li>
+      <li>
+<code>node_typing</code> parameter for per-node-type merge preferences
+        <ul>
+          <li>Enables <code>preference: { default: :destination, special_type: :template }</code> pattern</li>
+          <li>Works with custom merge_types assigned via node_typing lambdas</li>
+        </ul>
+      </li>
+      <li>
+<code>regions</code> and <code>region_placeholder</code> parameters for nested content merging</li>
+    </ul>
+  </li>
+  <li>
+<strong>ConflictResolver</strong>: Added <code>**options</code> for forward compatibility
+    <ul>
+      <li>Now passes <code>match_refiner</code> to base class instead of storing locally</li>
+    </ul>
+  </li>
+  <li>
+<strong>MergeResult</strong>: Added <code>**options</code> for forward compatibility</li>
+  <li>
+<strong>FileAnalysis</strong>: Simplified to use <code>TreeHaver.parser_for</code> API
+    <ul>
+      <li>Removed 40+ lines of grammar loading boilerplate</li>
+      <li>Now relies on tree_haver for auto-discovery and Citrus fallback</li>
+      <li>
+<code>:tree_sitter_toml</code> RSpec tag for tree-sitter-toml grammar tests</li>
+      <li>
+<code>:toml_rb</code> RSpec tag for toml-rb/Citrus backend tests</li>
+      <li>
+<code>:toml_backend</code> RSpec tag for tests requiring any TOML backend</li>
+    </ul>
+  </li>
+  <li>
+<strong>BREAKING</strong>: <code>NodeWrapper</code> type predicates now use <code>NodeTypeNormalizer</code> for backend-agnostic type checking
+    <ul>
+      <li>
+<code>array_of_tables?</code> now correctly identifies both <code>table_array_element</code> (tree-sitter) and <code>array_of_tables</code> nodes</li>
+      <li>All predicates (<code>table?</code>, <code>pair?</code>, <code>string?</code>, etc.) use canonical types</li>
+      <li>
+<code>type?</code> method checks both raw and canonical types</li>
+    </ul>
+  </li>
+  <li>
+<code>FileAnalysis#tables</code> now uses <code>NodeTypeNormalizer.table_type?</code> for type detection</li>
+  <li>
+<code>FileAnalysis#root_pairs</code> and <code>#integrate_nodes</code> use canonical type checks</li>
+  <li>
+<code>TableMatchRefiner#table_node?</code> uses <code>NodeTypeNormalizer</code> for backend-agnostic table detection</li>
+  <li>
+<code>compute_signature</code> method uses canonical types for consistent signatures across backends</li>
+  <li>Rewrote <code>node_wrapper_spec.rb</code> with proper tests (removed placeholder/pending tests)</li>
+  <li>Rewrote <code>table_match_refiner_spec.rb</code> with working tests using <code>:toml_backend</code> tag</li>
+  <li>Updated <code>spec_helper.rb</code> load order to ensure <code>TreeHaver</code> is available for dependency detection</li>
+  <li>
+<strong>BREAKING</strong>: Migrate from direct <code>TreeSitter::Language.load</code> to <code>TreeHaver</code> API
+    <ul>
+      <li>Changed <code>require "tree_sitter"</code> to <code>require "tree_haver"</code> in main module file</li>
+      <li>Added automatic grammar registration via <code>TreeHaver::GrammarFinder#register!</code>
+</li>
+      <li>
+<code>FileAnalysis#find_parser_path</code> now exclusively uses <code>TreeHaver::GrammarFinder</code>
+</li>
+      <li>
+<code>FileAnalysis#parse_toml</code> now uses <code>TreeHaver::Parser</code> and <code>TreeHaver::Language</code>
+</li>
+      <li>Removed legacy fallback path search (TreeHaver is now a hard requirement)</li>
+      <li>Updated documentation to reference <code>TreeHaver::Node</code> instead of <code>TreeSitter::Node</code>
+</li>
+      <li>Environment variable <code>TREE_SITTER_TOML_PATH</code> is still supported via TreeHaver</li>
+      <li>This enables support for multiple tree-sitter backends (MRI, Rust, FFI, Java) and Citrus fallback</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="fixed-1">Fixed</h3>
+
+<ul>
+  <li>
+<code>NodeTypeNormalizer.canonical_type</code> now defaults to <code>:tree_sitter_toml</code> backend when no backend is specified
+    <ul>
+      <li>Added <code>DEFAULT_BACKEND</code> constant and overrode <code>canonical_type</code> and <code>wrap</code> methods</li>
+      <li>Fixes issue where calling <code>canonical_type(:table_array_element)</code> without a backend argument would passthrough instead of mapping to <code>:array_of_tables</code>
+</li>
+      <li>Value type predicates (<code>string?</code>, <code>integer?</code>, <code>float?</code>, <code>boolean?</code>, <code>array?</code>, <code>inline_table?</code>, <code>datetime?</code>) now work correctly</li>
+    </ul>
+  </li>
+  <li>Consolidated duplicate <code>describe</code> blocks in spec files (<code>file_analysis_spec.rb</code>, <code>merge_result_spec.rb</code>, <code>node_wrapper_spec.rb</code>)</li>
+  <li>Fixed lint violations: added missing expectations to tests, used safe navigation where appropriate</li>
+  <li>No longer warns about missing TOML grammar when the grammar file exists but tree-sitter runtime is unavailable
+    <ul>
+      <li>This is expected behavior when using non-tree-sitter backends (Citrus, Prism, etc.)</li>
+      <li>Warning now only appears when the grammar file is actually missing</li>
+    </ul>
+  </li>
+</ul>
+
 <h2 id="100---2025-12-19">
 <a href="https://github.com/kettle-rb/toml-merge/compare/772a5f5802ce518f2e2c83a561eb583ed634bac4...v1.0.0">1.0.0</a> - 2025-12-19</h2>
 
@@ -93,7 +252,7 @@ Please file a bug if you notice a violation of semantic versioning.</p>
   <li>96.55% documented</li>
 </ul>
 
-<h3 id="added-1">Added</h3>
+<h3 id="added-2">Added</h3>
 
 <ul>
   <li>Initial release</li>
@@ -111,9 +270,9 @@ Please file a bug if you notice a violation of semantic versioning.</p>
 </div></div>
 
       <div id="footer">
-  Generated on Fri Dec 19 07:51:52 2025 by
+  Generated on Thu Jan  1 17:08:05 2026 by
   <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.9.38 (ruby-3.4.7).
+  0.9.38 (ruby-4.0.0).
 </div>
 
     </div>

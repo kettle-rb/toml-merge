@@ -109,7 +109,6 @@
 <p><code>if ci_badges.map(&amp;:color).detect { it != "green"}</code> ☝️ <a href="https://discord.gg/3qme4XHNKN">let me know</a>, as I may have missed the <a href="https://discord.gg/3qme4XHNKN">discord notification</a>.</p>
 
 <hr>
-
 <p><code>if ci_badges.map(&amp;:color).all? { it == "green"}</code> 👇️ send money so I can do more of this. FLOSS maintenance is now my full-time job.</p>
 
 <p><a href="https://opencollective.com/kettle-rb#backer"><img src="https://opencollective.com/kettle-rb/backers/badge.svg?style=flat" alt="OpenCollective Backers"></a> <a href="https://opencollective.com/kettle-rb#sponsor"><img src="https://opencollective.com/kettle-rb/sponsors/badge.svg?style=flat" alt="OpenCollective Sponsors"></a> <a href="https://github.com/sponsors/pboling"><img src="https://img.shields.io/badge/Sponsor_Me!-pboling.svg?style=social&amp;logo=github" alt="Sponsor Me on Github"></a> <a href="https://liberapay.com/pboling/donate"><img src="https://img.shields.io/liberapay/goal/pboling.svg?logo=liberapay&amp;color=a51611&amp;style=flat" alt="Liberapay Goal Progress"></a> <a href="https://www.paypal.com/paypalme/peterboling"><img src="https://img.shields.io/badge/donate-paypal-a51611.svg?style=flat&amp;logo=paypal" alt="Donate on PayPal"></a> <a href="https://www.buymeacoffee.com/pboling"><img src="https://img.shields.io/badge/buy_me_a_coffee-%E2%9C%93-a51611.svg?style=flat" alt="Buy me a coffee"></a> <a href="https://polar.sh/pboling"><img src="https://img.shields.io/badge/polar-donate-a51611.svg?style=flat" alt="Donate on Polar"></a> <a href="https://ko-fi.com/O5O86SNP4"><img src="https://img.shields.io/badge/ko--fi-%E2%9C%93-a51611.svg?style=flat" alt="Donate at ko-fi.com"></a></p>
@@ -165,36 +164,34 @@ or use a Hash for per-node-type preferences with <code>node_splitter</code> (see
     <tr>
       <td><a href="https://github.com/kettle-rb/prism-merge">prism-merge</a></td>
       <td>Ruby</td>
-      <td>
-<a href="https://github.com/ruby/prism">Prism</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+      <td><a href="https://github.com/ruby/prism">Prism</a></td>
       <td>Smart merge for Ruby source files</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/psych-merge">psych-merge</a></td>
       <td>YAML</td>
-      <td>
-<a href="https://github.com/ruby/psych">Psych</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+      <td><a href="https://github.com/ruby/psych">Psych</a></td>
       <td>Smart merge for YAML files</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/json-merge">json-merge</a></td>
       <td>JSON</td>
       <td>
-<a href="https://github.com/tree-sitter/tree-sitter-json">tree-sitter-json</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://github.com/tree-sitter/tree-sitter-json">tree-sitter-json</a> (via tree_haver)</td>
       <td>Smart merge for JSON files</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/jsonc-merge">jsonc-merge</a></td>
       <td>JSONC</td>
       <td>
-<a href="https://gitlab.com/WhyNotHugo/tree-sitter-jsonc">tree-sitter-jsonc</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://gitlab.com/WhyNotHugo/tree-sitter-jsonc">tree-sitter-jsonc</a> (via tree_haver)</td>
       <td>⚠️ Proof of concept; Smart merge for JSON with Comments</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/bash-merge">bash-merge</a></td>
       <td>Bash</td>
       <td>
-<a href="https://github.com/tree-sitter/tree-sitter-bash">tree-sitter-bash</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://github.com/tree-sitter/tree-sitter-bash">tree-sitter-bash</a> (via tree_haver)</td>
       <td>Smart merge for Bash scripts</td>
     </tr>
     <tr>
@@ -206,21 +203,21 @@ or use a Hash for per-node-type preferences with <code>node_splitter</code> (see
     <tr>
       <td><a href="https://github.com/kettle-rb/dotenv-merge">dotenv-merge</a></td>
       <td>Dotenv</td>
-      <td>internal (<a href="https://github.com/bkeepers/dotenv">dotenv</a>)</td>
+      <td>internal</td>
       <td>Smart merge for <code>.env</code> files</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/toml-merge">toml-merge</a></td>
       <td>TOML</td>
       <td>
-<a href="https://github.com/tree-sitter-grammars/tree-sitter-toml">tree-sitter-toml</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://github.com/emancu/toml-rb">Citrus + toml-rb</a> (default, via tree_haver), <a href="https://github.com/tree-sitter-grammars/tree-sitter-toml">tree-sitter-toml</a> (via tree_haver)</td>
       <td>Smart merge for TOML files</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/markdown-merge">markdown-merge</a></td>
       <td>Markdown</td>
       <td>
-<a href="https://github.com/gjtorikian/commonmarker">Commonmarker</a> / <a href="https://github.com/ioquatix/markly">Markly</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://github.com/gjtorikian/commonmarker">Commonmarker</a> / <a href="https://github.com/ioquatix/markly">Markly</a> (via tree_haver)</td>
       <td>
 <strong>Foundation</strong>: Shared base for Markdown mergers with inner code block merging</td>
     </tr>
@@ -228,14 +225,14 @@ or use a Hash for per-node-type preferences with <code>node_splitter</code> (see
       <td><a href="https://github.com/kettle-rb/markly-merge">markly-merge</a></td>
       <td>Markdown</td>
       <td>
-<a href="https://github.com/ioquatix/markly">Markly</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://github.com/ioquatix/markly">Markly</a> (via tree_haver)</td>
       <td>Smart merge for Markdown (CommonMark via cmark-gfm C)</td>
     </tr>
     <tr>
       <td><a href="https://github.com/kettle-rb/commonmarker-merge">commonmarker-merge</a></td>
       <td>Markdown</td>
       <td>
-<a href="https://github.com/gjtorikian/commonmarker">Commonmarker</a> (via <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>)</td>
+<a href="https://github.com/gjtorikian/commonmarker">Commonmarker</a> (via tree_haver)</td>
       <td>Smart merge for Markdown (CommonMark via comrak Rust)</td>
     </tr>
   </tbody>
@@ -264,6 +261,48 @@ or use a Hash for per-node-type preferences with <code>node_splitter</code> (see
     </tr>
   </tbody>
 </table>
+
+<p>The <code>*-merge</code> gem family provides intelligent, AST-based merging for various file formats. At the foundation is <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>, which provides a unified cross-Ruby parsing API that works seamlessly across MRI, JRuby, and TruffleRuby.<br>
+<a href="https://github.com/emancu/toml-rb">toml-rb</a>: https://github.com/emancu/toml-rb</p>
+
+<h3 id="configuration">Configuration</h3>
+
+<p>The tree-sitter TOML parser requires a shared library. Set the <code>TREE_SITTER_TOML_PATH</code> environment variable to point to your compiled <code>libtree-sitter-toml.so</code> (or <code>.dylib</code> on macOS):</p>
+
+<pre class="code language-bash"><code class="language-bash">export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
+</code></pre>
+
+<h3 id="basic-usage">Basic Usage</h3>
+
+<pre class="code language-ruby"><code class="language-ruby">require &quot;toml/merge&quot;
+
+template = &lt;&lt;~TOML
+  [package]
+  name = &quot;my-app&quot;
+  version = &quot;1.0.0&quot;
+  
+  [dependencies]
+  serde = &quot;1.0&quot;
+TOML
+
+destination = &lt;&lt;~TOML
+  [package]
+  name = &quot;my-app&quot;
+  version = &quot;2.0.0&quot;
+  authors = [&quot;Custom Author&quot;]
+  
+  [dev-dependencies]
+  tokio = &quot;1.0&quot;
+TOML
+
+merger = Toml::Merge::SmartMerger.new(template, destination)
+result = merger.merge
+
+puts result.content if result.success?
+# The [package] section is merged with destination&#39;s version and authors preserved,
+# [dependencies] from template is included,
+# [dev-dependencies] from destination is kept
+</code></pre>
 
 <h2 id="-info-you-can-shake-a-stick-at">💡 Info you can shake a stick at</h2>
 
@@ -439,17 +478,14 @@ or use a Hash for per-node-type preferences with <code>node_splitter</code> (see
     <li>💡Subscribe for support guarantees covering <em>all</em> your FLOSS dependencies</li>
     <li>💡Tidelift is part of <a href="https://blog.tidelift.com/tidelift-joins-sonar">Sonar</a>
 </li>
-    <li>💡Tidelift pays maintainers to maintain the software you depend on!<br>📊<code>@</code>Pointy Haired Boss: An <a href="https://tidelift.com/subscription/pkg/rubygems-toml-merge?utm_source=rubygems-toml-merge&amp;utm_medium=referral&amp;utm_campaign=readme">enterprise support</a> subscription is “<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">never gonna let you down</a>”, and <em>supports</em> open source maintainers</li>
-  </ul>
-
-  <p>Alternatively:</p>
-
-  <ul>
+    <li>
+      <p>💡Tidelift pays maintainers to maintain the software you depend on!<br>📊<code>@</code>Pointy Haired Boss: An <a href="https://tidelift.com/subscription/pkg/rubygems-toml-merge?utm_source=rubygems-toml-merge&amp;utm_medium=referral&amp;utm_campaign=readme">enterprise support</a> subscription is “<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">never gonna let you down</a>”, and <em>supports</em> open source maintainers
+Alternatively:</p>
+    </li>
     <li><a href="https://discord.gg/3qme4XHNKN"><img src="https://img.shields.io/discord/1373797679469170758?style=for-the-badge&amp;logo=discord" alt="Live Chat on Discord"></a></li>
     <li><a href="https://www.upwork.com/freelancers/~014942e9b056abdf86?mp_source=share"><img src="https://img.shields.io/badge/UpWork-13544E?style=for-the-badge&amp;logo=Upwork&amp;logoColor=white" alt="Get help from me on Upwork"></a></li>
     <li><a href="https://www.codementor.io/peterboling?utm_source=github&amp;utm_medium=button&amp;utm_term=peterboling&amp;utm_campaign=github"><img src="https://img.shields.io/badge/CodeMentor-Get_Help-1abc9c?style=for-the-badge&amp;logo=CodeMentor&amp;logoColor=white" alt="Get help from me on Codementor"></a></li>
   </ul>
-
 </details>
 
 <h2 id="-installation">✨ Installation</h2>
@@ -507,18 +543,76 @@ by following the instructions below.</p>
   <li>Set the <code>TREE_SITTER_TOML_PATH</code> environment variable to point to your compiled <code>libtree-sitter-toml.so</code> (or <code>.dylib</code> on macOS):</li>
 </ul>
 
+<!-- end list -->
 <pre class="code language-bash"><code class="language-bash">export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
 </code></pre>
+
+<h3 id="-ruby-interface-gems-tree-sitter-backend">💎 Ruby Interface Gems (Tree-sitter Backend)</h3>
+
+<p>If using the tree-sitter backend, you also need a Ruby gem that provides bindings to<br>
+tree-sitter. Choose <strong>one</strong> of the following based on your Ruby implementation:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Gem</th>
+      <th>Ruby Support</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/Faveod/ruby_tree_sitter">ruby_tree_sitter</a></td>
+      <td>MRI only</td>
+      <td>C extension bindings (recommended for MRI)</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/nickstenning/tree_stump">tree_stump</a></td>
+      <td>MRI (maybe JRuby)</td>
+      <td>Rust-based bindings via Rutie</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/ffi/ffi">ffi</a></td>
+      <td>MRI, JRuby, TruffleRuby</td>
+      <td>Generic FFI bindings (used by tree_haver’s FFI backend)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="for-mri-ruby-recommended">For MRI Ruby (Recommended)</h4>
+
+<pre class="code language-console"><code class="language-console">gem install ruby_tree_sitter
+</code></pre>
+
+<p>Or add to your Gemfile:</p>
+
+<pre class="code language-ruby"><code class="language-ruby">gem &quot;ruby_tree_sitter&quot;, &quot;~&gt; 2.0&quot;
+</code></pre>
+
+<h4 id="for-jruby-or-truffleruby">For JRuby or TruffleRuby</h4>
+
+<pre class="code language-console"><code class="language-console">gem install ffi
+</code></pre>
+
+<p>Or add to your Gemfile:</p>
+
+<pre class="code language-ruby"><code class="language-ruby">gem &quot;ffi&quot;
+</code></pre>
+
+<p>The <code>tree_haver</code> gem (a dependency of toml-merge) will automatically detect and use<br>
+the appropriate backend based on which gems are available.</p>
+
+<p><strong>Note:</strong> The <code>ruby_tree_sitter</code> gem only compiles on MRI Ruby. For JRuby or TruffleRuby,<br>
+you must use the FFI backend or the Citrus backend (below).</p>
 
 <p><strong>Citrus backend</strong> (pure Ruby, no native dependencies):</p>
 <ul>
   <li>Alternative option using the <a href="https://github.com/mjackson/citrus">citrus</a> and <a href="https://github.com/emancu/toml-rb">toml-rb</a> gems</li>
   <li>No compilation or system dependencies required</li>
   <li>Ideal for environments where native extensions are problematic</li>
-  <li>Configure via tree_haver’s backend selection</li>
+  <li>Configure via tree_haver’s backend selection<br>
+For more details on backend configuration, see the <a href="https://github.com/kettle-rb/tree_haver">tree_haver documentation</a>.</li>
 </ul>
-
-<p>For more details on backend configuration, see the <a href="https://github.com/kettle-rb/tree_haver">tree_haver documentation</a>.</p>
 
 <h3 id="merge-options">Merge Options</h3>
 
@@ -760,7 +854,6 @@ read this article from the creator of SemVer:</p>
   <ul>
     <li><a href="https://tom.preston-werner.com/2022/05/23/major-version-numbers-are-not-sacred.html">“Major Version Numbers are Not Sacred”</a></li>
   </ul>
-
 </details>
 
 <p>See <a href="file.CHANGELOG.html" title="CHANGELOG.md">CHANGELOG.md</a> for a list of releases.</p>
@@ -806,12 +899,36 @@ Please consider sponsoring me or the project.</p>
 
 <p>Thanks for RTFM. ☺️</p>
 
+<p>The <code>*-merge</code> gem family provides intelligent, AST-based merging for various file formats. At the foundation is <a href="https://github.com/kettle-rb/tree_haver">tree_haver</a>, which provides a unified cross-Ruby parsing API that works seamlessly across MRI, JRuby, and TruffleRuby.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Gem</th>
+      <th>Purpose</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/kettle-rb/kettle-dev">kettle-dev</a></td>
+      <td>Gem Development</td>
+      <td>Gem templating tool using <code>*-merge</code> gems</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/kettle-rb/kettle-jem">kettle-jem</a></td>
+      <td>Gem Templating</td>
+      <td>Gem template library with smart merge support</td>
+    </tr>
+  </tbody>
+</table>
+
 </div></div>
 
       <div id="footer">
-  Generated on Fri Dec 19 07:51:52 2025 by
+  Generated on Thu Jan  1 17:08:05 2026 by
   <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.9.38 (ruby-3.4.7).
+  0.9.38 (ruby-4.0.0).
 </div>
 
     </div>
