@@ -80,13 +80,14 @@ RSpec.describe "TOML Smart Merge Integration" do
         end
       end
 
-      include_examples "raises TemplateParseError for invalid template"
-      include_examples "raises DestinationParseError for invalid destination"
+      it_behaves_like "raises TemplateParseError for invalid template"
+      it_behaves_like "raises DestinationParseError for invalid destination"
     end
 
     # Test error handling with explicit tree-sitter backend
     # This ensures native parsing correctly detects errors
-    context "with explicit tree-sitter backend", :toml_grammar do
+    # Uses :mri_backend tag because this context explicitly uses TreeHaver.with_backend(:mri)
+    context "with explicit tree-sitter backend", :mri_backend, :toml_grammar do
       around do |example|
         # Use :mri to explicitly request tree-sitter (not :auto)
         TreeHaver.with_backend(:mri) do
@@ -94,8 +95,8 @@ RSpec.describe "TOML Smart Merge Integration" do
         end
       end
 
-      include_examples "raises TemplateParseError for invalid template"
-      include_examples "raises DestinationParseError for invalid destination"
+      it_behaves_like "raises TemplateParseError for invalid template"
+      it_behaves_like "raises DestinationParseError for invalid destination"
     end
 
     # Test error handling with explicit Citrus backend
@@ -106,8 +107,8 @@ RSpec.describe "TOML Smart Merge Integration" do
         end
       end
 
-      include_examples "raises TemplateParseError for invalid template"
-      include_examples "raises DestinationParseError for invalid destination"
+      it_behaves_like "raises TemplateParseError for invalid template"
+      it_behaves_like "raises DestinationParseError for invalid destination"
     end
 
     # Test error handling with explicit Rust backend
@@ -118,8 +119,8 @@ RSpec.describe "TOML Smart Merge Integration" do
         end
       end
 
-      include_examples "raises TemplateParseError for invalid template"
-      include_examples "raises DestinationParseError for invalid destination"
+      it_behaves_like "raises TemplateParseError for invalid template"
+      it_behaves_like "raises DestinationParseError for invalid destination"
     end
 
     # Test error handling with explicit Java backend
@@ -130,8 +131,8 @@ RSpec.describe "TOML Smart Merge Integration" do
         end
       end
 
-      include_examples "raises TemplateParseError for invalid template"
-      include_examples "raises DestinationParseError for invalid destination"
+      it_behaves_like "raises TemplateParseError for invalid template"
+      it_behaves_like "raises DestinationParseError for invalid destination"
     end
   end
 end

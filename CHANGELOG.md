@@ -29,12 +29,18 @@ Please file a bug if you notice a violation of semantic versioning.
   - `:citrus` backend via `TreeHaver.with_backend(:citrus)` - Tests explicit toml-rb behavior
   - `:rust` backend via `TreeHaver.with_backend(:rust)` - Tests explicit tree-sitter Rust behavior
   - `:java` backend via `TreeHaver.with_backend(:java)` - Tests explicit tree-sitter Java behavior
-  
+
   This ensures consistent behavior is verified across all backends, rather than relying
   on auto-selection which may vary by platform. Each shared example group is included
   in all contexts with appropriate dependency tags (`:toml_grammar`, `:toml_rb`,
   `:toml_parsing`, `:rust_backend`, `:java_backend`). Tests for unavailable backends
   are automatically skipped.
+
+  **Note**: The `:java_backend` tag now correctly detects whether the Java backend can
+  actually load grammars. Standard `.so` files built for MRI's tree-sitter C bindings
+  are NOT compatible with java-tree-sitter. Tests will be skipped on JRuby unless
+  grammar JARs from Maven Central (built for java-tree-sitter's Foreign Function Memory
+  API) are available.
 
 ### Deprecated
 

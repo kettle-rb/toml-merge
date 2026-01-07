@@ -66,30 +66,54 @@ tree-sitter AST nodes and comparing structural elements. It supports:
 
 ### The `*-merge` Gem Family
 
-This gem is part of a family of gems that provide intelligent merging for various file formats:
+The `*-merge` gem family provides intelligent, AST-based merging for various file formats. At the foundation is [tree_haver][tree_haver], which provides a unified cross-Ruby parsing API that works seamlessly across MRI, JRuby, and TruffleRuby.
 
-| Gem                                      | Format   | Parser Backend(s)                                                                                   | Description                                                                      |
-|------------------------------------------|----------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| [tree_haver][tree_haver]                 | Multi    | MRI C, Rust, FFI, Java, Prism, Psych, Commonmarker, Markly, Citrus                                  | **Foundation**: Cross-Ruby adapter for parsing libraries (like Faraday for HTTP) |
-| [ast-merge][ast-merge]                   | Text     | internal                                                                                            | **Infrastructure**: Shared base classes and merge logic for all `*-merge` gems   |
-| [prism-merge][prism-merge]               | Ruby     | [Prism][prism]                                                                                      | Smart merge for Ruby source files                                                |
-| [psych-merge][psych-merge]               | YAML     | [Psych][psych]                                                                                      | Smart merge for YAML files                                                       |
-| [json-merge][json-merge]                 | JSON     | [tree-sitter-json][ts-json] (via tree_haver)                                                        | Smart merge for JSON files                                                       |
-| [jsonc-merge][jsonc-merge]               | JSONC    | [tree-sitter-jsonc][ts-jsonc] (via tree_haver)                                                      | ⚠️ Proof of concept; Smart merge for JSON with Comments                          |
-| [bash-merge][bash-merge]                 | Bash     | [tree-sitter-bash][ts-bash] (via tree_haver)                                                        | Smart merge for Bash scripts                                                     |
-| [rbs-merge][rbs-merge]                   | RBS      | [RBS][rbs]                                                                                          | Smart merge for Ruby type signatures                                             |
-| [dotenv-merge][dotenv-merge]             | Dotenv   | internal                                                                                            | Smart merge for `.env` files                                                     |
-| [toml-merge][toml-merge]                 | TOML     | [Citrus + toml-rb][toml-rb] (default, via tree_haver), [tree-sitter-toml][ts-toml] (via tree_haver) | Smart merge for TOML files                                                       |
-| [markdown-merge][markdown-merge]         | Markdown | [Commonmarker][commonmarker] / [Markly][markly] (via tree_haver)                                    | **Foundation**: Shared base for Markdown mergers with inner code block merging   |
-| [markly-merge][markly-merge]             | Markdown | [Markly][markly] (via tree_haver)                                                                   | Smart merge for Markdown (CommonMark via cmark-gfm C)                            |
-| [commonmarker-merge][commonmarker-merge] | Markdown | [Commonmarker][commonmarker] (via tree_haver)                                                       | Smart merge for Markdown (CommonMark via comrak Rust)                            |
+| Gem                                      | Language<br>/ Format | Parser Backend(s)                                                                                   | Description                                                                      |
+|------------------------------------------|----------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [tree_haver][tree_haver]                 | Multi                | MRI C, Rust, FFI, Java, Prism, Psych, Commonmarker, Markly, Citrus                                  | **Foundation**: Cross-Ruby adapter for parsing libraries (like Faraday for HTTP) |
+| [ast-merge][ast-merge]                   | Text                 | internal                                                                                            | **Infrastructure**: Shared base classes and merge logic for all `*-merge` gems   |
+| [bash-merge][bash-merge]                 | Bash                 | [tree-sitter-bash][ts-bash] (via tree_haver)                                                        | Smart merge for Bash scripts                                                     |
+| [commonmarker-merge][commonmarker-merge] | Markdown             | [Commonmarker][commonmarker] (via tree_haver)                                                       | Smart merge for Markdown (CommonMark via comrak Rust)                            |
+| [dotenv-merge][dotenv-merge]             | Dotenv               | internal                                                                                            | Smart merge for `.env` files                                                     |
+| [json-merge][json-merge]                 | JSON                 | [tree-sitter-json][ts-json] (via tree_haver)                                                        | Smart merge for JSON files                                                       |
+| [jsonc-merge][jsonc-merge]               | JSONC                | [tree-sitter-jsonc][ts-jsonc] (via tree_haver)                                                      | ⚠️ Proof of concept; Smart merge for JSON with Comments                          |
+| [markdown-merge][markdown-merge]         | Markdown             | [Commonmarker][commonmarker] / [Markly][markly] (via tree_haver)                                    | **Foundation**: Shared base for Markdown mergers with inner code block merging   |
+| [markly-merge][markly-merge]             | Markdown             | [Markly][markly] (via tree_haver)                                                                   | Smart merge for Markdown (CommonMark via cmark-gfm C)                            |
+| [prism-merge][prism-merge]               | Ruby                 | [Prism][prism] (`prism` std lib gem)                                                                | Smart merge for Ruby source files                                                |
+| [psych-merge][psych-merge]               | YAML                 | [Psych][psych] (`psych` std lib gem)                                                                | Smart merge for YAML files                                                       |
+| [rbs-merge][rbs-merge]                   | RBS                  | [tree-sitter-bash][ts-rbs] (via tree_haver), [RBS][rbs] (`rbs` std lib gem)                         | Smart merge for Ruby type signatures                                             |
+| [toml-merge][toml-merge]                 | TOML                 | [Citrus + toml-rb][toml-rb] (default, via tree_haver), [tree-sitter-toml][ts-toml] (via tree_haver) | Smart merge for TOML files                                                       |
+
+#### Backend Platform Compatibility
+
+tree_haver supports multiple parsing backends, but not all backends work on all Ruby platforms:
+
+| Platform 👉️<br> TreeHaver Backend 👇️         | MRI | JRuby | TruffleRuby | Notes                                               |
+|------------------------------------------------|:---:|:-----:|:-----------:|-----------------------------------------------------|
+| **MRI** ([ruby_tree_sitter][ruby_tree_sitter]) |  ✅  |   ❌   |      ❌      | C extension, MRI only                               |
+| **Rust** ([tree_stump][tree_stump])            |  ✅  |   ❌   |      ❌      | Rust extension via magnus/rb-sys, MRI only          |
+| **FFI**                                        |  ✅  |   ✅   |      ❌      | TruffleRuby's FFI doesn't support `STRUCT_BY_VALUE` |
+| **Java** ([jtreesitter][jtreesitter])          |  ❌  |   ✅   |      ❌      | JRuby only, requires grammar JARs                   |
+| **Prism**                                      |  ✅  |   ✅   |      ✅      | Ruby parsing, stdlib in Ruby 3.4+                   |
+| **Psych**                                      |  ✅  |   ✅   |      ✅      | YAML parsing, stdlib                                |
+| **Citrus**                                     |  ✅  |   ✅   |      ✅      | Pure Ruby, no native dependencies                   |
+| **Commonmarker**                               |  ✅  |   ❌   |      ❓      | Rust extension for Markdown                         |
+| **Markly**                                     |  ✅  |   ❌   |      ❓      | C extension for Markdown                            |
+
+**Legend**: ✅ = Works, ❌ = Does not work, ❓ = Untested
+
+**Why some backends don't work on certain platforms**:
+
+- **JRuby**: Runs on the JVM; cannot load native C/Rust extensions (`.so` files)
+- **TruffleRuby**: Has C API emulation via Sulong/LLVM, but it doesn't expose all MRI internals that native extensions require (e.g., `RBasic.flags`, `rb_gc_writebarrier`)
+- **FFI on TruffleRuby**: TruffleRuby's FFI implementation doesn't support returning structs by value, which tree-sitter's C API requires
 
 **Example implementations** for the gem templating use case:
 
-| Gem | Purpose | Description |
-| --- | --- | --- |
-| [kettle-dev](https://github.com/kettle-rb/kettle-dev) | Gem Development | Gem templating tool using `*-merge` gems |
-| [kettle-jem](https://github.com/kettle-rb/kettle-jem) | Gem Templating | Gem template library with smart merge support |
+| Gem                      | Purpose         | Description                                   |
+|--------------------------|-----------------|-----------------------------------------------|
+| [kettle-dev][kettle-dev] | Gem Development | Gem templating tool using `*-merge` gems      |
+| [kettle-jem][kettle-jem] | Gem Templating  | Gem template library with smart merge support |
 
 [tree_haver]: https://github.com/kettle-rb/tree_haver
 [ast-merge]: https://github.com/kettle-rb/ast-merge
@@ -111,15 +135,16 @@ This gem is part of a family of gems that provide intelligent merging for variou
 [ts-json]: https://github.com/tree-sitter/tree-sitter-json
 [ts-jsonc]: https://gitlab.com/WhyNotHugo/tree-sitter-jsonc
 [ts-bash]: https://github.com/tree-sitter/tree-sitter-bash
+[ts-rbs]: https://github.com/joker1007/tree-sitter-rbs
 [ts-toml]: https://github.com/tree-sitter-grammars/tree-sitter-toml
-[rbs]: https://github.com/ruby/rbs
 [dotenv]: https://github.com/bkeepers/dotenv
+[rbs]: https://github.com/ruby/rbs
+[toml-rb]: https://github.com/emancu/toml-rb
 [markly]: https://github.com/ioquatix/markly
 [commonmarker]: https://github.com/gjtorikian/commonmarker
-
-
-The `*-merge` gem family provides intelligent, AST-based merging for various file formats. At the foundation is [tree_haver][tree_haver], which provides a unified cross-Ruby parsing API that works seamlessly across MRI, JRuby, and TruffleRuby.
-[toml-rb]: https://github.com/emancu/toml-rb
+[ruby_tree_sitter]: https://github.com/Faveod/ruby-tree-sitter
+[tree_stump]: https://github.com/joker1007/tree_stump
+[jtreesitter]: https://central.sonatype.com/artifact/io.github.tree-sitter/jtreesitter
 
 ### Configuration
 
@@ -213,12 +238,16 @@ The maintainers of this and thousands of other packages are working with Tidelif
 [![Get help from me on Tidelift](https://img.shields.io/badge/Tidelift_and_Sonar-Enterprise_Support-FD3456?style=for-the-badge&logo=sonar&logoColor=white)](https://tidelift.com/subscription/pkg/rubygems-toml-merge?utm_source=rubygems-toml-merge&utm_medium=referral&utm_campaign=readme)
 
   - 💡Subscribe for support guarantees covering *all* your FLOSS dependencies
+
   - 💡Tidelift is part of [Sonar](https://blog.tidelift.com/tidelift-joins-sonar)
+
   - 💡Tidelift pays maintainers to maintain the software you depend on\!<br/>📊`@`Pointy Haired Boss: An [enterprise support](https://tidelift.com/subscription/pkg/rubygems-toml-merge?utm_source=rubygems-toml-merge&utm_medium=referral&utm_campaign=readme) subscription is "[never gonna let you down](https://www.youtube.com/watch?v=dQw4w9WgXcQ)", and *supports* open source maintainers
-Alternatively:
+    Alternatively:
 
   - [![Live Chat on Discord](https://img.shields.io/discord/1373797679469170758?style=for-the-badge&logo=discord)](https://discord.gg/3qme4XHNKN)
+
   - [![Get help from me on Upwork](https://img.shields.io/badge/UpWork-13544E?style=for-the-badge&logo=Upwork&logoColor=white)](https://www.upwork.com/freelancers/~014942e9b056abdf86?mp_source=share)
+
   - [![Get help from me on Codementor](https://img.shields.io/badge/CodeMentor-Get_Help-1abc9c?style=for-the-badge&logo=CodeMentor&logoColor=white)](https://www.codementor.io/peterboling?utm_source=github&utm_medium=button&utm_term=peterboling&utm_campaign=github)
 </details>
 
@@ -279,7 +308,6 @@ NOTE: Be prepared to track down certs for signed gems and add them the same way 
 
 **Tree-sitter backend** (default, requires native library):
   - Set the `TREE_SITTER_TOML_PATH` environment variable to point to your compiled `libtree-sitter-toml.so` (or `.dylib` on macOS):
-
 <!-- end list -->
 ``` bash
 export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
@@ -335,8 +363,7 @@ you must use the FFI backend or the Citrus backend (below).
   - No compilation or system dependencies required
   - Ideal for environments where native extensions are problematic
   - Configure via tree\_haver's backend selection
-For more details on backend configuration, see the [tree\_haver documentation](https://github.com/kettle-rb/tree_haver).
-
+    For more details on backend configuration, see the [tree\_haver documentation](https://github.com/kettle-rb/tree_haver).
 ### Merge Options
 
 ``` ruby
