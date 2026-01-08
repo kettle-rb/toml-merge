@@ -20,6 +20,10 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+- **Emitter autoload** - Added `Emitter` to module autoload list
+  - Previously missing, causing `NameError: uninitialized constant Emitter` in ConflictResolver
+  - Now properly autoloaded via `autoload :Emitter, "toml/merge/emitter"`
+
 ### Changed
 
 - **Test suite now explicitly tests all available backend modes** - Tests previously ran with

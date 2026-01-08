@@ -92,6 +92,7 @@ module Toml
     class DestinationParseError < ParseError; end
 
     autoload :DebugLogger, "toml/merge/debug_logger"
+    autoload :Emitter, "toml/merge/emitter"
     autoload :FileAnalysis, "toml/merge/file_analysis"
     autoload :MergeResult, "toml/merge/merge_result"
     autoload :NodeTypeNormalizer, "toml/merge/node_type_normalizer"

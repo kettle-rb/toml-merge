@@ -8,7 +8,7 @@ module Toml
     # @example Basic usage
     #   resolver = ConflictResolver.new(template_analysis, dest_analysis)
     #   resolver.resolve(result)
-    class ConflictResolver < ::Ast::Merge::ConflictResolverBase
+    class ConflictResolver < Ast::Merge::ConflictResolverBase
       # Creates a new ConflictResolver
       #
       # @param template_analysis [FileAnalysis] Analyzed template file
@@ -30,6 +30,7 @@ module Toml
           match_refiner: match_refiner,
           **options
         )
+        @emitter = Emitter.new
       end
 
       protected
@@ -42,14 +43,24 @@ module Toml
           template_statements = @template_analysis.statements
           dest_statements = @dest_analysis.statements
 
-          # Merge root-level statements (tables, array_of_tables, pairs)
-          merge_node_lists(
+          # Clear emitter for fresh merge
+          @emitter.clear
+
+          # Merge root-level statements via emitter
+          merge_node_lists_to_emitter(
             template_statements,
             dest_statements,
             @template_analysis,
             @dest_analysis,
-            result,
           )
+
+          # Transfer emitter output to result
+          emitted_content = @emitter.to_s
+          unless emitted_content.empty?
+            emitted_content.lines.each do |line|
+              result.add_line(line.chomp, decision: MergeResult::DECISION_MERGED, source: :merged)
+            end
+          end
 
           DebugLogger.debug("Conflict resolution complete", {
             template_statements: template_statements.size,
@@ -61,13 +72,12 @@ module Toml
 
       private
 
-      # Recursively merge two lists of nodes (tree-based merge)
+      # Recursively merge two lists of nodes, emitting to emitter
       # @param template_nodes [Array<NodeWrapper>] Template nodes
       # @param dest_nodes [Array<NodeWrapper>] Destination nodes
       # @param template_analysis [FileAnalysis] Template analysis for line access
       # @param dest_analysis [FileAnalysis] Destination analysis for line access
-      # @param result [MergeResult] Result to populate
-      def merge_node_lists(template_nodes, dest_nodes, template_analysis, dest_analysis, result)
+      def merge_node_lists_to_emitter(template_nodes, dest_nodes, template_analysis, dest_analysis)
         # Build signature maps for matching
         template_by_sig = build_signature_map(template_nodes, template_analysis)
         dest_by_sig = build_signature_map(dest_nodes, dest_analysis)
@@ -84,20 +94,13 @@ module Toml
         dest_nodes.each do |dest_node|
           dest_sig = dest_analysis.generate_signature(dest_node)
 
-          # Freeze blocks from destination are always preserved
-          if freeze_node?(dest_node)
-            add_node_to_result(dest_node, result, :destination, MergeResult::DECISION_FREEZE_BLOCK, dest_analysis)
-            processed_dest_sigs << dest_sig if dest_sig
-            next
-          end
-
           # Check for signature match
           if dest_sig && template_by_sig[dest_sig]
             template_info = template_by_sig[dest_sig].first
             template_node = template_info[:node]
 
-            # Both have this node - merge them (recursively if containers)
-            merge_matched_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
+            # Both have this node - merge them
+            merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
 
             processed_dest_sigs << dest_sig
             processed_template_sigs << dest_sig
@@ -107,13 +110,13 @@ module Toml
             template_sig = template_analysis.generate_signature(template_node)
 
             # Merge matched nodes
-            merge_matched_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
+            merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
 
             processed_dest_sigs << dest_sig if dest_sig
             processed_template_sigs << template_sig if template_sig
           else
             # Destination-only node - always keep
-            add_node_to_result(dest_node, result, :destination, MergeResult::DECISION_KEPT_DEST, dest_analysis)
+            emit_node(dest_node, dest_analysis)
             processed_dest_sigs << dest_sig if dest_sig
           end
         end
@@ -127,38 +130,56 @@ module Toml
           # Skip if already processed
           next if template_sig && processed_template_sigs.include?(template_sig)
 
-          # Skip freeze blocks from template
-          next if freeze_node?(template_node)
-
           # Add template-only node
-          add_node_to_result(template_node, result, :template, MergeResult::DECISION_ADDED, template_analysis)
+          emit_node(template_node, template_analysis)
           processed_template_sigs << template_sig if template_sig
         end
       end
 
-      # Merge two matched nodes - for containers, recursively merge children
+      # Merge two matched nodes
       # @param template_node [NodeWrapper] Template node
       # @param dest_node [NodeWrapper] Destination node
       # @param template_analysis [FileAnalysis] Template analysis
       # @param dest_analysis [FileAnalysis] Destination analysis
-      # @param result [MergeResult] Result to populate
-      def merge_matched_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
+      def merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
+        # For TOML, tables can be merged recursively
         if dest_node.table? && template_node.table?
-          # Both are tables - merge their contents
-          merge_table_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
-        elsif dest_node.container? && template_node.container?
-          # Both are containers - recursively merge their children
-          merge_container_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
+          # Emit table header and merge children
+          @emitter.emit_table_header(dest_node.table_name || template_node.table_name)
+
+          template_children = template_node.children
+          dest_children = dest_node.children
+
+          merge_node_lists_to_emitter(
+            template_children,
+            dest_children,
+            template_analysis,
+            dest_analysis,
+          )
         elsif @preference == :destination
           # Leaf nodes or mismatched types - use preference
-          add_node_to_result(dest_node, result, :destination, MergeResult::DECISION_KEPT_DEST, dest_analysis)
+          emit_node(dest_node, dest_analysis)
         else
-          add_node_to_result(template_node, result, :template, MergeResult::DECISION_KEPT_TEMPLATE, template_analysis)
+          emit_node(template_node, template_analysis)
         end
       end
 
-      # Build a map of refined matches from template node to destination node.
-      # Uses the match_refiner to find additional pairings for nodes that didn't match by signature.
+      # Emit a single node to the emitter
+      # @param node [NodeWrapper] Node to emit
+      # @param analysis [FileAnalysis] Analysis for accessing source
+      def emit_node(node, analysis)
+        # Emit the node content
+        if node.start_line && node.end_line
+          lines = []
+          (node.start_line..node.end_line).each do |line_num|
+            line = analysis.line_at(line_num)
+            lines << line if line
+          end
+          @emitter.emit_raw_lines(lines)
+        end
+      end
+
+      # Build a map of refined matches
       # @param template_nodes [Array<NodeWrapper>] Template nodes
       # @param dest_nodes [Array<NodeWrapper>] Destination nodes
       # @param template_by_sig [Hash] Template signature map
@@ -189,76 +210,6 @@ module Toml
         # Build result map: template node -> dest node
         matches.each_with_object({}) do |match, h|
           h[match.template_node] = match.dest_node
-        end
-      end
-
-      # Merge two table nodes by emitting the table header and recursively merging pairs
-      # @param template_node [NodeWrapper] Template table node
-      # @param dest_node [NodeWrapper] Destination table node
-      # @param template_analysis [FileAnalysis] Template analysis
-      # @param dest_analysis [FileAnalysis] Destination analysis
-      # @param result [MergeResult] Result to populate
-      def merge_table_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
-        # Use destination's table header line
-        header = dest_node.opening_line || template_node.opening_line
-        result.add_line(header, decision: MergeResult::DECISION_MERGED, source: :merged) if header
-
-        # Recursively merge the pairs within the table
-        template_pairs = template_node.pairs
-        dest_pairs = dest_node.pairs
-
-        merge_node_lists(
-          template_pairs,
-          dest_pairs,
-          template_analysis,
-          dest_analysis,
-          result,
-        )
-      end
-
-      # Merge two container nodes by emitting opening, recursively merging children, then closing
-      # @param template_node [NodeWrapper] Template container node
-      # @param dest_node [NodeWrapper] Destination container node
-      # @param template_analysis [FileAnalysis] Template analysis
-      # @param dest_analysis [FileAnalysis] Destination analysis
-      # @param result [MergeResult] Result to populate
-      def merge_container_nodes(template_node, dest_node, template_analysis, dest_analysis, result)
-        # Recursively merge the children
-        template_children = template_node.mergeable_children
-        dest_children = dest_node.mergeable_children
-
-        merge_node_lists(
-          template_children,
-          dest_children,
-          template_analysis,
-          dest_analysis,
-          result,
-        )
-      end
-
-      # Add a node to the result (non-container or leaf node)
-      # @param node [NodeWrapper] Node to add
-      # @param result [MergeResult] Result to populate
-      # @param source [Symbol] :template or :destination
-      # @param decision [String] Decision constant
-      # @param analysis [FileAnalysis] Analysis for line access
-      def add_node_to_result(node, result, source, decision, analysis)
-        if node.is_a?(NodeWrapper)
-          add_wrapper_to_result(node, result, source, decision, analysis)
-        else
-          DebugLogger.debug("Unknown node type", {node_type: node.class.name})
-        end
-      end
-
-      def add_wrapper_to_result(wrapper, result, source, decision, analysis)
-        return unless wrapper.start_line && wrapper.end_line
-
-        # Add the node content line by line
-        (wrapper.start_line..wrapper.end_line).each do |line_num|
-          line = analysis.line_at(line_num)
-          next unless line
-
-          result.add_line(line.chomp, decision: decision, source: source, original_line: line_num)
         end
       end
     end

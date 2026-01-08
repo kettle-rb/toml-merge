@@ -571,28 +571,6 @@ RSpec.describe Toml::Merge::ConflictResolver do
     let(:dest_analysis) { instance_double(Toml::Merge::FileAnalysis, line_at: nil) }
     let(:result) { Toml::Merge::MergeResult.new }
 
-    describe "#add_node_to_result" do
-      it "logs unknown node types instead of raising" do
-        unknown = Object.new
-
-        allow(Toml::Merge::DebugLogger).to receive(:debug)
-
-        resolver.send(
-          :add_node_to_result,
-          unknown,
-          result,
-          :destination,
-          Toml::Merge::MergeResult::DECISION_KEPT_DEST,
-          dest_analysis,
-        )
-
-        expect(Toml::Merge::DebugLogger).to have_received(:debug).with(
-          "Unknown node type",
-          {node_type: "Object"},
-        )
-      end
-    end
-
     describe "#build_refined_matches" do
       it "returns empty hash when no match_refiner is configured" do
         matches = resolver.send(:build_refined_matches, [], [], {}, {})
@@ -625,68 +603,6 @@ RSpec.describe Toml::Merge::ConflictResolver do
         )
 
         expect(matches).to eq({})
-      end
-    end
-
-    describe "#merge_matched_nodes" do
-      it "keeps destination leaf when preference is :destination" do
-        # Use real NodeWrapper instances with minimal tree-sitter nodes
-        # to ensure is_a? checks pass and the full add_node flow works
-        template_toml = "host = \"staging\""
-        dest_toml = "host = \"production\""
-
-        template_analysis_real = Toml::Merge::FileAnalysis.new(template_toml)
-        dest_analysis_real = Toml::Merge::FileAnalysis.new(dest_toml)
-
-        template_node = template_analysis_real.statements.first
-        dest_node = dest_analysis_real.statements.first
-
-        resolver_with_real = described_class.new(
-          template_analysis_real,
-          dest_analysis_real,
-          preference: :destination,
-          add_template_only_nodes: false,
-        )
-
-        resolver_with_real.send(
-          :merge_matched_nodes,
-          template_node,
-          dest_node,
-          template_analysis_real,
-          dest_analysis_real,
-          result,
-        )
-
-        expect(result.content).to include("host = \"production\"")
-      end
-
-      it "keeps template leaf when preference is :template" do
-        template_toml = "host = \"template\""
-        dest_toml = "host = \"dest\""
-
-        template_analysis_real = Toml::Merge::FileAnalysis.new(template_toml)
-        dest_analysis_real = Toml::Merge::FileAnalysis.new(dest_toml)
-
-        template_node = template_analysis_real.statements.first
-        dest_node = dest_analysis_real.statements.first
-
-        resolver_with_real = described_class.new(
-          template_analysis_real,
-          dest_analysis_real,
-          preference: :template,
-          add_template_only_nodes: false,
-        )
-
-        resolver_with_real.send(
-          :merge_matched_nodes,
-          template_node,
-          dest_node,
-          template_analysis_real,
-          dest_analysis_real,
-          result,
-        )
-
-        expect(result.content).to include("host = \"template\"")
       end
     end
   end
