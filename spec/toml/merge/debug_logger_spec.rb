@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Toml::Merge::DebugLogger do
   describe ".debug" do
     context "when TOML_MERGE_DEBUG is not set" do

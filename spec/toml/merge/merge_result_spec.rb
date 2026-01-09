@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Toml::Merge::MergeResult do
   subject(:result) { described_class.new }
 

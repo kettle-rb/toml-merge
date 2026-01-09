@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Toml::Merge::ConflictResolver do
   # ConflictResolver requires real FileAnalysis objects with parsed content
   # These tests document the expected interface

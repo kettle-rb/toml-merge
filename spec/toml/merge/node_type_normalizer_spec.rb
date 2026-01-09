@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Toml::Merge::NodeTypeNormalizer do
   describe ".canonical_type" do
     # These tests only use the mapping hash - no actual parsing needed

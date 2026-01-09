@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe "TOML Smart Merge Integration" do
   let(:fixtures_path) { File.expand_path("../fixtures", __dir__) }
 

@@ -20,31 +20,7 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
-- **Emitter autoload** - Added `Emitter` to module autoload list
-  - Previously missing, causing `NameError: uninitialized constant Emitter` in ConflictResolver
-  - Now properly autoloaded via `autoload :Emitter, "toml/merge/emitter"`
-
 ### Changed
-
-- **Test suite now explicitly tests all available backend modes** - Tests previously ran with
-  whatever backend was auto-selected. Now specs explicitly test up to five backend configurations:
-  - `:auto` backend - Tests default user experience (backend-agnostic)
-  - `:mri` backend via `TreeHaver.with_backend(:mri)` - Tests explicit tree-sitter MRI behavior
-  - `:citrus` backend via `TreeHaver.with_backend(:citrus)` - Tests explicit toml-rb behavior
-  - `:rust` backend via `TreeHaver.with_backend(:rust)` - Tests explicit tree-sitter Rust behavior
-  - `:java` backend via `TreeHaver.with_backend(:java)` - Tests explicit tree-sitter Java behavior
-
-  This ensures consistent behavior is verified across all backends, rather than relying
-  on auto-selection which may vary by platform. Each shared example group is included
-  in all contexts with appropriate dependency tags (`:toml_grammar`, `:toml_rb`,
-  `:toml_parsing`, `:rust_backend`, `:java_backend`). Tests for unavailable backends
-  are automatically skipped.
-
-  **Note**: The `:java_backend` tag now correctly detects whether the Java backend can
-  actually load grammars. Standard `.so` files built for MRI's tree-sitter C bindings
-  are NOT compatible with java-tree-sitter. Tests will be skipped on JRuby unless
-  grammar JARs from Maven Central (built for java-tree-sitter's Foreign Function Memory
-  API) are available.
 
 ### Deprecated
 
@@ -54,15 +30,23 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Security
 
-## [2.0.0] - 2026-01-02
+## [2.0.0] - 2026-01-09
 
 - TAG: [v2.0.0][2.0.0t]
-- COVERAGE: 100.00% -- 78/78 lines in 1 files
-- BRANCH COVERAGE: 82.50% -- 33/40 branches in 1 files
-- 96.55% documented
+- COVERAGE: 88.38% -- 563/637 lines in 11 files
+- BRANCH COVERAGE: 64.13% -- 177/276 branches in 11 files
+- 97.03% documented
 
 ### Added
 
+- FFI backend isolation for test suite
+  - Added `bin/rspec-ffi` script to run FFI specs in isolation (before MRI backend loads)
+  - Added `spec/spec_ffi_helper.rb` for FFI-specific test configuration
+  - Updated Rakefile with `ffi_specs` and `remaining_specs` tasks
+  - The `:test` task now runs FFI specs first, then remaining specs
+- **Emitter autoload** - Added `Emitter` to module autoload list
+  - Previously missing, causing `NameError: uninitialized constant Emitter` in ConflictResolver
+  - Now properly autoloaded via `autoload :Emitter, "toml/merge/emitter"`
 - `Backends` module with constants for backend selection
   - `Backends::TREE_SITTER` (`:tree_sitter_toml`) - Native tree-sitter parser
   - `Backends::CITRUS` (`:citrus_toml`) - Pure Ruby toml-rb parser
@@ -92,6 +76,28 @@ Please file a bug if you notice a violation of semantic versioning.
 - `spec/support/dependency_tags.rb` for conditional test execution based on backend availability
 
 ### Changed
+
+- ast-merge v3.1.0
+- tree_haver v4.0.3, adds error handling for FFI backend
+- **Test suite now explicitly tests all available backend modes** - Tests previously ran with
+  whatever backend was auto-selected. Now specs explicitly test up to five backend configurations:
+  - `:auto` backend - Tests default user experience (backend-agnostic)
+  - `:mri` backend via `TreeHaver.with_backend(:mri)` - Tests explicit tree-sitter MRI behavior
+  - `:citrus` backend via `TreeHaver.with_backend(:citrus)` - Tests explicit toml-rb behavior
+  - `:rust` backend via `TreeHaver.with_backend(:rust)` - Tests explicit tree-sitter Rust behavior
+  - `:java` backend via `TreeHaver.with_backend(:java)` - Tests explicit tree-sitter Java behavior
+
+  This ensures consistent behavior is verified across all backends, rather than relying
+  on auto-selection which may vary by platform. Each shared example group is included
+  in all contexts with appropriate dependency tags (`:toml_grammar`, `:toml_rb`,
+  `:toml_parsing`, `:rust_backend`, `:java_backend`). Tests for unavailable backends
+  are automatically skipped.
+
+  **Note**: The `:java_backend` tag now correctly detects whether the Java backend can
+  actually load grammars. Standard `.so` files built for MRI's tree-sitter C bindings
+  are NOT compatible with java-tree-sitter. Tests will be skipped on JRuby unless
+  grammar JARs from Maven Central (built for java-tree-sitter's Foreign Function Memory
+  API) are available.
 
 - **Backend handling simplified** - Let TreeHaver handle all backend selection:
   - Removed `backend:` parameter from `SmartMerger` and `FileAnalysis`

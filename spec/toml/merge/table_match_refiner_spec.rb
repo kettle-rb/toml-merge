@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Toml::Merge::TableMatchRefiner do
   describe "#initialize" do
     it "accepts a threshold" do

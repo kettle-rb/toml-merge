@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Toml::Merge::NodeWrapper do
   describe ".wrap" do
     it "returns nil for nil input" do
