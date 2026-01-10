@@ -52,3 +52,4 @@ RSpec/Output:
   Exclude:
     - 'spec/support/**/*'
     - 'spec/config/**/*'
+    - 'spec/fixtures/**/*'
