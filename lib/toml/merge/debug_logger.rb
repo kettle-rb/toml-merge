@@ -6,7 +6,7 @@ module Toml
     # Extends the base Ast::Merge::DebugLogger with Toml-specific configuration.
     #
     # @example Enable debug logging
-    #   ENV['TOML_MERGE_DEBUG'] = '1'
+    #   ENV['TREE_HAVER_DEBUG'] = '1'
     #   DebugLogger.debug("Processing node", {type: "pair", line: 5})
     #
     # @example Disable debug logging (default)
@@ -15,7 +15,7 @@ module Toml
       extend Ast::Merge::DebugLogger
 
       # Toml-specific configuration
-      self.env_var_name = "TOML_MERGE_DEBUG"
+      self.env_var_name = "TREE_HAVER_DEBUG"
       self.log_prefix = "[Toml::Merge]"
 
       class << self

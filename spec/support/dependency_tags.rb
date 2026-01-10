@@ -6,25 +6,12 @@
 # implementation is in tree_haver so it can be shared across all gems
 # in the TreeHaver/ast-merge family.
 #
+# For debugging, use TREE_HAVER_DEBUG=true which prints dependency
+# availability in a way that respects backend isolation (FFI vs MRI).
+#
 # @see TreeHaver::RSpec::DependencyTags
 
 require "tree_haver/rspec"
 
-# Additional toml-merge specific configuration
-RSpec.configure do |config|
-  # Print dependency summary if TOML_MERGE_DEBUG is set
-  config.before(:suite) do
-    if ENV["TOML_MERGE_DEBUG"]
-      puts "\n=== Toml::Merge Test Dependencies ==="
-      TreeHaver::RSpec::DependencyTags.summary.each do |dep, available|
-        status = case available
-        when true then "✓ available"
-        when false then "✗ not available"
-        else available.to_s
-        end
-        puts "  #{dep}: #{status}"
-      end
-      puts "======================================\n"
-    end
-  end
-end
+# Alias for convenience in existing specs
+TomlMergeDependencies = TreeHaver::RSpec::DependencyTags

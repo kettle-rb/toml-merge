@@ -22,6 +22,14 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Changed
 
+- tree_haver v4.0.5
+  - FFI Backend improvements
+  - Error handling improvements
+- **Simplified dependency_tags.rb**: Removed redundant debug code
+  - Removed `TOML_MERGE_DEBUG` env var handling (use `TREE_HAVER_DEBUG` instead)
+  - tree_haver's debug output now respects blocked backends via `compute_blocked_backends`
+  - Avoids accidentally loading MRI backend during FFI-only test runs
+
 ### Deprecated
 
 ### Removed
