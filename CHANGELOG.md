@@ -29,6 +29,8 @@ Please file a bug if you notice a violation of semantic versioning.
   - Removed `TOML_MERGE_DEBUG` env var handling (use `TREE_HAVER_DEBUG` instead)
   - tree_haver's debug output now respects blocked backends via `compute_blocked_backends`
   - Avoids accidentally loading MRI backend during FFI-only test runs
+- Updated documentation on hostile takeover of RubyGems
+  - https://dev.to/galtzo/hostile-takeover-of-rubygems-my-thoughts-5hlo
 
 ### Deprecated
 
