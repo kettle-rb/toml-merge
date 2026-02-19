@@ -20,6 +20,25 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.0.1] - 2026-02-19
+
+- TAG: [v2.0.1][2.0.1t]
+- COVERAGE: 89.42% -- 575/643 lines in 11 files
+- BRANCH COVERAGE: 65.23% -- 182/279 branches in 11 files
+- 97.03% documented
+
+### Added
+
 - AGENTS.md
 
 ### Changed
@@ -40,14 +59,6 @@ Please file a bug if you notice a violation of semantic versioning.
   - Avoids accidentally loading MRI backend during FFI-only test runs
 - Updated documentation on hostile takeover of RubyGems
   - https://dev.to/galtzo/hostile-takeover-of-rubygems-my-thoughts-5hlo
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [2.0.0] - 2026-01-09
 
@@ -242,7 +253,7 @@ Please file a bug if you notice a violation of semantic versioning.
   - Can force Citrus backend via `TREE_HAVER_BACKEND=citrus` environment variable
 - Added graceful error handling when neither tree-sitter-toml nor toml-rb are available
 
-[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/kettle-rb/toml-merge/compare/v2.0.1...HEAD
 [2.0.1]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...v2.0.1
 [2.0.1t]: https://github.com/kettle-rb/toml-merge/releases/tag/v2.0.1
 [2.0.0]: https://github.com/kettle-rb/toml-merge/compare/v1.0.0...v2.0.0
