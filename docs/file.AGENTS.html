@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: AGENTS
+  
+    &mdash; Documentation by YARD 0.9.38
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "AGENTS";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: AGENTS</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="agentsmd---toml-merge-development-guide">AGENTS.md - toml-merge Development Guide</h1>
+
+<h2 id="-project-overview">🎯 Project Overview</h2>
+
+<p><code>toml-merge</code> is a <strong>format-specific implementation of the <code>*-merge</code> gem family</strong> for TOML files. It provides intelligent TOML file merging using AST analysis with support for multiple parser backends (tree-sitter, Citrus, Parslet).</p>
+
+<p><strong>Core Philosophy</strong>: Intelligent TOML merging that preserves structure, comments, and formatting while applying updates from templates.</p>
+
+<p><strong>Repository</strong>: https://github.com/kettle-rb/toml-merge<br>
+<strong>Current Version</strong>: 2.0.1<br>
+<strong>Required Ruby</strong>: &gt;= 3.2.0 (currently developed against Ruby 4.0.1)</p>
+
+<h2 id="️-architecture-format-specific-implementation">🏗️ Architecture: Format-Specific Implementation</h2>
+
+<h3 id="what-toml-merge-provides">What toml-merge Provides</h3>
+
+<ul>
+  <li>
+<strong><code>Toml::Merge::SmartMerger</code></strong> – TOML-specific SmartMerger implementation</li>
+  <li>
+<strong><code>Toml::Merge::FileAnalysis</code></strong> – TOML file analysis with table/pair extraction</li>
+  <li>
+<strong><code>Toml::Merge::NodeWrapper</code></strong> – Wrapper for TOML AST nodes (tables, pairs, arrays)</li>
+  <li>
+<strong><code>Toml::Merge::MergeResult</code></strong> – TOML-specific merge result</li>
+  <li>
+<strong><code>Toml::Merge::ConflictResolver</code></strong> – TOML conflict resolution</li>
+  <li>
+<strong><code>Toml::Merge::FreezeNode</code></strong> – TOML freeze block support</li>
+  <li>
+<strong><code>Toml::Merge::TableMatchRefiner</code></strong> – TOML table matching refinement</li>
+  <li>
+<strong><code>Toml::Merge::NodeTypeNormalizer</code></strong> – Cross-backend type normalization</li>
+</ul>
+
+<h3 id="key-dependencies">Key Dependencies</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Gem</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+<code>ast-merge</code> (~&gt; 4.0)</td>
+      <td>Base classes and shared infrastructure</td>
+    </tr>
+    <tr>
+      <td>
+<code>tree_haver</code> (~&gt; 5.0)</td>
+      <td>Unified parser adapter (tree-sitter, Citrus, Parslet)</td>
+    </tr>
+    <tr>
+      <td>
+<code>version_gem</code> (~&gt; 1.1)</td>
+      <td>Version management</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="parser-backend-support">Parser Backend Support</h3>
+
+<p>toml-merge works with multiple TOML parser backends via TreeHaver:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Backend</th>
+      <th>Parser</th>
+      <th>Platform</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>:mri</code></td>
+      <td>tree-sitter-toml</td>
+      <td>MRI only</td>
+      <td>Best performance, requires native library</td>
+    </tr>
+    <tr>
+      <td><code>:rust</code></td>
+      <td>tree-sitter-toml</td>
+      <td>MRI only</td>
+      <td>Rust implementation via tree_stump</td>
+    </tr>
+    <tr>
+      <td><code>:citrus</code></td>
+      <td>citrus + toml-rb</td>
+      <td>All platforms</td>
+      <td>Pure Ruby, good compatibility</td>
+    </tr>
+    <tr>
+      <td><code>:parslet</code></td>
+      <td>parslet + toml</td>
+      <td>All platforms</td>
+      <td>Pure Ruby, alternative parser</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="-project-structure">📁 Project Structure</h2>
+
+<pre class="code ruby"><code class="ruby">lib/toml/merge/
+├── smart_merger.rb          # Main SmartMerger implementation
+├── file_analysis.rb         # TOML file analysis (tables, pairs)
+├── node_wrapper.rb          # AST node wrapper
+├── merge_result.rb          # Merge result object
+├── conflict_resolver.rb     # Conflict resolution
+├── freeze_node.rb           # Freeze block support
+├── table_match_refiner.rb   # Table matching refinement
+├── node_type_normalizer.rb  # Cross-backend type mapping
+├── debug_logger.rb          # Debug logging
+└── version.rb
+
+spec/toml/merge/
+├── smart_merger_spec.rb
+├── file_analysis_spec.rb
+├── node_wrapper_spec.rb
+├── table_match_refiner_spec.rb
+└── integration/
+</code></pre>
+
+<h2 id="-development-workflows">🔧 Development Workflows</h2>
+
+<h3 id="running-tests">Running Tests</h3>
+
+<pre class="code language-bash"><code class="language-bash"># Full suite (required for coverage thresholds)
+bundle exec rspec
+
+# Single file (disable coverage threshold check)
+K_SOUP_COV_MIN_HARD=false bundle exec rspec spec/toml/merge/smart_merger_spec.rb
+
+# Specific backend tests
+bundle exec rspec --tag mri_backend
+bundle exec rspec --tag citrus_backend
+bundle exec rspec --tag parslet_backend
+</code></pre>
+
+<p><strong>Note</strong>: Always run commands in the project root (<code>/home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge</code>). Allow <code>direnv</code> to load environment variables first by doing a plain <code>cd</code> before running commands.</p>
+
+<h3 id="coverage-reports">Coverage Reports</h3>
+
+<pre class="code language-bash"><code class="language-bash">cd /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge
+bin/rake coverage &amp;&amp; bin/kettle-soup-cover -d
+</code></pre>
+
+<p><strong>Key ENV variables</strong> (set in <code>.envrc</code>, loaded via <code>direnv allow</code>):</p>
+<ul>
+  <li>
+<code>K_SOUP_COV_DO=true</code> – Enable coverage</li>
+  <li>
+<code>K_SOUP_COV_MIN_LINE=100</code> – Line coverage threshold</li>
+  <li>
+<code>K_SOUP_COV_MIN_BRANCH=82</code> – Branch coverage threshold</li>
+  <li>
+<code>K_SOUP_COV_MIN_HARD=true</code> – Fail if thresholds not met</li>
+</ul>
+
+<h3 id="code-quality">Code Quality</h3>
+
+<pre class="code language-bash"><code class="language-bash">bundle exec rake reek
+bundle exec rake rubocop_gradual
+</code></pre>
+
+<h2 id="-project-conventions">📝 Project Conventions</h2>
+
+<h3 id="api-conventions">API Conventions</h3>
+
+<h4 id="smartmerger-api">SmartMerger API</h4>
+<ul>
+  <li>
+<code>merge</code> – Returns a <strong>String</strong> (the merged TOML content)</li>
+  <li>
+<code>merge_result</code> – Returns a <strong>MergeResult</strong> object</li>
+  <li>
+<code>to_s</code> on MergeResult returns the merged content as a string</li>
+</ul>
+
+<h4 id="toml-specific-features">TOML-Specific Features</h4>
+
+<p><strong>Table Matching</strong>:</p>
+<pre class="code language-ruby"><code class="language-ruby">merger = Toml::Merge::SmartMerger.new(template_toml, dest_toml)
+result = merger.merge
+</code></pre>
+
+<p><strong>Freeze Blocks</strong>:</p>
+<pre class="code language-toml"><code class="language-toml">[server]
+# toml-merge:freeze
+port = 8080  # Custom port, don&#39;t override
+# toml-merge:unfreeze
+host = &quot;localhost&quot;
+</code></pre>
+
+<p><strong>Node Type Normalization</strong>:</p>
+<ul>
+  <li>Handles differences between tree-sitter (<code>table</code>), Citrus (<code>table</code>), and Parslet (<code>table</code>) backends</li>
+  <li>Provides canonical type names for consistent matching</li>
+</ul>
+
+<h3 id="kettle-dev-tooling">kettle-dev Tooling</h3>
+
+<p>This project uses <code>kettle-dev</code> for gem maintenance automation:</p>
+
+<ul>
+  <li>
+<strong>Rakefile</strong>: Sourced from kettle-dev template</li>
+  <li>
+<strong>CI Workflows</strong>: GitHub Actions and GitLab CI managed via kettle-dev</li>
+  <li>
+<strong>Releases</strong>: Use <code>kettle-release</code> for automated release process</li>
+</ul>
+
+<h3 id="version-requirements">Version Requirements</h3>
+<ul>
+  <li>Ruby &gt;= 3.2.0 (gemspec), developed against Ruby 4.0.1 (<code>.tool-versions</code>)</li>
+  <li>
+<code>ast-merge</code> &gt;= 4.0.0 required</li>
+  <li>
+<code>tree_haver</code> &gt;= 5.0.3 required</li>
+</ul>
+
+<h2 id="-testing-patterns">🧪 Testing Patterns</h2>
+
+<h3 id="treehaver-dependency-tags">TreeHaver Dependency Tags</h3>
+
+<p>All spec files use TreeHaver RSpec dependency tags for conditional execution:</p>
+
+<p><strong>Available tags</strong>:</p>
+<ul>
+  <li>
+<code>:toml_grammar</code> – Requires TOML grammar (any backend)</li>
+  <li>
+<code>:mri_backend</code> – Requires tree-sitter MRI backend</li>
+  <li>
+<code>:rust_backend</code> – Requires tree-sitter Rust backend</li>
+  <li>
+<code>:citrus_backend</code> – Requires Citrus backend</li>
+  <li>
+<code>:parslet_backend</code> – Requires Parslet backend</li>
+  <li>
+<code>:toml_parsing</code> – Requires any TOML parser</li>
+</ul>
+
+<p>✅ <strong>CORRECT</strong> – Use dependency tag on describe/context/it:</p>
+<pre class="code language-ruby"><code class="language-ruby">RSpec.describe Toml::Merge::SmartMerger, :toml_grammar do
+  # Skipped if no TOML parser available
+end
+
+it &quot;parses with tree-sitter&quot;, :mri_backend, :toml_grammar do
+  # Skipped if tree-sitter not available
+end
+
+context &quot;when comparing backends&quot;, :citrus_backend, :parslet_backend do
+  # Skipped unless both backends available
+end
+</code></pre>
+
+<p>❌ <strong>WRONG</strong> – Never use manual skip checks:</p>
+<pre class="code language-ruby"><code class="language-ruby">before do
+  skip &quot;Requires tree-sitter&quot; unless tree_sitter_available?  # DO NOT DO THIS
+end
+</code></pre>
+
+<h3 id="backend-isolation">Backend Isolation</h3>
+
+<p><strong>CRITICAL</strong>: Tests must respect backend isolation to prevent FFI/MRI conflicts:</p>
+
+<pre class="code language-ruby"><code class="language-ruby"># Use TreeHaver.with_backend to ensure backend isolation
+TreeHaver.with_backend(:mri) do
+  analysis = Toml::Merge::FileAnalysis.new(toml_source)
+end
+</code></pre>
+
+<h3 id="shared-examples">Shared Examples</h3>
+
+<p>toml-merge uses shared examples from <code>ast-merge</code>:</p>
+
+<pre class="code language-ruby"><code class="language-ruby">it_behaves_like &quot;Ast::Merge::FileAnalyzable&quot;
+it_behaves_like &quot;Ast::Merge::ConflictResolverBase&quot;
+it_behaves_like &quot;a reproducible merge&quot;, &quot;scenario_name&quot;, { preference: :template }
+</code></pre>
+
+<h2 id="-critical-files">🔍 Critical Files</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>lib/toml/merge/smart_merger.rb</code></td>
+      <td>Main TOML SmartMerger implementation</td>
+    </tr>
+    <tr>
+      <td><code>lib/toml/merge/file_analysis.rb</code></td>
+      <td>TOML file analysis and table extraction</td>
+    </tr>
+    <tr>
+      <td><code>lib/toml/merge/node_wrapper.rb</code></td>
+      <td>TOML node wrapper with type-specific methods</td>
+    </tr>
+    <tr>
+      <td><code>lib/toml/merge/table_match_refiner.rb</code></td>
+      <td>TOML table matching refinement</td>
+    </tr>
+    <tr>
+      <td><code>lib/toml/merge/node_type_normalizer.rb</code></td>
+      <td>Cross-backend type normalization</td>
+    </tr>
+    <tr>
+      <td><code>spec/spec_thin_helper.rb</code></td>
+      <td>Test suite entry point with TreeHaver integration</td>
+    </tr>
+    <tr>
+      <td><code>spec/support/dependency_tags.rb</code></td>
+      <td>TreeHaver dependency tag integration</td>
+    </tr>
+    <tr>
+      <td><code>.envrc</code></td>
+      <td>Coverage thresholds and backend configuration</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="-common-tasks">🚀 Common Tasks</h2>
+
+<pre class="code language-bash"><code class="language-bash"># Run all specs with coverage
+bundle exec rake spec
+
+# Generate coverage report
+bundle exec rake coverage
+
+# Check code quality
+bundle exec rake reek
+bundle exec rake rubocop_gradual
+
+# Run with specific backend
+TREE_HAVER_BACKEND=citrus bundle exec rspec
+
+# Prepare and release
+kettle-changelog &amp;&amp; kettle-release
+</code></pre>
+
+<h2 id="-integration-points">🌊 Integration Points</h2>
+
+<ul>
+  <li>
+<strong><code>ast-merge</code></strong>: Inherits base classes (<code>SmartMergerBase</code>, <code>FileAnalyzable</code>, etc.)</li>
+  <li>
+<strong><code>tree_haver</code></strong>: Multi-backend TOML parsing (tree-sitter, Citrus, Parslet)</li>
+  <li>
+<strong>RSpec</strong>: Full integration via <code>ast/merge/rspec</code> and <code>tree_haver/rspec</code>
+</li>
+  <li>
+<strong>SimpleCov</strong>: Coverage tracked for <code>lib/**/*.rb</code>; spec directory excluded</li>
+</ul>
+
+<h2 id="-key-insights">💡 Key Insights</h2>
+
+<ol>
+  <li>
+<strong>Multi-backend support</strong>: toml-merge works with 4 different TOML parsers; use backend tags to test all</li>
+  <li>
+<strong>Backend isolation is critical</strong>: Always use <code>TreeHaver.with_backend</code> to prevent FFI/MRI conflicts</li>
+  <li>
+<strong>Node type normalization</strong>: Different backends use different node type names; <code>NodeTypeNormalizer</code> provides canonical types</li>
+  <li>
+<strong>Table matching</strong>: TOML tables are matched by name; nested tables are handled hierarchically</li>
+  <li>
+<strong>Freeze blocks use <code># toml-merge:freeze</code></strong>: Language-specific comment syntax</li>
+  <li>
+<strong>Never use manual skip checks</strong>: Always use TreeHaver dependency tags (<code>:toml_grammar</code>, <code>:mri_backend</code>, etc.)</li>
+  <li>
+<strong>Backend conflicts can cause segfaults</strong>: The TreeHaver backend protection system prevents mixing FFI and MRI backends</li>
+</ol>
+
+<h2 id="-common-pitfalls">🚫 Common Pitfalls</h2>
+
+<ol>
+  <li>
+<strong>NEVER mix FFI and MRI backends</strong> – Use <code>TreeHaver.with_backend</code> for isolation</li>
+  <li>
+<strong>NEVER use manual skip checks</strong> – Use dependency tags (<code>:toml_grammar</code>, <code>:mri_backend</code>)</li>
+  <li>
+<strong>NEVER assume a specific backend</strong> – Write tests that work with any TOML parser</li>
+  <li>
+<strong>Do NOT load vendor gems</strong> – They are not part of this project; they do not exist in CI</li>
+  <li>
+<strong>Use <code>tmp/</code> for temporary files</strong> – Never use <code>/tmp</code> or other system directories</li>
+  <li>
+<strong>Do NOT chain <code>cd</code> with <code>&amp;&amp;</code></strong> – Run <code>cd</code> as a separate command so <code>direnv</code> loads ENV</li>
+</ol>
+
+<h2 id="-toml-specific-notes">🔧 TOML-Specific Notes</h2>
+
+<h3 id="table-structures">Table Structures</h3>
+<pre class="code language-toml"><code class="language-toml"># Simple table
+[server]
+port = 8080
+
+# Nested table (dot notation)
+[server.ssl]
+enabled = true
+
+# Nested table (bracket notation)
+[database]
+[database.connection]
+timeout = 30
+
+# Array of tables
+[[servers]]
+name = &quot;alpha&quot;
+
+[[servers]]
+name = &quot;beta&quot;
+</code></pre>
+
+<h3 id="merge-behavior">Merge Behavior</h3>
+<ul>
+  <li>
+<strong>Tables</strong>: Matched by full path (<code>server.ssl</code>)</li>
+  <li>
+<strong>Pairs</strong>: Matched by key name within table</li>
+  <li>
+<strong>Arrays</strong>: Can be merged or replaced based on preference</li>
+  <li>
+<strong>Comments</strong>: Preserved when attached to tables/pairs</li>
+  <li>
+<strong>Freeze blocks</strong>: Protect customizations from template updates</li>
+</ul>
+</div></div>
+
+      <div id="footer">
+  Generated on Thu Feb 19 09:35:12 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.38 (ruby-4.0.1).
+</div>
+
+    </div>
+  </body>
+</html>
