@@ -9,8 +9,11 @@
 
 # FFI Backend - works on MRI, JRuby, and TruffleRuby
 gem "ffi", require: false # DO NOT LOAD, because conflicts with MRI
-gem "toml-rb"
-gem "citrus"
+# Dev dependencies in the gemspec
+# gem "toml-rb"
+# gem "citrus"
+# gem "toml"
+# gem "parslet"
 
 # Set KETTLE_RB_DEV=true for local development
 if ENV.fetch("KETTLE_RB_DEV", "false").casecmp?("true")
@@ -32,8 +35,6 @@ platform :mri do
       github: "pboling/ruby-tree-sitter",
       branch: "tree_haver",
       require: false # DO NOT LOAD, because conflicts with FFI
-    gem "tree_stump",
-      github: "pboling/tree_stump",
-      branch: "tree_haver"
+    gem "tree_stump", "~> 0.2"
   end
 end
