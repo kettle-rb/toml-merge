@@ -4,8 +4,8 @@ gem "ffi", github: "ffi/ffi"
 platform :mri do
   # MRI Backend
   gem "ruby_tree_sitter",
-      github: "Faveod/ruby-tree-sitter",
-      branch: "master"
+    github: "Faveod/ruby-tree-sitter",
+    branch: "master"
   # Rust Backend: not yet compatible with ruby-head due to magnus ruby-head compat being unreleased.
   # See: https://github.com/matsadler/magnus/pull/167
   # gem "tree_stump",

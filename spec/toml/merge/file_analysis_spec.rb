@@ -310,7 +310,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
       end
     end
 
-    context "comparing tree-sitter and citrus", :mri_backend, :citrus_backend, :toml_grammar do
+    context "when comparing tree-sitter and citrus", :citrus_backend, :mri_backend, :toml_grammar do
       it "both report valid for valid TOML" do
         ts_analysis = analyze_with_backend(:mri, test_toml)
         citrus_analysis = analyze_with_backend(:citrus, test_toml)
@@ -328,7 +328,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
       end
     end
 
-    context "comparing tree-sitter and parslet", :mri_backend, :parslet_backend, :toml_grammar do
+    context "when comparing tree-sitter and parslet", :mri_backend, :parslet_backend, :toml_grammar do
       it "both report valid for valid TOML" do
         ts_analysis = analyze_with_backend(:mri, test_toml)
         parslet_analysis = analyze_with_backend(:parslet, test_toml)
@@ -338,7 +338,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
       end
     end
 
-    context "comparing citrus and parslet", :citrus_backend, :parslet_backend do
+    context "when comparing citrus and parslet", :citrus_backend, :parslet_backend do
       it "both report valid for valid TOML" do
         citrus_analysis = analyze_with_backend(:citrus, test_toml)
         parslet_analysis = analyze_with_backend(:parslet, test_toml)
@@ -349,4 +349,3 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 end
-
