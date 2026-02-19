@@ -369,7 +369,7 @@ tree-sitter. Choose **one** of the following based on your Ruby implementation:
 | [ffi][ffi] | MRI, JRuby, TruffleRuby | Generic FFI bindings (used by tree\_haver's FFI backend) |
 
 [ruby_tree_sitter]: https://github.com/Faveod/ruby_tree_sitter
-[tree_stump]: https://github.com/nickstenning/tree_stump
+[tree_stump]: https://github.com/joker1007/tree_stump
 [ffi-gem]: https://github.com/ffi/ffi
 
 #### For MRI Ruby (Recommended)
