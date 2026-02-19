@@ -20,12 +20,8 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     end
   end
 
-  describe "#extract_table_name" do
+  describe "#extract_table_name", :toml_grammar do
     subject(:refiner) { described_class.new }
-
-    before do
-      skip "Requires tree-sitter TOML parser" unless tree_sitter_available?
-    end
 
     it "extracts name from table node" do
       toml = "[server]\nport = 8080"
