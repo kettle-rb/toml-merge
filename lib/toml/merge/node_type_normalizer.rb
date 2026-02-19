@@ -20,6 +20,7 @@ module Toml
     # Currently supports:
     # - `:tree_sitter` - tree-sitter-toml grammar (via ruby_tree_sitter, tree_stump, FFI)
     # - `:citrus` - toml-rb gem with Citrus parser
+    # - `:parslet` - toml gem with Parslet parser
     #
     # ## Extensibility
     #
@@ -188,6 +189,46 @@ module Toml
           "{": :brace_open,
           "}": :brace_close,
           ",": :comma,
+        }.freeze,
+
+        # Parslet/toml gem backend node types
+        # These are produced by TreeHaver's Parslet adapter wrapping the toml gem
+        # Parslet returns Hash/Array/Slice structures with keys from .as(:name) rules
+        # Reference: https://github.com/jm/toml (TOML::Parslet grammar)
+        parslet: {
+          # Document structure
+          document: :document,
+          hash: :document,       # Root result is often a hash
+          table: :table,
+          table_array: :array_of_tables,
+
+          # Key-value pairs - Parslet uses :key and :value hash keys
+          key: :bare_key,
+          value: :value,
+          pair: :pair,          # Synthetic type for key-value combinations
+
+          # Value types - from .as(:type) rules in TOML::Parslet
+          string: :string,
+          integer: :integer,
+          float: :float,
+          boolean: :boolean,
+          true: :boolean,
+          false: :boolean,
+          array: :array,
+
+          # Date/time types
+          datetime: :datetime,
+          datetime_rfc3339: :datetime,
+
+          # Slice types (terminal values)
+          slice: :string,       # Parslet::Slice defaults to string
+
+          # Structural types from Parslet result structure
+          element: :element,    # Array elements
+          array_element: :element,
+
+          # Unknown/fallback
+          unknown: :unknown,
         }.freeze,
       )
 

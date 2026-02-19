@@ -136,5 +136,22 @@ RSpec.describe "TOML Smart Merge Integration" do
       it_behaves_like "raises TemplateParseError for invalid template"
       it_behaves_like "raises DestinationParseError for invalid destination"
     end
+
+    # Test error handling with explicit Parslet backend
+    # NOTE: Parslet error detection may need additional work - the toml gem's
+    # Parslet grammar may not properly detect all invalid TOML cases.
+    # The grammar uses `repeat` which stops matching on failure, and `all_space`
+    # at the end can match zero characters. Parslet should fail on unconsumed
+    # input, but this needs more investigation.
+    context "with explicit Parslet backend", :parslet_backend, skip: "Parslet backend parse error detection needs investigation" do
+      around do |example|
+        TreeHaver.with_backend(:parslet) do
+          example.run
+        end
+      end
+
+      it_behaves_like "raises TemplateParseError for invalid template"
+      it_behaves_like "raises DestinationParseError for invalid destination"
+    end
   end
 end

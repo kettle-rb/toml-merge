@@ -20,11 +20,20 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+- AGENTS.md
+
 ### Changed
 
-- tree_haver v4.0.5
+- appraisal2 v3.0.6
+- kettle-test v1.0.10
+- stone_checksums v1.0.3
+- [ast-merge v4.0.6](https://github.com/kettle-rb/ast-merge/releases/tag/v4.0.6)
+- [tree_haver v5.0.5](https://github.com/kettle-rb/tree_haver/releases/tag/v5.0.5)
   - FFI Backend improvements
   - Error handling improvements
+  - Many new features, and more bug fixes
+- tree_stump v0.2.0
+  - fork no longer required, updates all applied upstream
 - **Simplified dependency_tags.rb**: Removed redundant debug code
   - Removed `TOML_MERGE_DEBUG` env var handling (use `TREE_HAVER_DEBUG` instead)
   - tree_haver's debug output now respects blocked backends via `compute_blocked_backends`

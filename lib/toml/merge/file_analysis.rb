@@ -173,16 +173,23 @@ module Toml
         # TreeHaver handles everything:
         # - Backend selection (via TREE_HAVER_BACKEND env or TreeHaver.backend)
         # - Grammar auto-discovery
-        # - Fallback to Citrus if tree-sitter unavailable
-        # - CITRUS_DEFAULTS already includes toml configuration
+        # - Fallback to Citrus or Parslet if tree-sitter unavailable
+        # - CITRUS_DEFAULTS and PARSLET_DEFAULTS include toml configuration
         parser_options = {}
         parser_options[:library_path] = @parser_path if @parser_path
 
         parser = TreeHaver.parser_for(:toml, **parser_options)
 
-        # For NodeTypeNormalizer, we only care: is it Citrus or tree-sitter format?
-        # All native backends (mri, rust, ffi, java) produce tree-sitter AST format.
-        @backend = (parser.backend == :citrus) ? :citrus : :tree_sitter
+        # For NodeTypeNormalizer, we care about the backend type:
+        # - All native backends (mri, rust, ffi, java) produce tree-sitter AST format
+        # - Citrus produces Citrus::Match-based nodes
+        # - Parslet produces Hash/Array/Slice-based nodes
+        backend_sym = parser.backend
+        @backend = case backend_sym
+        when :citrus then :citrus
+        when :parslet then :parslet
+        else :tree_sitter  # mri, rust, ffi, java all use tree-sitter format
+        end
 
         @ast = parser.parse(@source)
 

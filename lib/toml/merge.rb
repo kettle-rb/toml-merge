@@ -5,7 +5,7 @@ require "set"
 
 # External gems
 # TreeHaver provides a unified cross-Ruby interface to tree-sitter.
-# It handles grammar discovery, backend selection, and Citrus fallback automatically
+# It handles grammar discovery, backend selection, Citrus and Parslet fallbacks, automatically
 # via parser_for(:toml). No manual registration needed.
 require "tree_haver"
 require "version_gem"
@@ -101,6 +101,18 @@ module Toml
     autoload :SmartMerger, "toml/merge/smart_merger"
     autoload :TableMatchRefiner, "toml/merge/table_match_refiner"
   end
+end
+
+# Register with ast-merge's MergeGemRegistry for RSpec dependency tags
+# Only register if MergeGemRegistry is loaded (i.e., in test environment)
+if defined?(Ast::Merge::RSpec::MergeGemRegistry)
+  Ast::Merge::RSpec::MergeGemRegistry.register(
+    :toml_merge,
+    require_path: "toml/merge",
+    merger_class: "Toml::Merge::SmartMerger",
+    test_source: "[section]\nkey = \"value\"",
+    category: :config,
+  )
 end
 
 Toml::Merge::Version.class_eval do

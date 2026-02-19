@@ -79,7 +79,4 @@ module TomlParsingHelper
   def toml_available?
     TreeHaver::Language.respond_to?(:toml)
   end
-
-  # Alias for backwards compatibility
-  alias_method :tree_sitter_available?, :toml_available?
 end

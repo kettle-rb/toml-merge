@@ -1,10 +1,45 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "ast/merge/rspec/shared_examples"
 
 RSpec.describe Toml::Merge::ConflictResolver do
   # ConflictResolver requires real FileAnalysis objects with parsed content
   # These tests document the expected interface
+  it_behaves_like "Ast::Merge::ConflictResolverBase" do
+    let(:conflict_resolver_class) { described_class }
+    let(:strategy) { :batch }
+    let(:build_conflict_resolver) do
+      ->(preference:, template_analysis:, dest_analysis:, **opts) {
+        described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: preference,
+          add_template_only_nodes: opts.fetch(:add_template_only_nodes, false),
+        )
+      }
+    end
+    let(:build_mock_analysis) do
+      -> { double("MockAnalysis") }
+    end
+  end
+
+  it_behaves_like "Ast::Merge::ConflictResolverBase batch strategy" do
+    let(:conflict_resolver_class) { described_class }
+    let(:build_conflict_resolver) do
+      ->(preference:, template_analysis:, dest_analysis:, **opts) {
+        described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: preference,
+          add_template_only_nodes: opts.fetch(:add_template_only_nodes, false),
+        )
+      }
+    end
+    let(:build_mock_analysis) do
+      -> { double("MockAnalysis") }
+    end
+  end
 
   let(:template_content) do
     <<~TOML

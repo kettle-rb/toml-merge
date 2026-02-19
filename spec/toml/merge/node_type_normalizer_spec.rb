@@ -149,6 +149,43 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       end
     end
 
+    context "with parslet backend" do
+      it "normalizes table_array to array_of_tables" do
+        expect(described_class.canonical_type(:table_array, :parslet)).to eq(:array_of_tables)
+      end
+
+      it "preserves table type" do
+        expect(described_class.canonical_type(:table, :parslet)).to eq(:table)
+      end
+
+      it "normalizes key to bare_key" do
+        expect(described_class.canonical_type(:key, :parslet)).to eq(:bare_key)
+      end
+
+      it "normalizes value types" do
+        expect(described_class.canonical_type(:string, :parslet)).to eq(:string)
+        expect(described_class.canonical_type(:integer, :parslet)).to eq(:integer)
+        expect(described_class.canonical_type(:float, :parslet)).to eq(:float)
+        expect(described_class.canonical_type(:boolean, :parslet)).to eq(:boolean)
+        expect(described_class.canonical_type(:true, :parslet)).to eq(:boolean)
+        expect(described_class.canonical_type(:false, :parslet)).to eq(:boolean)
+        expect(described_class.canonical_type(:array, :parslet)).to eq(:array)
+      end
+
+      it "normalizes datetime types to :datetime" do
+        expect(described_class.canonical_type(:datetime, :parslet)).to eq(:datetime)
+        expect(described_class.canonical_type(:datetime_rfc3339, :parslet)).to eq(:datetime)
+      end
+
+      it "normalizes slice to string" do
+        expect(described_class.canonical_type(:slice, :parslet)).to eq(:string)
+      end
+
+      it "passes through unknown types" do
+        expect(described_class.canonical_type(:unknown_type, :parslet)).to eq(:unknown_type)
+      end
+    end
+
     context "with nil input" do
       it "returns nil with default backend" do
         expect(described_class.canonical_type(nil)).to be_nil
@@ -160,6 +197,10 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
 
       it "returns nil with citrus backend" do
         expect(described_class.canonical_type(nil, :citrus)).to be_nil
+      end
+
+      it "returns nil with parslet backend" do
+        expect(described_class.canonical_type(nil, :parslet)).to be_nil
       end
     end
   end
@@ -249,12 +290,17 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       expect(described_class.registered_backends).to include(:tree_sitter)
       expect(described_class.registered_backends).to include(:citrus)
     end
+
+    it "includes parslet backend" do
+      expect(described_class.registered_backends).to include(:parslet)
+    end
   end
 
   describe ".backend_registered?" do
     it "returns true for registered backends" do
       expect(described_class.backend_registered?(:tree_sitter)).to be true
       expect(described_class.backend_registered?(:citrus)).to be true
+      expect(described_class.backend_registered?(:parslet)).to be true
     end
 
     it "returns false for unregistered backends" do
@@ -297,6 +343,15 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
       # Citrus uses :keyvalue, not :pair
       expect(mappings[:keyvalue]).to eq(:pair)
       expect(mappings[:date]).to eq(:datetime)
+    end
+
+    it "returns mappings for parslet backend" do
+      mappings = described_class.mappings_for(:parslet)
+      expect(mappings).to be_a(Hash)
+      expect(mappings[:table_array]).to eq(:array_of_tables)
+      expect(mappings[:key]).to eq(:bare_key)
+      expect(mappings[:datetime]).to eq(:datetime)
+      expect(mappings[:datetime_rfc3339]).to eq(:datetime)
     end
 
     it "returns nil for unregistered backends" do
@@ -368,6 +423,38 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
         wrapped = described_class.wrap(date_node, :citrus)
 
         expect(wrapped.merge_type).to eq(:datetime)
+      end
+    end
+
+    context "with parslet backend" do
+      let(:parslet_table_node) { double("ParsletTableNode", type: :table) }
+
+      it "wraps a node with canonical merge_type using parslet backend" do
+        wrapped = described_class.wrap(parslet_table_node, :parslet)
+
+        expect(wrapped.merge_type).to eq(:table)
+        expect(wrapped.unwrap).to eq(parslet_table_node)
+      end
+
+      it "handles parslet-specific key type" do
+        key_node = double("KeyNode", type: :key)
+        wrapped = described_class.wrap(key_node, :parslet)
+
+        expect(wrapped.merge_type).to eq(:bare_key)
+      end
+
+      it "handles parslet-specific datetime_rfc3339 type" do
+        datetime_node = double("DatetimeNode", type: :datetime_rfc3339)
+        wrapped = described_class.wrap(datetime_node, :parslet)
+
+        expect(wrapped.merge_type).to eq(:datetime)
+      end
+
+      it "handles parslet slice type" do
+        slice_node = double("SliceNode", type: :slice)
+        wrapped = described_class.wrap(slice_node, :parslet)
+
+        expect(wrapped.merge_type).to eq(:string)
       end
     end
 
