@@ -28,11 +28,12 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Fixed
 
-- ConflictResolver no longer collapses nodes that share the same signature. Uses
-  cursor-based positional matching (consumed indices + per-signature cursor) instead
-  of `processed_*_sigs` Sets. This is especially important for TOML because
-  `[[array_of_tables]]` headers can legitimately repeat, and the old Set-based
-  approach would collapse them into a single entry.
+- ConflictResolver no longer collapses nodes that share the same signature.
+  Multiple nodes with identical signatures are now matched 1:1 in order via
+  cursor-based positional matching, instead of being treated as a single node.
+  This is especially important for TOML because `[[array_of_tables]]` headers
+  can legitimately repeat, and the old approach would collapse them into a
+  single entry.
 
 ### Security
 
