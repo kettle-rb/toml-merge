@@ -20,34 +20,49 @@
 
 **CRITICAL**: The canonical project environment now lives in `mise.toml`, with local overrides in `.env.local` loaded via `dotenvy`.
 
-✅ **CORRECT**:
+⚠️ **Watch for trust prompts**: After editing `mise.toml` or `.env.local`, `mise` may require trust to be refreshed before commands can load the project environment. That interactive trust screen can masquerade as missing terminal output, so commands may appear hung or silent until you handle it.
+
+**Recovery rule**: If a `mise exec` command in this repo goes silent, appears hung, or terminal polling stops returning useful output, assume `mise trust` is needed first and recover with:
+
 ```bash
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bundle exec rspec
+mise trust -C /home/pboling/src/kettle-rb/toml-merge
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bundle exec rspec
+```
+
+Do this before spending time on unrelated debugging; in this workspace, silent `mise` commands are usually a trust problem.
+
+```bash
+mise trust -C /home/pboling/src/kettle-rb/toml-merge
 ```
 
 ✅ **CORRECT**:
 ```bash
-eval "$(mise env -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -s bash)" && bundle exec rspec
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bundle exec rspec
+```
+
+✅ **CORRECT**:
+```bash
+eval "$(mise env -C /home/pboling/src/kettle-rb/toml-merge -s bash)" && bundle exec rspec
 ```
 
 ❌ **WRONG**:
 ```bash
-cd /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge
+cd /home/pboling/src/kettle-rb/toml-merge
 bundle exec rspec
 ```
 
 ❌ **WRONG**:
 ```bash
-cd /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge && bundle exec rspec
+cd /home/pboling/src/kettle-rb/toml-merge && bundle exec rspec
 ```
 
 ### Prefer Internal Tools Over Terminal
 
 Use `read_file`, `list_dir`, `grep_search`, `file_search` instead of terminal commands for gathering information. Only use terminal for running tests, installing dependencies, and git operations.
 
-### grep_search Cannot Search Nested Git Projects
+### Workspace layout
 
-This project is a nested git project inside the `ast-merge` workspace. The `grep_search` tool **cannot** search inside it. Use `read_file` and `list_dir` instead.
+This repo is a sibling project inside the `/home/pboling/src/kettle-rb` workspace, not a vendored dependency under another repo.
 
 ### NEVER Pipe Test Commands Through head/tail
 
@@ -114,24 +129,24 @@ spec/toml/merge/
 
 ```bash
 # Full suite (required for coverage thresholds)
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bundle exec rspec
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bundle exec rspec
 
 # Single file (disable coverage threshold check)
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- env K_SOUP_COV_MIN_HARD=false bundle exec rspec spec/toml/merge/smart_merger_spec.rb
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- env K_SOUP_COV_MIN_HARD=false bundle exec rspec spec/toml/merge/smart_merger_spec.rb
 
 # Specific backend tests
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bundle exec rspec --tag mri_backend
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bundle exec rspec --tag citrus_backend
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bundle exec rspec --tag parslet_backend
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bundle exec rspec --tag mri_backend
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bundle exec rspec --tag citrus_backend
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bundle exec rspec --tag parslet_backend
 ```
 
-**Note**: Always make commands self-contained. Use `mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- ...` so the command gets the project environment in the same invocation.
+**Note**: Always make commands self-contained. Use `mise exec -C /home/pboling/src/kettle-rb/toml-merge -- ...` so the command gets the project environment in the same invocation.
 
 ### Coverage Reports
 
 ```bash
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bin/rake coverage
-mise exec -C /home/pboling/src/kettle-rb/ast-merge/vendor/toml-merge -- bin/kettle-soup-cover -d
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bin/rake coverage
+mise exec -C /home/pboling/src/kettle-rb/toml-merge -- bin/kettle-soup-cover -d
 ```
 
 **Key ENV variables** (set in `mise.toml`, with local overrides in `.env.local`):

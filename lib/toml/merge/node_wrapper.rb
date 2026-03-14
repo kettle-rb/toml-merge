@@ -34,7 +34,7 @@ module Toml
         # @param inline_comment [Hash, nil] Inline comment on the node's line
         # @param backend [Symbol] The backend used for parsing (:tree_sitter or :citrus)
         # @return [NodeWrapper, nil] Wrapped node or nil if node is nil
-        def wrap(node, lines, source: nil, leading_comments: [], inline_comment: nil, backend: :tree_sitter)
+        def wrap(node, lines, source: nil, leading_comments: nil, inline_comment: nil, backend: :tree_sitter, comment_entries: nil, comment_tracker: nil)
           return if node.nil?
 
           new(
@@ -44,8 +44,26 @@ module Toml
             leading_comments: leading_comments,
             inline_comment: inline_comment,
             backend: backend,
+            comment_entries: comment_entries,
+            comment_tracker: comment_tracker,
           )
         end
+      end
+
+      def initialize(node, lines:, source: nil, leading_comments: nil, inline_comment: nil, **options)
+        @explicit_leading_comments = !leading_comments.nil?
+        @explicit_inline_comment = !inline_comment.nil?
+
+        super(
+          node,
+          lines: lines,
+          source: source,
+          leading_comments: leading_comments || [],
+          inline_comment: inline_comment,
+          **options,
+        )
+
+        hydrate_comment_associations!
       end
 
       # @return [Symbol] The backend used for parsing
@@ -59,6 +77,8 @@ module Toml
       def process_additional_options(options)
         @backend = options.fetch(:backend, :tree_sitter)
         @document_root = options[:document_root]
+        @comment_entries = Array(options[:comment_entries])
+        @comment_tracker = options[:comment_tracker]
       end
 
       # Get the canonical (normalized) type for this node
@@ -338,13 +358,7 @@ module Toml
 
       # Override wrap_child to use Toml::Merge::NodeWrapper with proper options
       def wrap_child(child)
-        NodeWrapper.new(
-          child,
-          lines: @lines,
-          source: @source,
-          backend: @backend,
-          document_root: @document_root,
-        )
+        build_wrapped_node(child)
       end
 
       def compute_signature(node)
@@ -464,13 +478,7 @@ module Toml
           child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           next unless child_canonical == :pair
 
-          result << NodeWrapper.new(
-            child,
-            lines: @lines,
-            source: @source,
-            backend: @backend,
-            document_root: @document_root,
-          )
+          result << build_wrapped_node(child)
         end
         result
       end
@@ -505,13 +513,7 @@ module Toml
           # Pair must be before the next table (if there is one)
           next if next_table_start && sibling_start >= next_table_start
 
-          result << NodeWrapper.new(
-            sibling,
-            lines: @lines,
-            source: @source,
-            backend: @backend,
-            document_root: @document_root,
-          )
+          result << build_wrapped_node(sibling)
         end
 
         result
@@ -568,13 +570,47 @@ module Toml
           next if %i[whitespace unknown space array_comments sign].include?(child_canonical)
 
           # This is an actual value element (integer, string, boolean, etc.)
-          result << NodeWrapper.new(
-            child,
-            lines: @lines,
-            source: @source,
-            backend: @backend,
-            document_root: @document_root,
-          )
+          result << build_wrapped_node(child)
+        end
+      end
+
+      def build_wrapped_node(node)
+        NodeWrapper.new(
+          node,
+          lines: @lines,
+          source: @source,
+          backend: @backend,
+          document_root: @document_root,
+          comment_entries: @comment_entries,
+          comment_tracker: comment_tracker,
+        )
+      end
+
+      def node_start_line(node)
+        extract_point_row(node.respond_to?(:start_point) ? node.start_point : nil)&.+(1)
+      end
+
+      def node_end_line(node)
+        extract_point_row(node.respond_to?(:end_point) ? node.end_point : nil)&.+(1)
+      end
+
+      def extract_point_row(point)
+        return point.row if point.respond_to?(:row)
+        return point[:row] if point.is_a?(Hash)
+
+        nil
+      end
+
+      def hydrate_comment_associations!
+        return unless comment_tracker
+
+        @leading_comments = comment_tracker.leading_comments_before(@start_line) unless @explicit_leading_comments || @start_line.nil?
+        @inline_comment = comment_tracker.inline_comment_for(@node, line_num: @start_line) unless @explicit_inline_comment || @start_line.nil?
+      end
+
+      def comment_tracker
+        @comment_tracker ||= if @comment_entries.any?
+          CommentTracker.new(@lines, @comment_entries, backend: @backend)
         end
       end
     end

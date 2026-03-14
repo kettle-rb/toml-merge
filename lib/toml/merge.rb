@@ -91,6 +91,7 @@ module Toml
     #   end
     class DestinationParseError < ParseError; end
 
+    autoload :CommentTracker, "toml/merge/comment_tracker"
     autoload :DebugLogger, "toml/merge/debug_logger"
     autoload :Emitter, "toml/merge/emitter"
     autoload :FileAnalysis, "toml/merge/file_analysis"

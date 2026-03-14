@@ -20,13 +20,14 @@ module Toml
       # @param add_template_only_nodes [Boolean] Whether to add nodes only in template
       # @param match_refiner [#call, nil] Optional match refiner for fuzzy matching
       # @param options [Hash] Additional options for forward compatibility
-      def initialize(template_analysis, dest_analysis, preference: :destination, add_template_only_nodes: false, match_refiner: nil, **options)
+      def initialize(template_analysis, dest_analysis, preference: :destination, add_template_only_nodes: false, remove_template_missing_nodes: false, match_refiner: nil, **options)
         super(
           strategy: :batch,
           preference: preference,
           template_analysis: template_analysis,
           dest_analysis: dest_analysis,
           add_template_only_nodes: add_template_only_nodes,
+          remove_template_missing_nodes: remove_template_missing_nodes,
           match_refiner: match_refiner,
           **options
         )
@@ -46,6 +47,13 @@ module Toml
           # Clear emitter for fresh merge
           @emitter.clear
 
+          if template_statements.empty? && dest_statements.empty?
+            emit_comment_only_document(preferred_comment_only_analysis(@template_analysis, @dest_analysis))
+            return transfer_emitter_output(result)
+          end
+
+          emit_root_boundary_region(preferred_boundary_analysis(@template_analysis, @dest_analysis), :preamble)
+
           # Merge root-level statements via emitter
           merge_node_lists_to_emitter(
             template_statements,
@@ -54,13 +62,11 @@ module Toml
             @dest_analysis,
           )
 
+          emit_root_boundary_region(preferred_boundary_analysis(@template_analysis, @dest_analysis), :postlude)
+          emit_comment_only_document(preferred_comment_only_analysis(@template_analysis, @dest_analysis)) if @emitter.to_s.empty?
+
           # Transfer emitter output to result
-          emitted_content = @emitter.to_s
-          unless emitted_content.empty?
-            emitted_content.lines.each do |line|
-              result.add_line(line.chomp, decision: MergeResult::DECISION_MERGED, source: :merged)
-            end
-          end
+          transfer_emitter_output(result)
 
           DebugLogger.debug("Conflict resolution complete", {
             template_statements: template_statements.size,
@@ -123,8 +129,12 @@ module Toml
               consumed_template_indices << template_info[:index]
               sig_cursor[dest_sig] = cursor + 1
             else
-              # All template copies consumed — keep dest copy
-              emit_node(dest_node, dest_analysis)
+              # All template copies consumed — treat the extra destination copy as destination-only.
+              if @remove_template_missing_nodes
+                emit_removed_destination_node_comments(dest_node, dest_analysis)
+              else
+                emit_node(dest_node, dest_analysis)
+              end
             end
           elsif refined_dest_to_template.key?(dest_node)
             # Found refined match
@@ -144,8 +154,12 @@ module Toml
             # Merge matched nodes
             merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
           else
-            # Destination-only node - always keep
-            emit_node(dest_node, dest_analysis)
+            # Destination-only node
+            if @remove_template_missing_nodes
+              emit_removed_destination_node_comments(dest_node, dest_analysis)
+            else
+              emit_node(dest_node, dest_analysis)
+            end
           end
         end
 
@@ -169,11 +183,39 @@ module Toml
       def merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
         # For TOML, tables can be merged recursively
         if dest_node.table? && template_node.table?
-          # Emit table header and merge children
-          @emitter.emit_table_header(dest_node.table_name || template_node.table_name)
+          selected_node, selected_analysis = preferred_node_with_analysis(
+            template_node,
+            dest_node,
+            template_analysis,
+            dest_analysis,
+          )
 
-          template_children = template_node.children
-          dest_children = dest_node.children
+          comment_source_node, comment_source_analysis = if @preference == :template
+            [dest_node, dest_analysis]
+          else
+            [nil, selected_analysis]
+          end
+
+          emit_leading_region(
+            selected_node,
+            selected_analysis,
+            comment_source_node: comment_source_node,
+            comment_analysis: comment_source_analysis,
+          )
+
+          # Emit table header and merge children
+          @emitter.emit_table_header(
+            selected_node.table_name || dest_node.table_name || template_node.table_name,
+            inline_comment: preferred_inline_comment_text(
+              selected_node,
+              selected_analysis,
+              comment_source_node: comment_source_node,
+              comment_analysis: comment_source_analysis,
+            ),
+          )
+
+          template_children = template_node.mergeable_children
+          dest_children = dest_node.mergeable_children
 
           merge_node_lists_to_emitter(
             template_children,
@@ -185,22 +227,43 @@ module Toml
           # Leaf nodes or mismatched types - use preference
           emit_node(dest_node, dest_analysis)
         else
-          emit_node(template_node, template_analysis)
+          emit_node(
+            template_node,
+            template_analysis,
+            comment_source_node: dest_node,
+            comment_analysis: dest_analysis,
+          )
         end
       end
 
       # Emit a single node to the emitter
       # @param node [NodeWrapper] Node to emit
       # @param analysis [FileAnalysis] Analysis for accessing source
-      def emit_node(node, analysis)
+      def emit_node(node, analysis, comment_source_node: nil, comment_analysis: analysis)
+        emit_leading_region(
+          node,
+          analysis,
+          comment_source_node: comment_source_node,
+          comment_analysis: comment_analysis,
+        )
+
         # Emit the node content
-        if node.start_line && node.end_line
+        start_line = node.start_line
+        end_line = emitted_end_line_for(node)
+
+        if start_line && end_line
           lines = []
-          (node.start_line..node.end_line).each do |line_num|
+          (start_line..end_line).each do |line_num|
             line = analysis.line_at(line_num)
             lines << line if line
           end
-          @emitter.emit_raw_lines(lines)
+          emit_node_lines(
+            lines,
+            node,
+            analysis,
+            comment_source_node: comment_source_node,
+            comment_analysis: comment_analysis,
+          )
         end
       end
 
@@ -236,6 +299,262 @@ module Toml
         matches.each_with_object({}) do |match, h|
           h[match.template_node] = match.dest_node
         end
+      end
+
+      def transfer_emitter_output(result)
+        emitted_content = @emitter.to_s
+        return if emitted_content.empty?
+
+        emitted_content.lines.each do |line|
+          result.add_line(line.chomp, decision: MergeResult::DECISION_MERGED, source: :merged)
+        end
+      end
+
+      def emit_removed_destination_node_comments(node, analysis)
+        if table_like_node?(node)
+          emit_leading_region(node, analysis)
+          emit_removed_destination_node_inline_comments(node, analysis)
+          node.mergeable_children.each do |child|
+            emit_removed_destination_node_comments(child, analysis)
+          end
+        else
+          emit_leading_region(node, analysis)
+          emit_removed_destination_node_inline_comments(node, analysis)
+        end
+      end
+
+      def emit_removed_destination_node_inline_comments(node, analysis)
+        inline_region = attachment_region(node, analysis, :inline_region)
+        return unless inline_region && !inline_region.empty?
+
+        indent = analysis.line_at(node.start_line).to_s[/\A\s*/].to_s.length
+        tracked_hashes = Array(inline_region.metadata[:tracked_hashes])
+
+        if tracked_hashes.any?
+          tracked_hashes.each do |comment|
+            @emitter.emit_tracked_comment(comment.merge(indent: indent, full_line: true))
+          end
+        else
+          @emitter.emit_comment(inline_region.text.to_s.sub(/\A\s*#\s?/, ""))
+        end
+      end
+
+      def preferred_boundary_analysis(template_analysis, dest_analysis)
+        @preference == :template ? template_analysis : dest_analysis
+      end
+
+      def preferred_comment_only_analysis(template_analysis, dest_analysis)
+        preferred = preferred_boundary_analysis(template_analysis, dest_analysis)
+        alternate = preferred.equal?(template_analysis) ? dest_analysis : template_analysis
+
+        [preferred, alternate].find do |analysis|
+          analysis.statements.empty? && analysis.comment_nodes.any?
+        end
+      end
+
+      def emit_comment_only_document(analysis)
+        return unless analysis
+
+        @emitter.emit_raw_lines(analysis.lines)
+      end
+
+      def emit_root_boundary_region(analysis, kind)
+        return unless analysis
+
+        augmenter = analysis.comment_augmenter(owners: analysis.statements)
+        region = kind == :preamble ? augmenter.preamble_region : augmenter.postlude_region
+        return unless region
+
+        boundary_lines = root_boundary_lines_for(region, analysis, kind)
+        @emitter.emit_raw_lines(boundary_lines) if boundary_lines.any?
+      end
+
+      def emit_leading_region(node, analysis, comment_source_node: nil, comment_analysis: analysis)
+        region, source_analysis, source_node = preferred_region_with_source(
+          node,
+          analysis,
+          :leading_region,
+          comment_source_node: comment_source_node,
+          comment_analysis: comment_analysis,
+        )
+        return unless region
+
+        emit_preceding_blank_lines(region, source_analysis)
+        emit_region(region, source_analysis)
+        emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
+      end
+
+      def emit_region(region, analysis)
+        return unless region
+
+        lines = region.nodes.filter_map do |comment_node|
+          analysis.line_at(comment_node.line_number) if comment_node.respond_to?(:line_number)
+        end
+        @emitter.emit_raw_lines(lines) if lines.any?
+      end
+
+      def root_boundary_lines_for(region, analysis, kind)
+        return [] unless region.respond_to?(:nodes)
+        return [] if region.nodes.empty?
+
+        last_comment_line = region.nodes.last.line_number
+        start_line = if kind == :preamble
+          1
+        else
+          last_structural_root_line_for(analysis) + 1
+        end
+
+        return [] if start_line > last_comment_line
+
+        (start_line..last_comment_line).filter_map { |line_num| analysis.line_at(line_num) }
+      end
+
+      def preferred_node_with_analysis(template_node, dest_node, template_analysis, dest_analysis)
+        if @preference == :template
+          [template_node, template_analysis]
+        else
+          [dest_node, dest_analysis]
+        end
+      end
+
+      def inline_comment_text_for(node)
+        inline_comment = node.respond_to?(:inline_comment) ? node.inline_comment : nil
+        return unless inline_comment
+
+        inline_comment[:text]
+      end
+
+      def preferred_inline_comment_text(node, analysis, comment_source_node: nil, comment_analysis: analysis)
+        region, = preferred_region_with_source(
+          node,
+          analysis,
+          :inline_region,
+          comment_source_node: comment_source_node,
+          comment_analysis: comment_analysis,
+        )
+        return unless region && !region.empty?
+
+        tracked = Array(region.metadata[:tracked_hashes]).first
+        return tracked[:text] if tracked && tracked[:text]
+
+        inline_comment_text_for(node)
+      end
+
+      def emit_node_lines(lines, node, analysis, comment_source_node: nil, comment_analysis: analysis)
+        return if lines.empty?
+
+        inline_region, = preferred_region_with_source(
+          node,
+          analysis,
+          :inline_region,
+          comment_source_node: comment_source_node,
+          comment_analysis: comment_analysis,
+        )
+
+        unless inline_region && !inline_region.empty?
+          @emitter.emit_raw_lines(lines)
+          return
+        end
+
+        existing_inline_region = attachment_region(node, analysis, :inline_region)
+        first_line = strip_inline_region_from_line(lines.first, existing_inline_region)
+        first_line = append_inline_region_to_line(first_line, inline_region)
+
+        @emitter.emit_raw_lines([first_line])
+        @emitter.emit_raw_lines(lines.drop(1)) if lines.length > 1
+      end
+
+      def preferred_region_with_source(node, analysis, region_kind, comment_source_node: nil, comment_analysis: analysis)
+        primary_region = attachment_region(node, analysis, region_kind)
+        return [primary_region, analysis, node] if primary_region && !primary_region.empty?
+
+        if comment_source_node && comment_analysis
+          source_region = attachment_region(comment_source_node, comment_analysis, region_kind)
+          return [source_region, comment_analysis, comment_source_node] if source_region && !source_region.empty?
+        end
+
+        [primary_region, analysis, node]
+      end
+
+      def attachment_region(node, analysis, region_kind)
+        return unless node && analysis
+
+        attachment = analysis.comment_attachment_for(node)
+        attachment.public_send(region_kind) if attachment.respond_to?(region_kind)
+      end
+
+      def strip_inline_region_from_line(line, inline_region)
+        return line unless line
+        return line unless inline_region && !inline_region.empty?
+
+        tracked = Array(inline_region.metadata[:tracked_hashes]).first
+        column = tracked && tracked[:column]
+        return line unless column
+
+        line.byteslice(0...column).to_s.rstrip
+      end
+
+      def append_inline_region_to_line(line, inline_region)
+        return line unless inline_region && !inline_region.empty?
+
+        tracked = Array(inline_region.metadata[:tracked_hashes]).first
+        raw = tracked && tracked[:raw]
+        return [line.rstrip, raw].reject(&:empty?).join(" ") if raw
+
+        [line.rstrip, inline_region.text.to_s.strip].reject(&:empty?).join(" ")
+      end
+
+      def emit_interstitial_blank_lines(start_line, end_line, analysis)
+        return unless analysis
+        return unless start_line && end_line && start_line <= end_line
+
+        lines = []
+        (start_line..end_line).each do |line_num|
+          line = analysis.line_at(line_num)
+          lines << line if line && line.strip.empty?
+        end
+        @emitter.emit_raw_lines(lines) if lines.any?
+      end
+
+      def emit_preceding_blank_lines(region, analysis)
+        return unless analysis
+        return unless region.respond_to?(:start_line) && region.start_line
+
+        line_num = region.start_line - 1
+        lines = []
+
+        while line_num >= 1
+          line = analysis.line_at(line_num)
+          break unless line && line.strip.empty?
+
+          lines.unshift(line)
+          line_num -= 1
+        end
+
+        @emitter.emit_raw_lines(lines) if lines.any?
+      end
+
+      def emitted_end_line_for(node)
+        return node.start_line if table_like_without_children?(node)
+
+        if table_like_node?(node)
+          child_end_line = node.mergeable_children.map(&:end_line).compact.max
+          return child_end_line if child_end_line
+        end
+
+        node.end_line
+      end
+
+      def last_structural_root_line_for(analysis)
+        analysis.statements.map { |node| emitted_end_line_for(node) }.compact.max || 0
+      end
+
+      def table_like_without_children?(node)
+        table_like_node?(node) && node.mergeable_children.empty?
+      end
+
+      def table_like_node?(node)
+        node.table? || (node.respond_to?(:array_of_tables?) && node.array_of_tables?)
       end
     end
   end

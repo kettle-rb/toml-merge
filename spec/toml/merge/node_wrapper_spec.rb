@@ -129,6 +129,48 @@ RSpec.describe Toml::Merge::NodeWrapper do
       end
     end
 
+    describe "comment associations" do
+      let(:commented_toml) do
+        <<~TOML
+          # root docs
+          title = "My App" # inline title
+
+          [server] # server table
+          # host docs
+          host = "localhost"
+        TOML
+      end
+
+      let(:commented_analysis) { Toml::Merge::FileAnalysis.new(commented_toml) }
+
+      it "retains leading and inline comments on wrapped nodes" do
+        title_pair = commented_analysis.root_pairs.find { |pair| pair.key_name == "title" }
+        server_table = commented_analysis.tables.find { |table| table.table_name == "server" }
+        host_pair = server_table.pairs.find { |pair| pair.key_name == "host" }
+
+        expect(title_pair.leading_comments.map { |comment| comment[:line] }).to eq([1])
+        expect(title_pair.inline_comment[:line]).to eq(2)
+        expect(server_table.inline_comment[:line]).to eq(4)
+        expect(host_pair.leading_comments.map { |comment| comment[:line] }).to eq([5])
+      end
+
+      it "derives comment associations from shared comment entries without duplicate wrapper-specific lookup state" do
+        root_pair = commented_analysis.root_pairs.find { |pair| pair.key_name == "title" }
+
+        wrapper = described_class.new(
+          root_pair.node,
+          lines: commented_toml.lines.map(&:chomp),
+          source: commented_toml,
+          backend: commented_analysis.backend,
+          comment_tracker: commented_analysis.send(:comment_tracker),
+          comment_entries: commented_analysis.send(:tracked_comment_entries),
+        )
+
+        expect(wrapper.leading_comments.map { |comment| comment[:line] }).to eq([1])
+        expect(wrapper.inline_comment[:line]).to eq(2)
+      end
+    end
+
     describe "#table_name" do
       it "returns the name for table nodes" do
         server_table = analysis.tables.find { |t| t.table_name&.include?("server") }

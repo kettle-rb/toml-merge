@@ -125,6 +125,125 @@ RSpec.describe Toml::Merge::ConflictResolver do
       expect(result.content).not_to be_empty
     end
 
+    it "preserves destination leading and inline comments for matched keys under template preference", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        [database]
+
+        title = "template"
+      TOML
+
+      dest_toml = <<~TOML
+        [database]
+
+        # keep this title doc
+
+        title = "destination" # keep this inline note
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :template,
+          add_template_only_nodes: false,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content).to eq(<<~TOML)
+          [database]
+
+          # keep this title doc
+
+          title = "template" # keep this inline note
+        TOML
+      end
+    end
+
+    it "preserves comments for removed destination-only keys when removal is enabled", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        [database]
+        title = "template"
+      TOML
+
+      dest_toml = <<~TOML
+        [database]
+        title = "destination"
+        # keep removed key doc
+        legacy = "destination" # keep removed inline
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :destination,
+          add_template_only_nodes: false,
+          remove_template_missing_nodes: true,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content).to eq(<<~TOML)
+          [database]
+          title = "destination"
+          # keep removed key doc
+          # keep removed inline
+        TOML
+      end
+    end
+
+    it "preserves destination docs for adjacent matched tables under template preference", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        [one]
+        a = 1
+
+        [two]
+        b = 2
+      TOML
+
+      dest_toml = <<~TOML
+        [one]
+        a = 10
+
+        # keep second table docs
+        [two] # keep second inline
+        b = 20
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :template,
+          add_template_only_nodes: false,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content).to eq(<<~TOML)
+          [one]
+          a = 1
+
+          # keep second table docs
+          [two] # keep second inline
+          b = 2
+        TOML
+      end
+    end
+
     it "handles add_template_only_nodes: true" do
       template_content_with_extra = <<~TOML
         [server]

@@ -48,15 +48,21 @@ module Toml
       # Emit a table header
       #
       # @param name [String] Table name (e.g., "package" or "dependencies.dev")
-      def emit_table_header(name)
-        @lines << "[#{name}]"
+      # @param inline_comment [String, nil] Optional inline comment to keep on the header line
+      def emit_table_header(name, inline_comment: nil)
+        line = "[#{name}]"
+        line += " # #{inline_comment}" if inline_comment
+        @lines << line
       end
 
       # Emit an array of tables header
       #
       # @param name [String] Array of tables name
-      def emit_array_of_tables_header(name)
-        @lines << "[[#{name}]]"
+      # @param inline_comment [String, nil] Optional inline comment to keep on the header line
+      def emit_array_of_tables_header(name, inline_comment: nil)
+        line = "[[#{name}]]"
+        line += " # #{inline_comment}" if inline_comment
+        @lines << line
       end
 
       # Emit a key-value pair

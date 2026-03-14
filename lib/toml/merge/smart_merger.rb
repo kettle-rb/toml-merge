@@ -40,6 +40,10 @@ module Toml
       # @return [Symbol] The AST format being used (:tree_sitter or :citrus)
       attr_reader :backend
 
+      # @return [Boolean] Whether destination-only nodes should be removed while
+      #   promoting their attached comments
+      attr_reader :remove_template_missing_nodes
+
       # Creates a new SmartMerger
       #
       # @param template_content [String] Template TOML content
@@ -49,6 +53,8 @@ module Toml
       # @param add_template_only_nodes [Boolean] Whether to add nodes only found in template
       # @param freeze_token [String, nil] Token for freeze block markers
       # @param match_refiner [#call, nil] Match refiner for fuzzy matching
+      # @param remove_template_missing_nodes [Boolean] Whether to remove destination-only
+      #   nodes while preserving their attached comments
       # @param regions [Array<Hash>, nil] Region configurations for nested merging
       # @param region_placeholder [String, nil] Custom placeholder for regions
       # @param node_typing [Hash{Symbol,String => #call}, nil] Node typing configuration
@@ -63,6 +69,7 @@ module Toml
         signature_generator: nil,
         preference: :destination,
         add_template_only_nodes: false,
+        remove_template_missing_nodes: false,
         freeze_token: nil,
         match_refiner: nil,
         regions: nil,
@@ -70,12 +77,15 @@ module Toml
         node_typing: nil,
         **options
       )
+        @remove_template_missing_nodes = remove_template_missing_nodes
+
         super(
           template_content,
           dest_content,
           signature_generator: signature_generator,
           preference: preference,
           add_template_only_nodes: add_template_only_nodes,
+          remove_template_missing_nodes: remove_template_missing_nodes,
           freeze_token: freeze_token,
           match_refiner: match_refiner,
           regions: regions,
@@ -95,6 +105,7 @@ module Toml
         {
           preference: @preference,
           add_template_only_nodes: @add_template_only_nodes,
+          remove_template_missing_nodes: @remove_template_missing_nodes,
           match_refiner: @match_refiner,
         }
       end
@@ -142,6 +153,7 @@ module Toml
           @dest_analysis,
           preference: @preference,
           add_template_only_nodes: @add_template_only_nodes,
+          remove_template_missing_nodes: @remove_template_missing_nodes,
           match_refiner: @match_refiner,
         )
       end

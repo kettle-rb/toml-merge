@@ -49,6 +49,10 @@ RSpec.describe Toml::Merge do
   end
 
   describe "autoloaded classes" do
+    it "autoloads CommentTracker" do
+      expect(Toml::Merge::CommentTracker).to be_a(Class)
+    end
+
     it "autoloads DebugLogger" do
       expect(Toml::Merge::DebugLogger).to be_a(Module)
     end
