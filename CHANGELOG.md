@@ -20,7 +20,12 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Added
 
+- Added shared comment capability and augmenter adoption across file analysis, wrappers, and comment-only document emission, including backend-aware native-partial vs source-augmented reporting
+
 ### Changed
+
+- Preserved table-leading docs, inline table-header comments, matched-key fallback, and adjacent `[[array_of_tables]]` comment ownership through recursive TOML merges and reproducible fixtures
+- Preserved or promoted comments for removed destination-only keys, duplicate nodes, and tables when `remove_template_missing_nodes: true` is enabled, without keeping the removed TOML bodies
 
 ### Deprecated
 
