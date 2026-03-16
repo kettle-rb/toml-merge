@@ -174,6 +174,44 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
   end
 
   describe "recursive and fixture parity" do
+	it "preserves blank-line separators in qlty-style documents under template preference" do
+	  template = <<~TOML
+		# For a guide to configuration, visit https://qlty.sh/d/config
+		# Or for a full reference, visit https://qlty.sh/d/qlty-toml
+		config_version = "0"
+
+		exclude_patterns = [
+		  "**/vendor/**",
+		  ".github/workflows/codeql-analysis.yml"
+		]
+
+		test_patterns = [
+		  "**/test/**",
+		  "**/spec/**",
+		]
+
+		[smells]
+		mode = "comment"
+
+		[smells.boolean_logic]
+		threshold = 4
+		enabled = true
+
+		[smells.file_complexity]
+		threshold = 55
+		enabled = false
+	  TOML
+
+	  merged = described_class.new(
+		template,
+		template,
+		preference: :template,
+		add_template_only_nodes: true,
+	  ).merge
+
+	  expect(merged).to eq(template)
+	end
+
 	it "preserves destination docs for adjacent matched tables under template preference" do
 	  template = <<~TOML
 		[one]

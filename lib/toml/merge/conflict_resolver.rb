@@ -99,6 +99,8 @@ module Toml
         # legitimately repeat headers.
         consumed_template_indices = ::Set.new
         sig_cursor = Hash.new(0)
+        prev_emitted_end_line = nil
+        prev_emitted_analysis = nil
 
         # First pass: Process destination nodes
         dest_nodes.each do |dest_node|
@@ -122,9 +124,25 @@ module Toml
 
             if template_info
               template_node = template_info[:node]
+              selected_node, selected_analysis = preferred_node_with_analysis(
+                template_node,
+                dest_node,
+                template_analysis,
+                dest_analysis,
+              )
+
+              emit_gap_before_node(
+                selected_node,
+                selected_analysis,
+                prev_emitted_end_line,
+                prev_emitted_analysis,
+                skip_for_borrowed_leading_region: @preference == :template && leading_region_present?(dest_node, dest_analysis),
+              )
 
               # Both have this node - merge them
               merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
+              prev_emitted_end_line = emitted_end_line_for(selected_node)
+              prev_emitted_analysis = selected_analysis
 
               consumed_template_indices << template_info[:index]
               sig_cursor[dest_sig] = cursor + 1
@@ -133,13 +151,22 @@ module Toml
               if @remove_template_missing_nodes
                 emit_removed_destination_node_comments(dest_node, dest_analysis)
               else
+                emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
                 emit_node(dest_node, dest_analysis)
+                prev_emitted_end_line = emitted_end_line_for(dest_node)
+                prev_emitted_analysis = dest_analysis
               end
             end
           elsif refined_dest_to_template.key?(dest_node)
             # Found refined match
             template_node = refined_dest_to_template[dest_node]
             template_sig = template_analysis.generate_signature(template_node)
+            selected_node, selected_analysis = preferred_node_with_analysis(
+              template_node,
+              dest_node,
+              template_analysis,
+              dest_analysis,
+            )
 
             # Find and consume the matching template index
             if template_sig && template_by_sig[template_sig]
@@ -152,13 +179,25 @@ module Toml
             end
 
             # Merge matched nodes
+            emit_gap_before_node(
+              selected_node,
+              selected_analysis,
+              prev_emitted_end_line,
+              prev_emitted_analysis,
+              skip_for_borrowed_leading_region: @preference == :template && leading_region_present?(dest_node, dest_analysis),
+            )
             merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
+            prev_emitted_end_line = emitted_end_line_for(selected_node)
+            prev_emitted_analysis = selected_analysis
           else
             # Destination-only node
             if @remove_template_missing_nodes
               emit_removed_destination_node_comments(dest_node, dest_analysis)
             else
+              emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
               emit_node(dest_node, dest_analysis)
+              prev_emitted_end_line = emitted_end_line_for(dest_node)
+              prev_emitted_analysis = dest_analysis
             end
           end
         end
@@ -171,7 +210,10 @@ module Toml
           next if consumed_template_indices.include?(idx)
 
           # Add template-only node
+          emit_gap_before_node(template_node, template_analysis, prev_emitted_end_line, prev_emitted_analysis)
           emit_node(template_node, template_analysis)
+          prev_emitted_end_line = emitted_end_line_for(template_node)
+          prev_emitted_analysis = template_analysis
         end
       end
 
@@ -514,6 +556,23 @@ module Toml
           lines << line if line && line.strip.empty?
         end
         @emitter.emit_raw_lines(lines) if lines.any?
+      end
+
+      def emit_gap_before_node(node, analysis, prev_end_line, prev_analysis, skip_for_borrowed_leading_region: false)
+        return unless node && analysis && prev_end_line
+        return unless prev_analysis&.equal?(analysis)
+        return unless node.respond_to?(:start_line) && node.start_line
+        return if skip_for_borrowed_leading_region
+
+        leading_region = attachment_region(node, analysis, :leading_region)
+        return if leading_region && (!leading_region.respond_to?(:empty?) || !leading_region.empty?)
+
+        emit_interstitial_blank_lines(prev_end_line + 1, node.start_line - 1, analysis)
+      end
+
+      def leading_region_present?(node, analysis)
+        region = attachment_region(node, analysis, :leading_region)
+        region && (!region.respond_to?(:empty?) || !region.empty?)
       end
 
       def emit_preceding_blank_lines(region, analysis)

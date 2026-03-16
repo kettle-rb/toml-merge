@@ -39,6 +39,10 @@ Please file a bug if you notice a violation of semantic versioning.
   This is especially important for TOML because `[[array_of_tables]]` headers
   can legitimately repeat, and the old approach would collapse them into a
   single entry.
+- Template-preferred merges now preserve same-source separator blank lines
+  between emitted TOML nodes, including qlty-style top-level arrays and table
+  groups, without double-emitting blanks in front of borrowed destination
+  comment regions.
 
 ### Security
 
