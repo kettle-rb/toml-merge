@@ -229,6 +229,83 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
+  describe "shared layout compliance" do
+    let(:layout_toml) do
+      <<~TOML
+
+        title = "Example"
+
+        color = "blue"
+
+      TOML
+    end
+
+    shared_examples "a layout-compliant TOML analysis" do
+      let(:analysis) { described_class.new(layout_toml) }
+      let(:first_owner) do
+        analysis.statements.find { |statement| statement.respond_to?(:start_line) && statement.start_line == 2 }
+      end
+      let(:second_owner) do
+        analysis.statements.find { |statement| statement.respond_to?(:start_line) && statement.start_line == 4 }
+      end
+      let(:layout_augmenter) { analysis.layout_augmenter(owners: [first_owner, second_owner].compact) }
+      let(:layout_attachment) { layout_augmenter.attachment_for(first_owner) }
+
+      it "finds stable owners for the shared layout contract" do
+        expect(first_owner).not_to be_nil
+        expect(second_owner).not_to be_nil
+      end
+
+      it_behaves_like "Ast::Merge::Layout::Attachment" do
+        let(:expected_attachment_owner) { first_owner }
+        let(:expected_leading_gap_kind) { :preamble }
+        let(:expected_trailing_gap_kind) { :interstitial }
+        let(:expected_gap_ranges) { [1..1, 3..3] }
+        let(:expected_leading_controls_output) { true }
+        let(:expected_trailing_controls_output) { false }
+      end
+
+      it_behaves_like "Ast::Merge::Layout::Augmenter" do
+        let(:augmenter_owner) { first_owner }
+        let(:expected_preamble_range) { 1..1 }
+        let(:expected_postlude_range) { 5..5 }
+        let(:expected_interstitial_ranges) { [3..3] }
+        let(:expected_owner_leading_gap_kind) { :preamble }
+        let(:expected_owner_trailing_gap_kind) { :interstitial }
+      end
+    end
+
+    context "with tree-sitter backend", :mri_backend, :toml_grammar do
+      around do |example|
+        TreeHaver.with_backend(:mri) do
+          example.run
+        end
+      end
+
+      include_examples "a layout-compliant TOML analysis"
+    end
+
+    context "with citrus backend", :citrus_backend do
+      around do |example|
+        TreeHaver.with_backend(:citrus) do
+          example.run
+        end
+      end
+
+      include_examples "a layout-compliant TOML analysis"
+    end
+
+    context "with parslet backend", :parslet_backend do
+      around do |example|
+        TreeHaver.with_backend(:parslet) do
+          example.run
+        end
+      end
+
+      include_examples "a layout-compliant TOML analysis"
+    end
+  end
+
   describe "#tables" do
     context "with tree-sitter backend", :mri_backend, :toml_grammar do
       around do |example|
