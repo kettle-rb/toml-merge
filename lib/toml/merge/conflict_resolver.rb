@@ -10,6 +10,7 @@ module Toml
     #   resolver.resolve(result)
     class ConflictResolver < Ast::Merge::ConflictResolverBase
       include ::Ast::Merge::TrailingGroups::DestIterate
+
       # Creates a new ConflictResolver
       #
       # @param template_analysis [FileAnalysis] Analyzed template file
@@ -105,7 +106,10 @@ module Toml
 
         # Pre-compute position-aware trailing groups for template-only nodes.
         dest_sigs = ::Set.new
-        dest_nodes.each { |n| sig = dest_analysis.generate_signature(n); dest_sigs << sig if sig }
+        dest_nodes.each { |n|
+          sig = dest_analysis.generate_signature(n)
+          dest_sigs << sig if sig
+        }
         refined_template_ids = ::Set.new(refined_matches.keys.map(&:object_id))
 
         trailing_groups, all_matched_indices = build_dest_iterate_trailing_groups(
@@ -168,16 +172,14 @@ module Toml
 
               consumed_template_indices << template_info[:index]
               sig_cursor[dest_sig] = cursor + 1
-            else
+            elsif @remove_template_missing_nodes
               # All template copies consumed — treat the extra destination copy as destination-only.
-              if @remove_template_missing_nodes
-                emit_removed_destination_node_comments(dest_node, dest_analysis)
-              else
-                emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
-                emit_node(dest_node, dest_analysis)
-                prev_emitted_end_line = emitted_end_line_for(dest_node)
-                prev_emitted_analysis = dest_analysis
-              end
+              emit_removed_destination_node_comments(dest_node, dest_analysis)
+            else
+              emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
+              emit_node(dest_node, dest_analysis)
+              prev_emitted_end_line = emitted_end_line_for(dest_node)
+              prev_emitted_analysis = dest_analysis
             end
           elsif refined_dest_to_template.key?(dest_node)
             # Found refined match
@@ -211,16 +213,14 @@ module Toml
             merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
             prev_emitted_end_line = emitted_end_line_for(selected_node)
             prev_emitted_analysis = selected_analysis
-          else
+          elsif @remove_template_missing_nodes
             # Destination-only node
-            if @remove_template_missing_nodes
-              emit_removed_destination_node_comments(dest_node, dest_analysis)
-            else
-              emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
-              emit_node(dest_node, dest_analysis)
-              prev_emitted_end_line = emitted_end_line_for(dest_node)
-              prev_emitted_analysis = dest_analysis
-            end
+            emit_removed_destination_node_comments(dest_node, dest_analysis)
+          else
+            emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
+            emit_node(dest_node, dest_analysis)
+            prev_emitted_end_line = emitted_end_line_for(dest_node)
+            prev_emitted_analysis = dest_analysis
           end
 
           # Flush interior trailing groups
@@ -413,7 +413,7 @@ module Toml
       end
 
       def preferred_boundary_analysis(template_analysis, dest_analysis)
-        @preference == :template ? template_analysis : dest_analysis
+        (@preference == :template) ? template_analysis : dest_analysis
       end
 
       def preferred_comment_only_analysis(template_analysis, dest_analysis)
@@ -435,7 +435,7 @@ module Toml
         return unless analysis
 
         augmenter = analysis.comment_augmenter(owners: analysis.statements)
-        region = kind == :preamble ? augmenter.preamble_region : augmenter.postlude_region
+        region = (kind == :preamble) ? augmenter.preamble_region : augmenter.postlude_region
         return unless region
 
         boundary_lines = root_boundary_lines_for(region, analysis, kind)
@@ -453,17 +453,8 @@ module Toml
         return unless region
 
         emit_preceding_blank_lines(region, source_analysis)
-        emit_region(region, source_analysis)
+        @emitter.emit_comment_region(region, source_lines: source_analysis&.lines)
         emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
-      end
-
-      def emit_region(region, analysis)
-        return unless region
-
-        lines = region.nodes.filter_map do |comment_node|
-          analysis.line_at(comment_node.line_number) if comment_node.respond_to?(:line_number)
-        end
-        @emitter.emit_raw_lines(lines) if lines.any?
       end
 
       def root_boundary_lines_for(region, analysis, kind)
@@ -531,9 +522,9 @@ module Toml
 
         existing_inline_region = attachment_region(node, analysis, :inline_region)
         first_line = strip_inline_region_from_line(lines.first, existing_inline_region)
-        first_line = append_inline_region_to_line(first_line, inline_region)
 
         @emitter.emit_raw_lines([first_line])
+        @emitter.emit_comment_region(inline_region, inline: true, source_lines: comment_analysis&.lines)
         @emitter.emit_raw_lines(lines.drop(1)) if lines.length > 1
       end
 
@@ -567,15 +558,6 @@ module Toml
         line.byteslice(0...column).to_s.rstrip
       end
 
-      def append_inline_region_to_line(line, inline_region)
-        return line unless inline_region && !inline_region.empty?
-
-        tracked = Array(inline_region.metadata[:tracked_hashes]).first
-        raw = tracked && tracked[:raw]
-        return [line.rstrip, raw].reject(&:empty?).join(" ") if raw
-
-        [line.rstrip, inline_region.text.to_s.strip].reject(&:empty?).join(" ")
-      end
 
       def emit_interstitial_blank_lines(start_line, end_line, analysis)
         return unless analysis

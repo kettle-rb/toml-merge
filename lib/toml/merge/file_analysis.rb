@@ -25,7 +25,7 @@ module Toml
             comments: analysis.send(:tracked_comment_entries),
             owners: analysis.send(:augmenter_delegate_owners, @owners),
             style: :hash_comment,
-            **details
+            **details,
           )
           @capability = analysis.send(:build_comment_capability, owner_count: @owners.size, **details)
           @attachments_by_owner = @owners.each_with_object({}) do |owner, result|
@@ -537,7 +537,6 @@ module Toml
           source: source,
         }
       end
-
 
       def node_start_line(node)
         extract_point_row(node.respond_to?(:start_point) ? node.start_point : nil)&.+(1)

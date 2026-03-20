@@ -1,0 +1,14 @@
+{
+  "lib/toml/merge/conflict_resolver.rb:3193290269": [
+    [388, 11, 35, "Style/IdenticalConditionalBranches: Move `emit_leading_region(node, analysis)` out of the conditional.", 1406586843],
+    [394, 11, 35, "Style/IdenticalConditionalBranches: Move `emit_leading_region(node, analysis)` out of the conditional.", 1406586843]
+  ],
+  "spec/toml/merge/file_analysis_spec.rb:3634489225": [
+    [285, 7, 16, "RSpec/IncludeExamples: Prefer `it_behaves_like` over `include_examples`.", 2874877341],
+    [295, 7, 16, "RSpec/IncludeExamples: Prefer `it_behaves_like` over `include_examples`.", 2874877341],
+    [305, 7, 16, "RSpec/IncludeExamples: Prefer `it_behaves_like` over `include_examples`.", 2874877341]
+  ],
+  "spec/toml/merge/removal_mode_compliance_spec.rb:2948725517": [
+    [7, 1, 68, "RSpec/SpecFilePathFormat: Spec path should end with `toml/merge/smart_merger*_spec.rb`.", 4289576431]
+  ]
+}

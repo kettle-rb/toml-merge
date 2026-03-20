@@ -4,40 +4,33 @@ module Toml
   module Merge
     # Tracks pre-extracted TOML comment entries and exposes shared comment helpers.
     #
-    # This keeps wrapper-level comment association and analysis-layer shared
-    # comment APIs on one lookup implementation.
-    class CommentTracker
-      attr_reader :lines, :comment_entries, :backend
+    # Inherits shared lookup, query, region-building, and attachment API from
+    # +Ast::Merge::Comment::HashTrackerBase+. This tracker differs from most
+    # siblings in that it receives pre-extracted comment entries from the TOML
+    # parser rather than scanning source lines itself.
+    #
+    # Format-specific overrides:
+    # - Initialization accepts pre-extracted entries + backend hint
+    # - Region building preserves internal blank lines between comment nodes
+    # - Inline comment detection is owner-aware (table headers vs key/value pairs)
+    class CommentTracker < Ast::Merge::Comment::HashTrackerBase
+      attr_reader :comment_entries, :backend
 
       def initialize(lines, comment_entries, backend: :tree_sitter)
-        @lines = Array(lines)
         @comment_entries = Array(comment_entries).map { |entry| normalize_entry(entry) }
         @backend = backend
+        super(Array(lines))
       end
 
-      def comment_nodes
-        @comment_nodes ||= @comment_entries.map { |entry| comment_node_for_entry(entry) }
-      end
-
-      def comment_node_at(line_num)
-        entry = @comment_entries.find { |comment| comment[:line] == line_num }
-        return unless entry
-
-        comment_node_for_entry(entry)
-      end
-
-      def comment_region_for_range(range, kind:, full_line_only: false)
-        entries = @comment_entries.select { |entry| range.cover?(entry[:line]) }
-        entries = entries.select { |entry| entry[:full_line] } if full_line_only
-        build_comment_region(kind, entries, metadata: {range: range, full_line_only: full_line_only})
-      end
-
+      # Override: TOML inline comment detection is owner-aware — table headers
+      # only match inline comments on their own line, while key/value pairs
+      # match across their full line range.
       def comment_attachment_for(owner, line_num: nil, **options)
         owner_line = line_num || owner_start_line(owner)
         return Ast::Merge::Comment::Attachment.new(owner: owner, metadata: options) unless owner_line
 
-        leading_region = build_comment_region(:leading, leading_comments_before(owner_line))
-        inline_region = build_comment_region(:inline, owner_inline_comment_entries(owner, line_num: owner_line))
+        leading_region = build_toml_region(:leading, leading_comments_before(owner_line))
+        inline_region = build_toml_region(:inline, owner_inline_comment_entries(owner, line_num: owner_line))
 
         Ast::Merge::Comment::Attachment.new(
           owner: owner,
@@ -48,31 +41,6 @@ module Toml
             line_num: owner_line,
           }.merge(options),
         )
-      end
-
-      def leading_comments_before(line_num)
-        candidates = @comment_entries.select do |entry|
-          entry[:full_line] && entry[:line] < line_num
-        end
-        return [] if candidates.empty?
-
-        selected = []
-        current_line = line_num - 1
-
-        while current_line >= 1
-          comment = candidates.find { |candidate| candidate[:line] == current_line }
-
-          if comment
-            selected.unshift(comment)
-            current_line -= 1
-          elsif line_at(current_line).to_s.strip.empty?
-            current_line -= 1
-          else
-            break
-          end
-        end
-
-        selected
       end
 
       def inline_comment_for(owner, line_num: nil)
@@ -96,6 +64,11 @@ module Toml
 
       private
 
+      # Override: use pre-extracted entries directly instead of scanning source.
+      def extract_comments
+        @comment_entries
+      end
+
       def normalize_entry(entry)
         entry.each_with_object({}) do |(key, value), result|
           result[key.to_sym] = value
@@ -106,15 +79,13 @@ module Toml
         @backend != :parslet
       end
 
-      def line_at(line_number)
-        @lines[line_number - 1]
+      # Override: TOML region building preserves internal blank lines
+      # between consecutive comment nodes.
+      def build_comment_node(comment)
+        comment[:comment_node] ||= Ast::Merge::Comment::TrackedHashAdapter.node(comment, style: :hash_comment)
       end
 
-      def comment_node_for_entry(entry)
-        entry[:comment_node] ||= Ast::Merge::Comment::TrackedHashAdapter.node(entry, style: :hash_comment)
-      end
-
-      def build_comment_region(kind, entries, metadata: {})
+      def build_toml_region(kind, entries, metadata: {})
         return if entries.empty?
 
         nodes = []
@@ -130,7 +101,7 @@ module Toml
             end
           end
 
-          nodes << comment_node_for_entry(entry)
+          nodes << build_comment_node(entry)
           previous_line = entry[:line]
         end
 
@@ -181,6 +152,11 @@ module Toml
         return point[:row] if point.is_a?(Hash)
 
         nil
+      end
+
+      # Override owner_line_num for the base class's leading comment helpers.
+      def owner_line_num(owner)
+        owner_start_line(owner)
       end
     end
   end

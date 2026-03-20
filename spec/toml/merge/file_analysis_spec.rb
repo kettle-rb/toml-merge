@@ -190,16 +190,16 @@ RSpec.describe Toml::Merge::FileAnalysis do
         # FileAnalysis should rely on Ast::Merge::Comment constants, whether they are
         # still pending autoload or have already been loaded by earlier specs.
         expect(
-          Ast::Merge::Comment.autoload?(:Capability) || Ast::Merge::Comment.const_defined?(:Capability, false)
+          Ast::Merge::Comment.autoload?(:Capability) || Ast::Merge::Comment.const_defined?(:Capability, false),
         ).to be_truthy
         expect(
-          Ast::Merge::Comment.autoload?(:Attachment) || Ast::Merge::Comment.const_defined?(:Attachment, false)
+          Ast::Merge::Comment.autoload?(:Attachment) || Ast::Merge::Comment.const_defined?(:Attachment, false),
         ).to be_truthy
         expect(
-          Ast::Merge::Comment.autoload?(:Region) || Ast::Merge::Comment.const_defined?(:Region, false)
+          Ast::Merge::Comment.autoload?(:Region) || Ast::Merge::Comment.const_defined?(:Region, false),
         ).to be_truthy
         expect(
-          Ast::Merge::Comment.autoload?(:TrackedHashAdapter) || Ast::Merge::Comment.const_defined?(:TrackedHashAdapter, false)
+          Ast::Merge::Comment.autoload?(:TrackedHashAdapter) || Ast::Merge::Comment.const_defined?(:TrackedHashAdapter, false),
         ).to be_truthy
 
         analysis = described_class.new(commented_toml)
