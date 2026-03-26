@@ -28,6 +28,9 @@ Please file a bug if you notice a violation of semantic versioning.
 - Preserved table-leading docs, inline table-header comments, matched-key fallback, and adjacent `[[array_of_tables]]` comment ownership through recursive TOML merges and reproducible fixtures
 - Preserved or promoted comments for removed destination-only keys, duplicate nodes, and tables when `remove_template_missing_nodes: true` is enabled, without keeping the removed TOML bodies
 - Adopted `Ast::Merge::TrailingGroups::DestIterate` for position-aware template-only key, table, and `[[array_of_tables]]` insertion while keeping TOML gap emission and destination-relative table ordering intact
+- Reused the shared emitter comment-region helpers for matched-node TOML comment
+  replay while keeping TOML-local document-boundary, removed-node promotion, and
+  backend-specific comment extraction behavior local
 
 ### Deprecated
 
