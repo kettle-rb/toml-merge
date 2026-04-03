@@ -82,7 +82,7 @@ Gem::Specification.new do |spec|
   spec.executables = []
 
   # Parser - tree_haver provides unified tree-sitter & citrus interface
-  spec.add_dependency("tree_haver", "~> 5.0", ">= 5.0.5")                           # ruby >= 3.2.0
+  spec.add_dependency("tree_haver", "~> 6.0", ">= 6.0.0")                           # ruby >= 3.2.0
   # NOTE: tree-sitter-toml parser must be installed separately via your package manager
   #       e.g., `apt install libtree-sitter-toml-dev` or built from source
   # A ruby interface for tree-sitter must also be installed (pick ONE):
