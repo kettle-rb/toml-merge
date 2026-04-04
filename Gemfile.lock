@@ -52,19 +52,6 @@ PATH
       tree_haver (~> 6.0, >= 6.0.0)
       version_gem (~> 1.1, >= 1.1.9)
 
-PATH
-  remote: /home/pboling/src/kettle-rb/ast-merge
-  specs:
-    ast-merge (5.0.0)
-      tree_haver (~> 6.0, >= 6.0.0)
-      version_gem (~> 1.1, >= 1.1.9)
-
-PATH
-  remote: /home/pboling/src/kettle-rb/tree_haver
-  specs:
-    tree_haver (6.0.0)
-      version_gem (~> 1.1, >= 1.1.9)
-
 GEM
   remote: https://gem.coop/
   specs:
@@ -76,6 +63,9 @@ GEM
       rake (>= 10)
       thor (>= 0.14)
     ast (2.4.3)
+    ast-merge (5.0.0)
+      tree_haver (~> 6.0, >= 6.0.0)
+      version_gem (~> 1.1, >= 1.1.9)
     backports (3.25.3)
     benchmark (0.5.0)
     bigdecimal (3.3.1)
@@ -83,6 +73,13 @@ GEM
       bundler (>= 1.2.0)
       thor (~> 1.0)
     citrus (3.0.2)
+    commonmarker (2.7.0-aarch64-linux)
+    commonmarker (2.7.0-aarch64-linux-musl)
+    commonmarker (2.7.0-arm-linux)
+    commonmarker (2.7.0-arm64-darwin)
+    commonmarker (2.7.0-x86_64-darwin)
+    commonmarker (2.7.0-x86_64-linux)
+    commonmarker (2.7.0-x86_64-linux-musl)
     concurrent-ruby (1.3.6)
     date (3.5.1)
     debug (1.11.1)
@@ -167,7 +164,6 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.2-x86_64-linux-musl)
       racc (~> 1.4)
-    oppen (1.0.0)
     ostruct (0.6.3)
     parallel (1.28.0)
     parser (3.3.11.1)
@@ -295,42 +291,6 @@ GEM
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-progressbar (1.13.0)
     ruby_engine (2.0.3)
-    ruby_tree_sitter (2.1.0)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-aarch64-linux-gnu)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-aarch64-linux-musl)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-arm-linux-gnu)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-arm-linux-musl)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-arm64-darwin)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-x86_64-darwin)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-x86_64-linux-gnu)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
-    ruby_tree_sitter (2.1.0-x86_64-linux-musl)
-      oppen (~> 1.0)
-      sorbet-runtime
-      zeitwerk
     ruby_version (1.0.3)
     silent_stream (1.0.12)
       logger (~> 1.2)
@@ -351,7 +311,6 @@ GEM
     simplecov-rcov (0.3.7)
       simplecov (>= 0.4.1)
     simplecov_json_formatter (0.1.4)
-    sorbet-runtime (0.6.13082)
     standard (1.54.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
@@ -386,6 +345,8 @@ GEM
     toml-rb (4.1.0)
       citrus (~> 3.0, > 3.0)
       racc (~> 1.7)
+    tree_haver (6.0.0)
+      version_gem (~> 1.1, >= 1.1.9)
     tree_stump (0.2.0)
       rb_sys (~> 0.9.119)
     tsort (0.2.0)
@@ -426,10 +387,10 @@ PLATFORMS
 DEPENDENCIES
   addressable (>= 2.8, < 3)
   appraisal2 (~> 3.0.6, ~> 3.0)
-  ast-merge!
   benchmark (~> 0.5, >= 0.5.0)
   bundler-audit (~> 0.9.2)
-  citrus (~> 3.0, >= 3.0.2)
+  citrus (~> 3.0, >= 3.0.2, >= 0)
+  commonmarker
   debug (>= 1.1)
   erb (~> 5.0)
   ffi
@@ -453,14 +414,12 @@ DEPENDENCIES
   rubocop-rspec (~> 3.6)
   rubocop-ruby3_2
   ruby-progressbar (~> 1.13)
-  ruby_tree_sitter
   standard (>= 1.50)
   stone_checksums (~> 1.0, >= 1.0.3)
   stringio (>= 3.0)
   toml (~> 0.3, >= 0.3.0)
   toml-merge!
-  toml-rb (~> 4.1, >= 4.1.0)
-  tree_haver!
+  toml-rb (~> 4.1, >= 4.1.0, >= 0)
   tree_stump (~> 0.2)
   yaml-converter (~> 0.1)
   yard (~> 0.9, >= 0.9.37)
@@ -480,6 +439,13 @@ CHECKSUMS
   bigdecimal (3.3.1) sha256=eaa01e228be54c4f9f53bf3cc34fe3d5e845c31963e7fcc5bedb05a4e7d52218
   bundler-audit (0.9.3) sha256=81c8766c71e47d0d28a0f98c7eed028539f21a6ea3cd8f685eb6f42333c9b4e9
   citrus (3.0.2) sha256=4ec2412fc389ad186735f4baee1460f7900a8e130ffe3f216b30d4f9c684f650
+  commonmarker (2.7.0-aarch64-linux) sha256=a15a47bb901f4cfcb3b4fe54d0daf91ec46e70b6e9704c67abec0ba30064b2dc
+  commonmarker (2.7.0-aarch64-linux-musl) sha256=fa08eb19ffc3cf2f7132d86d74622338a0c35b480b23814a7ae63deaeafb56d3
+  commonmarker (2.7.0-arm-linux) sha256=85274d47feca40bd574ac49c2959a015464936f7f830c1e2918ee147d5be1a13
+  commonmarker (2.7.0-arm64-darwin) sha256=ef00f7efef4822e8e7f88be88920a319f71a251e894e02fbc82f6db5d4291db3
+  commonmarker (2.7.0-x86_64-darwin) sha256=a8f5928f36138347b5e672d080b8f76dc430c6207566128b117cdd02f3e48c34
+  commonmarker (2.7.0-x86_64-linux) sha256=53243eeb30e4ddb6a474672597ff7e59334e55a7653126bb87e65e6ab2629a4c
+  commonmarker (2.7.0-x86_64-linux-musl) sha256=e4f5c06975f37a405bd157d276609e1c02502d2fbaf576f6e3616fba2e7b5662
   concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
   date (3.5.1) sha256=750d06384d7b9c15d562c76291407d89e368dda4d4fff957eb94962d325a0dc0
   debug (1.11.1) sha256=2e0b0ac6119f2207a6f8ac7d4a73ca8eb4e440f64da0a3136c30343146e952b6
@@ -526,7 +492,6 @@ CHECKSUMS
   nokogiri (1.19.2-x86_64-darwin) sha256=7d9af11fda72dfaa2961d8c4d5380ca0b51bc389dc5f8d4b859b9644f195e7a4
   nokogiri (1.19.2-x86_64-linux-gnu) sha256=fa8feca882b73e871a9845f3817a72e9734c8e974bdc4fbad6e4bc6e8076b94f
   nokogiri (1.19.2-x86_64-linux-musl) sha256=93128448e61a9383a30baef041bf1f5817e22f297a1d400521e90294445069a8
-  oppen (1.0.0) sha256=379bf0b35c5e87c5f4139927721fd6c9f561e344a73ce3f658726a609034ddee
   ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
   parallel (1.28.0) sha256=33e6de1484baf2524792d178b0913fc8eb94c628d6cfe45599ad4458c638c970
   parser (3.3.11.1) sha256=d17ace7aabe3e72c3cc94043714be27cc6f852f104d81aa284c2281aecc65d54
@@ -574,15 +539,6 @@ CHECKSUMS
   rubocop-thread_safety (0.7.3) sha256=067cdd52fbf5deffc18995437e45b5194236eaff4f71de3375a1f6052e48f431
   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
   ruby_engine (2.0.3) sha256=ca2ae7def8cfcdc2bfb6a186d36d5d59c8b403245dc0256c3802b767fa278aaa
-  ruby_tree_sitter (2.1.0) sha256=afbfbd03eae48b522a0dd383f65a03e009a7284e09271cc2ed11ce759c4601e8
-  ruby_tree_sitter (2.1.0-aarch64-linux-gnu) sha256=f6b50e4f45c0097b043b979765012ff6defa9b8972c8e9504e55f14acd94ae2a
-  ruby_tree_sitter (2.1.0-aarch64-linux-musl) sha256=83bf8dd929b611f1084137492351bccfaa679788619c818036984c7ae209f026
-  ruby_tree_sitter (2.1.0-arm-linux-gnu) sha256=8a394672e485e46cfb34f0d8a75627955b7bc95b7035f2c3170a606b78907af5
-  ruby_tree_sitter (2.1.0-arm-linux-musl) sha256=c93e3d2dac38aca6fa3512c1db8f0c8a48a4b1275e6303c61cf156aecf28e125
-  ruby_tree_sitter (2.1.0-arm64-darwin) sha256=6df6ef21ecb98054866faa6b17d336f563dbf8fbc4aa093c551766457bfd2795
-  ruby_tree_sitter (2.1.0-x86_64-darwin) sha256=54486331954f1c96d0186ef2e0c89f054b0c033773a2fd0721f4dbba5f1c00ed
-  ruby_tree_sitter (2.1.0-x86_64-linux-gnu) sha256=d1e1d127d91f049043e8f951524f852733c8c479775684918aa0456b567358bc
-  ruby_tree_sitter (2.1.0-x86_64-linux-musl) sha256=8866852e1188a432a17f940ca0208f6658d8552eb63c4cf1ca4a9b087cb40a9d
   ruby_version (1.0.3) sha256=5930f9950746b7e6c973184398ee364ee7440b170fef7922b9f5cdf317f1ccb5
   silent_stream (1.0.12) sha256=377c43aa10033fe90c33b39ea8cd97d79f2d1c4856df598efc56f3091f3ae782
   simplecov (0.22.0) sha256=fe2622c7834ff23b98066bb0a854284b2729a569ac659f82621fc22ef36213a5
@@ -592,7 +548,6 @@ CHECKSUMS
   simplecov-lcov (0.9.0) sha256=7a77a31e200a595ed4b0249493056efd0c920601f53d2ef135ca34ee796346cd
   simplecov-rcov (0.3.7) sha256=372f50bf6df6b6350b7d0c840f2f8bdabe021861a43c26877b747c9ac96139fc
   simplecov_json_formatter (0.1.4) sha256=529418fbe8de1713ac2b2d612aa3daa56d316975d307244399fa4838c601b428
-  sorbet-runtime (0.6.13082) sha256=e0821d6407631f5842d9cbf6a8e64cbf4f5e719279fec8655b6e2af75aa5c50e
   standard (1.54.0) sha256=7a4b08f83d9893083c8f03bc486f0feeb6a84d48233b40829c03ef4767ea0100
   standard-custom (1.0.2) sha256=424adc84179a074f1a2a309bb9cf7cd6bfdb2b6541f20c6bf9436c0ba22a652b
   standard-performance (1.9.0) sha256=49483d31be448292951d80e5e67cdcb576c2502103c7b40aec6f1b6e9c88e3f2
