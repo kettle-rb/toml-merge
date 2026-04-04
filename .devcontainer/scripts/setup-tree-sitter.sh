@@ -237,6 +237,7 @@ for grammar in "${GRAMMARS[@]}"; do
   echo "  ✓ Installed tree-sitter-${grammar}"
 done
 echo "[universal-blue] tree-sitter setup complete!"
+
 echo ""
 echo "Detected library paths (set these if needed):"
 
@@ -253,7 +254,6 @@ else
 fi
 
 echo "  TREE_SITTER_TOML_PATH=/usr/local/lib/libtree-sitter-toml.so"
-
 echo ""
 echo "If Ruby cannot find libraries at runtime, you may need to export:"
 echo "  export LD_LIBRARY_PATH=/usr/local/lib:/usr/lib64:/usr/lib"
