@@ -1,16 +1,22 @@
 # coding: utf-8
 # frozen_string_literal: true
 
+# kettle-jem:freeze
+# To retain chunks of comments & code during toml-merge templating:
+# Wrap custom sections with freeze markers (e.g., as above and below this comment chunk).
+# toml-merge will then preserve content between those markers across template runs.
+# kettle-jem:unfreeze
+
 Gem::Specification.new do |spec|
   spec.name = "toml-merge"
   spec.version = Module.new.tap { |mod| Kernel.load("#{__dir__}/lib/toml/merge/version.rb", mod) }::Toml::Merge::Version::VERSION
   spec.authors = ["Peter H. Boling"]
   spec.email = ["floss@galtzo.com"]
 
-  spec.summary = "☯️ TOML file smart merge using tree-sitter AST analysis"
-  spec.description = "☯️ Intelligently merges TOML files by analyzing their AST structure with tree-sitter, preserving key organization and resolving conflicts based on structural similarity."
+  spec.summary = "🍲 TOML file smart merge using tree-sitter AST analysis"
+  spec.description = "🍲 Intelligently merges TOML files by analyzing their AST structure with tree-sitter, preserving key organization and resolving conflicts based on structural similarity."
   spec.homepage = "https://github.com/kettle-rb/toml-merge"
-  spec.licenses = ["MIT"]
+  spec.licenses = ["AGPL-3.0-only", "PolyForm-Small-Business-1.0.0", "LicenseRef-Big-Time-Public-License"]
   spec.required_ruby_version = ">= 3.2.0"
 
   # Linux distros often package gems and securely certify them independent
@@ -31,7 +37,7 @@ Gem::Specification.new do |spec|
     end
   end
 
-  spec.metadata["homepage_uri"] = "https://#{spec.name.tr("_", "-")}.galtzo.com/"
+  spec.metadata["homepage_uri"] = "https://toml-merge.galtzo.com/"
   spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/v#{spec.version}"
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/v#{spec.version}/CHANGELOG.md"
   spec.metadata["bug_tracker_uri"] = "#{spec.homepage}/issues"
@@ -119,11 +125,24 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency("toml", "~> 0.3", ">= 0.3.0")
   spec.add_development_dependency("toml-rb", "~> 4.1", ">= 4.1.0")
 
+  # NOTE: It is preferable to list development dependencies in the gemspec due to increased
+  #       visibility and discoverability.
+  #       However, development dependencies in gemspec will install on
+  #       all versions of Ruby that will run in CI.
+  #       This gem, and its gemspec runtime dependencies, will install on Ruby down to 3.2.0.
+  #       This gem, and its gemspec development dependencies, will install on Ruby down to 3.2.0.
+  #       Thus, dev dependencies in gemspec must have
+  #
+  #       required_ruby_version ">= 3.2.0" (or lower)
+  #
+  #       Development dependencies that require strictly newer Ruby versions should be in a "gemfile",
+  #       and preferably a modular one (see gemfiles/modular/*.gemfile).
+
   # Dev, Test, & Release Tasks
-  spec.add_development_dependency("kettle-dev", "~> 2.0")                           # ruby >= 2.3.0
+  spec.add_development_dependency("kettle-dev", "~> 2.0")                  # ruby >= 2.3.0
 
   # Security
-  spec.add_development_dependency("bundler-audit", "~> 0.9.2")                      # ruby >= 2.0.0
+  spec.add_development_dependency("bundler-audit", "~> 0.9.3")                      # ruby >= 2.0.0
 
   # Tasks
   spec.add_development_dependency("rake", "~> 13.0")                                # ruby >= 2.2.0
@@ -132,8 +151,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency("require_bench", "~> 1.0", ">= 1.0.4")            # ruby >= 2.2.0
 
   # Testing
-  spec.add_development_dependency("appraisal2", "~> 3.0", "~> 3.0.6")               # ruby >= 1.8.7, for testing against multiple versions of dependencies
-  spec.add_development_dependency("kettle-test", "~> 1.0", ">= 1.0.10")             # ruby >= 2.3
+  spec.add_development_dependency("appraisal2", "~> 3.0", ">= 3.0.6")               # ruby >= 1.8.7, for testing against multiple versions of dependencies
+  spec.add_development_dependency("kettle-test", "~> 1.0", ">= 1.0.10")              # ruby >= 2.3
 
   # Releasing
   spec.add_development_dependency("ruby-progressbar", "~> 1.13")                    # ruby >= 0
