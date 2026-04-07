@@ -59,6 +59,8 @@ module Toml
       # @param region_placeholder [String, nil] Custom placeholder for regions
       # @param node_typing [Hash{Symbol,String => #call}, nil] Node typing configuration
       #   for per-node-type merge preferences
+      # @param sort_keys [Boolean] Whether to alphabetically sort key=value pairs
+      #   within gap-separated blocks after merging
       # @param options [Hash] Additional options for forward compatibility
       #
       # @note To force a specific backend, use TreeHaver.with_backend or TREE_HAVER_BACKEND env var.
@@ -75,9 +77,11 @@ module Toml
         regions: nil,
         region_placeholder: nil,
         node_typing: nil,
+        sort_keys: false,
         **options
       )
         @remove_template_missing_nodes = remove_template_missing_nodes
+        @sort_keys = sort_keys
 
         super(
           template_content,
@@ -137,6 +141,8 @@ module Toml
       # @return [MergeResult] The merge result
       def perform_merge
         @resolver.resolve(@result)
+
+        KeySorter.new(@result.lines_array).sort! if @sort_keys
 
         DebugLogger.debug("Merge complete", {
           lines: @result.line_count,

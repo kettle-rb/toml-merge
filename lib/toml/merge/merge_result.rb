@@ -21,6 +21,11 @@ module Toml
       # @return [Hash] Statistics about the merge
       attr_reader :statistics
 
+      # @return [Array<Hash>] Raw line data for post-processing (e.g., sorting)
+      def lines_array
+        @lines
+      end
+
       # Initialize a new merge result
       # @param options [Hash] Additional options for forward compatibility
       def initialize(**options)

@@ -95,6 +95,7 @@ module Toml
     autoload :DebugLogger, "toml/merge/debug_logger"
     autoload :Emitter, "toml/merge/emitter"
     autoload :FileAnalysis, "toml/merge/file_analysis"
+    autoload :KeySorter, "toml/merge/key_sorter"
     autoload :MergeResult, "toml/merge/merge_result"
     autoload :NodeTypeNormalizer, "toml/merge/node_type_normalizer"
     autoload :NodeWrapper, "toml/merge/node_wrapper"

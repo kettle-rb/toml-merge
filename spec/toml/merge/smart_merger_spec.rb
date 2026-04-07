@@ -350,4 +350,244 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
       expect(merged).to include('GREETING = "こんにちは"')
     end
   end
+
+  describe "sort_keys option" do
+    it "sorts key=value pairs alphabetically within a table" do
+      template = <<~TOML
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+        MIDDLE = "m"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+        MIDDLE = "m"
+      TOML
+
+      merged = described_class.new(template, destination, sort_keys: true).merge
+
+      keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(keys).to eq(%w[ALPHA MIDDLE ZEBRA])
+    end
+
+    it "preserves gap-separated blocks independently" do
+      template = <<~TOML
+        [env]
+        Z_FIRST_GROUP = "1"
+        A_FIRST_GROUP = "2"
+
+        Z_SECOND_GROUP = "3"
+        A_SECOND_GROUP = "4"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        Z_FIRST_GROUP = "1"
+        A_FIRST_GROUP = "2"
+
+        Z_SECOND_GROUP = "3"
+        A_SECOND_GROUP = "4"
+      TOML
+
+      merged = described_class.new(template, destination, sort_keys: true).merge
+
+      lines = merged.lines.map(&:rstrip)
+      first_idx = lines.index { |l| l.include?("A_FIRST_GROUP") }
+      second_idx = lines.index { |l| l.include?("Z_FIRST_GROUP") }
+      gap_idx = lines.index(&:empty?)
+
+      # Within first block: A before Z
+      expect(first_idx).to be < second_idx
+      # Gap separates blocks
+      expect(second_idx).to be < gap_idx
+
+      # Within second block: A before Z
+      a2_idx = lines.index { |l| l.include?("A_SECOND_GROUP") }
+      z2_idx = lines.index { |l| l.include?("Z_SECOND_GROUP") }
+      expect(a2_idx).to be < z2_idx
+    end
+
+    it "keeps leading comments attached to their key during sort" do
+      template = <<~TOML
+        [env]
+        # Zebra comment
+        ZEBRA = "z"
+        # Alpha comment
+        ALPHA = "a"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        # Zebra comment
+        ZEBRA = "z"
+        # Alpha comment
+        ALPHA = "a"
+      TOML
+
+      merged = described_class.new(template, destination, sort_keys: true).merge
+
+      lines = merged.lines.map(&:rstrip)
+      alpha_comment_idx = lines.index { |l| l.include?("Alpha comment") }
+      alpha_key_idx = lines.index { |l| l.include?("ALPHA") && l.include?("=") }
+      zebra_comment_idx = lines.index { |l| l.include?("Zebra comment") }
+      zebra_key_idx = lines.index { |l| l.include?("ZEBRA") && l.include?("=") }
+
+      # Alpha before Zebra
+      expect(alpha_key_idx).to be < zebra_key_idx
+      # Each comment directly precedes its key
+      expect(alpha_comment_idx).to eq(alpha_key_idx - 1)
+      expect(zebra_comment_idx).to eq(zebra_key_idx - 1)
+    end
+
+    it "inserts destination-only keys alphabetically" do
+      template = <<~TOML
+        [env]
+        ALPHA = "a"
+        ZEBRA = "z"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        ALPHA = "a"
+        MIDDLE = "m"
+        ZEBRA = "z"
+      TOML
+
+      merged = described_class.new(template, destination,
+        sort_keys: true,
+        add_template_only_nodes: true).merge
+
+      keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(keys).to eq(%w[ALPHA MIDDLE ZEBRA])
+    end
+
+    it "inserts template-only keys alphabetically" do
+      template = <<~TOML
+        [env]
+        ALPHA = "a"
+        MIDDLE = "m"
+        ZEBRA = "z"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        ALPHA = "a"
+        ZEBRA = "z"
+      TOML
+
+      merged = described_class.new(template, destination,
+        sort_keys: true,
+        add_template_only_nodes: true).merge
+
+      keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(keys).to eq(%w[ALPHA MIDDLE ZEBRA])
+    end
+
+    it "handles dotted keys (_.path etc.) in sort" do
+      template = <<~TOML
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+        _.path = ["exe", "bin"]
+        _.file = { path = ".env.local", redact = true }
+      TOML
+
+      destination = <<~TOML
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+        _.path = ["exe", "bin"]
+        _.file = { path = ".env.local", redact = true }
+      TOML
+
+      merged = described_class.new(template, destination, sort_keys: true).merge
+
+      keys = merged.lines.select { |l| l.match?(/\A[_\w]+.*\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(keys).to eq(%w[ALPHA ZEBRA _.file _.path])
+    end
+
+    it "does not sort when sort_keys is false (default)" do
+      template = <<~TOML
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+      TOML
+
+      merged = described_class.new(template, destination).merge
+
+      keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(keys).to eq(%w[ZEBRA ALPHA])
+    end
+
+    it "handles trailing comment owned by preceding key" do
+      template = <<~TOML
+        [env]
+        ZEBRA = "z"
+        # trailing comment for zebra
+        ALPHA = "a"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        ZEBRA = "z"
+        # trailing comment for zebra
+        ALPHA = "a"
+      TOML
+
+      # When ALPHA sorts before ZEBRA, the comment between them
+      # should stay with ZEBRA (as a trailing comment when there's
+      # no following key it's leading for, but here ALPHA follows
+      # so the comment is leading for ALPHA)
+      merged = described_class.new(template, destination, sort_keys: true).merge
+      keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(keys).to eq(%w[ALPHA ZEBRA])
+    end
+
+    it "preserves table headers and only sorts pairs within tables" do
+      template = <<~TOML
+        # preamble comment
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+
+        [other]
+        Y = "y"
+        X = "x"
+      TOML
+
+      destination = <<~TOML
+        # preamble comment
+        [env]
+        ZEBRA = "z"
+        ALPHA = "a"
+
+        [other]
+        Y = "y"
+        X = "x"
+      TOML
+
+      merged = described_class.new(template, destination, sort_keys: true).merge
+
+      lines = merged.lines.map(&:rstrip)
+      env_idx = lines.index("[env]")
+      other_idx = lines.index("[other]")
+
+      # Within [env]: A before Z
+      env_keys = lines[env_idx..other_idx].select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(env_keys).to eq(%w[ALPHA ZEBRA])
+
+      # Within [other]: X before Y
+      other_keys = lines[other_idx..].select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
+      expect(other_keys).to eq(%w[X Y])
+    end
+  end
 end
