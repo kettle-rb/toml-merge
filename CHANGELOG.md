@@ -21,6 +21,7 @@ Please file a bug if you notice a violation of semantic versioning.
 ### Added
 
 - Added shared comment capability and augmenter adoption across file analysis, wrappers, and comment-only document emission, including backend-aware native-partial vs source-augmented reporting
+- Added `sort_keys` option to `SmartMerger` for alphabetical key ordering within TOML sections
 
 ### Changed
 
@@ -38,6 +39,7 @@ Please file a bug if you notice a violation of semantic versioning.
 
 ### Fixed
 
+- Fixed multi-byte character corruption in local `node_text` — replaced `byteslice` with `slice` to prevent splitting multi-byte characters (e.g. emoji) at byte boundaries
 - ConflictResolver no longer collapses nodes that share the same signature.
   Multiple nodes with identical signatures are now matched 1:1 in order via
   cursor-based positional matching, instead of being treated as a single node.
