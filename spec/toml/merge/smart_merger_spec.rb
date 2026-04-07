@@ -263,4 +263,91 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
       TOML
     end
   end
+
+  describe "multi-byte character (emoji) handling" do
+    it "does not duplicate keys when destination contains emoji values" do
+      template = <<~TOML
+        [env]
+        A = "1"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        EMOJI = "🪙"
+        A = "1"
+      TOML
+
+      merged = described_class.new(template, destination,
+        preference: :destination,
+        add_template_only_nodes: true).merge
+
+      lines = merged.lines.select { |l| l.strip.start_with?("A") }
+      expect(lines.size).to eq(1), "Expected A to appear once but got #{lines.size}: #{lines.inspect}"
+    end
+
+    it "does not duplicate keys when destination has multiple emoji values" do
+      template = <<~TOML
+        [env]
+        X = "hello"
+        Y = "world"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        E1 = "🍲"
+        E2 = "🪙"
+        X = "hello"
+        Y = "world"
+      TOML
+
+      merged = described_class.new(template, destination,
+        preference: :destination,
+        add_template_only_nodes: true).merge
+
+      x_lines = merged.lines.select { |l| l.strip.start_with?("X") }
+      y_lines = merged.lines.select { |l| l.strip.start_with?("Y") }
+      expect(x_lines.size).to eq(1), "Expected X once, got #{x_lines.size}"
+      expect(y_lines.size).to eq(1), "Expected Y once, got #{y_lines.size}"
+    end
+
+    it "preserves emoji values in destination" do
+      template = <<~TOML
+        [env]
+        NAME = "default"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        NAME = "🪙 Token::Resolver"
+      TOML
+
+      merged = described_class.new(template, destination,
+        preference: :destination,
+        add_template_only_nodes: true).merge
+
+      expect(merged).to include('NAME = "🪙 Token::Resolver"')
+    end
+
+    it "handles CJK characters without duplicating keys" do
+      template = <<~TOML
+        [env]
+        LANG = "en"
+      TOML
+
+      destination = <<~TOML
+        [env]
+        GREETING = "こんにちは"
+        LANG = "ja"
+      TOML
+
+      merged = described_class.new(template, destination,
+        preference: :destination,
+        add_template_only_nodes: true).merge
+
+      lang_lines = merged.lines.select { |l| l.strip.start_with?("LANG") }
+      expect(lang_lines.size).to eq(1), "Expected LANG once, got #{lang_lines.size}"
+      expect(merged).to include('LANG = "ja"')
+      expect(merged).to include('GREETING = "こんにちは"')
+    end
+  end
 end
