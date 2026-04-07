@@ -567,7 +567,7 @@ module Toml
       def node_text(node)
         return "" unless node.respond_to?(:start_byte) && node.respond_to?(:end_byte)
 
-        @source[node.start_byte...node.end_byte].to_s
+        @source.byteslice(node.start_byte, node.end_byte - node.start_byte).to_s
       end
 
       def build_signature_map
