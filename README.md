@@ -504,6 +504,33 @@ result = merger.merge
 # Result includes tables/keys from template that don't exist in destination
 ```
 
+### Alphabetical Key Sorting
+
+Sort keys alphabetically within gap-separated blocks using the `sort_keys` option. Blank lines act as block separators — keys within each block are sorted independently, preserving the document's logical grouping:
+
+```ruby
+template = <<~TOML
+  [env]
+  ZEBRA = "1"
+  ALPHA = "2"
+
+  MANGO = "3"
+  BANANA = "4"
+TOML
+
+merger = Toml::Merge::SmartMerger.new(template, template, sort_keys: true)
+result = merger.merge
+puts result.content
+# [env]
+# ALPHA = "2"
+# ZEBRA = "1"
+#
+# BANANA = "4"
+# MANGO = "3"
+```
+
+Comment ownership is preserved during sorting — comments attached to a key move with that key. Gap-separated comment blocks retain their structural position.
+
 ## 🦷 FLOSS Funding
 
 While kettle-rb tools are free software and will always be, the project would benefit immensely from some funding.
