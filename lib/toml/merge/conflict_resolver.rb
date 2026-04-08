@@ -68,6 +68,9 @@ module Toml
           emit_root_boundary_region(preferred_boundary_analysis(@template_analysis, @dest_analysis), :postlude)
           emit_comment_only_document(preferred_comment_only_analysis(@template_analysis, @dest_analysis)) if @emitter.to_s.empty?
 
+          # Normalize consecutive blank lines left behind by comment dedup or node removal
+          @emitter.normalize_consecutive_blank_lines!
+
           # Transfer emitter output to result
           transfer_emitter_output(result)
 
