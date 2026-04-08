@@ -48,6 +48,7 @@ module Toml
 
           # Clear emitter for fresh merge
           @emitter.clear
+          @emitted_leading_comment_texts = ::Set.new
 
           if template_statements.empty? && dest_statements.empty?
             emit_comment_only_document(preferred_comment_only_analysis(@template_analysis, @dest_analysis))
@@ -451,6 +452,15 @@ module Toml
           comment_analysis: comment_analysis,
         )
         return unless region
+
+        # Bidirectional dedup: skip this region if an identical comment block
+        # was already emitted by a preceding node (from either source).
+        normalized = region.normalized_content
+        if normalized && !normalized.empty? && @emitted_leading_comment_texts.include?(normalized)
+          emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
+          return
+        end
+        @emitted_leading_comment_texts.add(normalized) if normalized && !normalized.empty?
 
         emit_preceding_blank_lines(region, source_analysis)
         @emitter.emit_comment_region(region, source_lines: source_analysis&.lines)
