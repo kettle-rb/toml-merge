@@ -179,10 +179,13 @@ RSpec.describe Toml::Merge::FileAnalysis do
         expect(title_pair).not_to be_nil
         attachment = analysis.comment_attachment_for(title_pair)
 
-        expect(attachment.leading_region.nodes.map(&:line_number)).to eq([1])
+        # Line-1 comment separated by a gap is preamble, not owned by the first key
+        expect(attachment.leading_region).to be_nil
         expect(attachment.inline_region.nodes.map(&:line_number)).to eq([3])
 
         augmenter = analysis.comment_augmenter(owners: analysis.statements)
+        expect(augmenter.preamble_region).not_to be_nil
+        expect(augmenter.preamble_region.nodes.map(&:line_number)).to eq([1])
         expect(augmenter.postlude_region.nodes.map(&:line_number)).to eq([9])
       end
 
