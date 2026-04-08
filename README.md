@@ -7,7 +7,7 @@
 [🖼️kettle-rb-i]: https://logos.galtzo.com/assets/images/kettle-rb/avatar-192px.svg
 [🖼️kettle-rb]: https://github.com/kettle-rb
 
-# 🍲 Toml::Merge
+# ☯️ Toml::Merge
 
 [![Version][👽versioni]][👽version] [![GitHub tag (latest SemVer)][⛳️tag-img]][⛳️tag] [![License: MIT][📄license-img]][📄license-ref] [![Downloads Rank][👽dl-ranki]][👽dl-rank] [![Open Source Helpers][👽oss-helpi]][👽oss-help] [![CodeCov Test Coverage][🏀codecovi]][🏀codecov] [![Coveralls Test Coverage][🏀coveralls-img]][🏀coveralls] [![QLTY Test Coverage][🏀qlty-covi]][🏀qlty-cov] [![QLTY Maintainability][🏀qlty-mnti]][🏀qlty-mnt] [![CI Heads][🚎3-hd-wfi]][🚎3-hd-wf] [![CI Runtime Dependencies @ HEAD][🚎12-crh-wfi]][🚎12-crh-wf] [![CI Current][🚎11-c-wfi]][🚎11-c-wf] [![CI Truffle Ruby][🚎9-t-wfi]][🚎9-t-wf] [![CI JRuby][🚎10-j-wfi]][🚎10-j-wf] [![Deps Locked][🚎13-🔒️-wfi]][🚎13-🔒️-wf] [![Deps Unlocked][🚎14-🔓️-wfi]][🚎14-🔓️-wf] [![CI Test Coverage][🚎2-cov-wfi]][🚎2-cov-wf] [![CI Style][🚎5-st-wfi]][🚎5-st-wf] [![CodeQL][🖐codeQL-img]][🖐codeQL] [![Apache SkyWalking Eyes License Compatibility Check][🚎15-🪪-wfi]][🚎15-🪪-wf]
 
@@ -27,7 +27,6 @@ I've summarized my thoughts in [this blog post](https://dev.to/galtzo/hostile-ta
 </details>
 
 ## 🌻 Synopsis
-
 
 `toml-merge` provides intelligent merging of TOML files by parsing them into
 tree-sitter AST nodes and comparing structural elements. It supports:
@@ -342,110 +341,17 @@ NOTE: Be prepared to track down certs for signed gems and add them the same way 
 
 ## ⚙️ Configuration
 
-
-### Parser Backend Options
-
-`toml-merge` uses [tree\_haver][tree_haver] for parsing, which supports multiple backends:
-
-**Tree-sitter backend** (default, requires native library):
-
-- Set the `TREE_SITTER_TOML_PATH` environment variable to point to your compiled `libtree-sitter-toml.so` (or `.dylib` on macOS):
-
-<!-- end list -->
+The tree-sitter TOML parser requires a shared library. Set the `TREE_SITTER_TOML_PATH` environment variable to point to your compiled `libtree-sitter-toml.so` (or `.dylib` on macOS):
 
 ```bash
 export TREE_SITTER_TOML_PATH=/path/to/libtree-sitter-toml.so
 ```
 
-### 💎 Ruby Interface Gems (Tree-sitter Backend)
-
-If using the tree-sitter backend, you also need a Ruby gem that provides bindings to
-tree-sitter. Choose **one** of the following based on your Ruby implementation:
-
-| Gem | Ruby Support | Description |
-| --- | --- | --- |
-| [ruby\_tree\_sitter][ruby_tree_sitter] | MRI only | C extension bindings (recommended for MRI) |
-| [tree\_stump][tree_stump] | MRI (maybe JRuby) | Rust-based bindings via Rutie |
-| [ffi][ffi] | MRI, JRuby, TruffleRuby | Generic FFI bindings (used by tree\_haver's FFI backend) |
-
-[ruby_tree_sitter]: https://github.com/Faveod/ruby_tree_sitter
-[tree_stump]: https://github.com/joker1007/tree_stump
-[ffi-gem]: https://github.com/ffi/ffi
-
-#### For MRI Ruby (Recommended)
-
-```console
-gem install ruby_tree_sitter
-```
-
-Or add to your Gemfile:
-
-```ruby
-gem "ruby_tree_sitter", "~> 2.0"
-```
-
-#### For JRuby or TruffleRuby
-
-```console
-gem install ffi
-```
-
-Or add to your Gemfile:
-
-```ruby
-gem "ffi"
-```
-
-The `tree_haver` gem (a dependency of toml-merge) will automatically detect and use
-the appropriate backend based on which gems are available.
-
-**Note:** The `ruby_tree_sitter` gem only compiles on MRI Ruby. For JRuby or TruffleRuby,
-you must use the FFI backend or the Citrus backend (below).
-
-**Citrus backend** (pure Ruby, no native dependencies):
-
-- Alternative option using the [citrus][citrus] and [toml-rb][toml-rb] gems
-- No compilation or system dependencies required
-- Ideal for environments where native extensions are problematic
-- Configure via tree\_haver's backend selection
-  For more details on backend configuration, see the [tree\_haver documentation][tree_haver].
-
-### Merge Options
-
-```ruby
-merger = Toml::Merge::SmartMerger.new(
-  template_content,
-  dest_content,
-  # Which version to prefer when nodes match
-  # :destination (default) - keep destination values
-  # :template - use template values
-  preference: :destination,
-
-  # Whether to add template-only nodes to the result
-  # false (default) - only include keys that exist in destination
-  # true - include all template keys and tables
-  add_template_only_nodes: false,
-
-  # Token for freeze block markers
-  # Default: "toml-merge"
-  # Looks for: # toml-merge:freeze / # toml-merge:unfreeze
-  freeze_token: "toml-merge",
-
-  # Custom signature generator (optional)
-  # Receives a node, returns a signature array or nil
-  signature_generator: ->(node) { [:table, node.name] if node.type == :table },
-)
-```
-
 ## 🔧 Basic Usage
-
-
-### Simple Merge
 
 ```ruby
 require "toml/merge"
 
-# Template defines the structure
 template = <<~TOML
   [package]
   name = "my-app"
@@ -453,10 +359,8 @@ template = <<~TOML
 
   [dependencies]
   serde = "1.0"
-  tokio = "1.0"
 TOML
 
-# Destination has customizations
 destination = <<~TOML
   [package]
   name = "my-app"
@@ -464,72 +368,17 @@ destination = <<~TOML
   authors = ["Custom Author"]
 
   [dev-dependencies]
-  criterion = "0.5"
+  tokio = "1.0"
 TOML
 
 merger = Toml::Merge::SmartMerger.new(template, destination)
 result = merger.merge
-puts result.content
+
+puts result.content if result.success?
+# The [package] section is merged with destination's version and authors preserved,
+# [dependencies] from template is included,
+# [dev-dependencies] from destination is kept
 ```
-
-### Using Freeze Blocks
-
-Freeze blocks protect sections from being overwritten during merge:
-
-```toml
-[package]
-name = "my-app"
-
-# toml-merge:freeze Custom configuration
-[secrets]
-api_key = "my_production_api_key"
-db_password = "super_secret_password"
-# toml-merge:unfreeze
-
-[dependencies]
-serde = "1.0"
-```
-
-Content between `# toml-merge:freeze` and `# toml-merge:unfreeze` markers is preserved from the destination file, regardless of what the template contains.
-
-### Adding Template-Only Tables
-
-```ruby
-merger = Toml::Merge::SmartMerger.new(
-  template,
-  destination,
-  add_template_only_nodes: true,
-)
-result = merger.merge
-# Result includes tables/keys from template that don't exist in destination
-```
-
-### Alphabetical Key Sorting
-
-Sort keys alphabetically within gap-separated blocks using the `sort_keys` option. Blank lines act as block separators — keys within each block are sorted independently, preserving the document's logical grouping:
-
-```ruby
-template = <<~TOML
-  [env]
-  ZEBRA = "1"
-  ALPHA = "2"
-
-  MANGO = "3"
-  BANANA = "4"
-TOML
-
-merger = Toml::Merge::SmartMerger.new(template, template, sort_keys: true)
-result = merger.merge
-puts result.content
-# [env]
-# ALPHA = "2"
-# ZEBRA = "1"
-#
-# BANANA = "4"
-# MANGO = "3"
-```
-
-Comment ownership is preserved during sorting — comments attached to a key move with that key. Gap-separated comment blocks retain their structural position.
 
 ## 🦷 FLOSS Funding
 

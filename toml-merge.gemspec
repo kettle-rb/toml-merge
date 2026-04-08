@@ -13,8 +13,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["Peter H. Boling"]
   spec.email = ["floss@galtzo.com"]
 
-  spec.summary = "🍲 TOML file smart merge using tree-sitter AST analysis"
-  spec.description = "🍲 Intelligently merges TOML files by analyzing their AST structure with tree-sitter, preserving key organization and resolving conflicts based on structural similarity."
+  spec.summary = "☯️ TOML file smart merge using tree-sitter AST analysis"
+  spec.description = "☯️ Intelligently merges TOML files by analyzing their AST structure with tree-sitter, preserving key organization and resolving conflicts based on structural similarity."
   spec.homepage = "https://github.com/kettle-rb/toml-merge"
   spec.licenses = ["AGPL-3.0-only"]
   spec.required_ruby_version = ">= 3.2.0"
