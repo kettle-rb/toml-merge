@@ -277,9 +277,12 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         A = "1"
       TOML
 
-      merged = described_class.new(template, destination,
+      merged = described_class.new(
+        template,
+        destination,
         preference: :destination,
-        add_template_only_nodes: true).merge
+        add_template_only_nodes: true,
+      ).merge
 
       lines = merged.lines.select { |l| l.strip.start_with?("A") }
       expect(lines.size).to eq(1), "Expected A to appear once but got #{lines.size}: #{lines.inspect}"
@@ -300,9 +303,12 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         Y = "world"
       TOML
 
-      merged = described_class.new(template, destination,
+      merged = described_class.new(
+        template,
+        destination,
         preference: :destination,
-        add_template_only_nodes: true).merge
+        add_template_only_nodes: true,
+      ).merge
 
       x_lines = merged.lines.select { |l| l.strip.start_with?("X") }
       y_lines = merged.lines.select { |l| l.strip.start_with?("Y") }
@@ -321,9 +327,12 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         NAME = "🪙 Token::Resolver"
       TOML
 
-      merged = described_class.new(template, destination,
+      merged = described_class.new(
+        template,
+        destination,
         preference: :destination,
-        add_template_only_nodes: true).merge
+        add_template_only_nodes: true,
+      ).merge
 
       expect(merged).to include('NAME = "🪙 Token::Resolver"')
     end
@@ -340,9 +349,12 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         LANG = "ja"
       TOML
 
-      merged = described_class.new(template, destination,
+      merged = described_class.new(
+        template,
+        destination,
         preference: :destination,
-        add_template_only_nodes: true).merge
+        add_template_only_nodes: true,
+      ).merge
 
       lang_lines = merged.lines.select { |l| l.strip.start_with?("LANG") }
       expect(lang_lines.size).to eq(1), "Expected LANG once, got #{lang_lines.size}"
@@ -456,9 +468,12 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         ZEBRA = "z"
       TOML
 
-      merged = described_class.new(template, destination,
+      merged = described_class.new(
+        template,
+        destination,
         sort_keys: true,
-        add_template_only_nodes: true).merge
+        add_template_only_nodes: true,
+      ).merge
 
       keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
       expect(keys).to eq(%w[ALPHA MIDDLE ZEBRA])
@@ -478,9 +493,12 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         ZEBRA = "z"
       TOML
 
-      merged = described_class.new(template, destination,
+      merged = described_class.new(
+        template,
+        destination,
         sort_keys: true,
-        add_template_only_nodes: true).merge
+        add_template_only_nodes: true,
+      ).merge
 
       keys = merged.lines.select { |l| l.match?(/\A\w+\s*=/) }.map { |l| l.split("=").first.strip }
       expect(keys).to eq(%w[ALPHA MIDDLE ZEBRA])

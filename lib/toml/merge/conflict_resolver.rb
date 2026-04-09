@@ -571,7 +571,6 @@ module Toml
         line.byteslice(0...column).to_s.rstrip
       end
 
-
       def emit_interstitial_blank_lines(start_line, end_line, analysis)
         return unless analysis
         return unless start_line && end_line && start_line <= end_line
