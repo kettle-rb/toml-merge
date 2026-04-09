@@ -119,7 +119,15 @@ bundle exec rake test
 
 ### Coverage-focused workflow (recommended when improving tests)
 
-When you are working specifically on test coverage, use this two-step command to both run the suite with coverage enabled and immediately inspect uncovered lines and branches:
+Run tests via `kettle-test` (provided by `kettle-test`). It runs RSpec, writes the full log to
+`tmp/kettle-test/rspec-TIMESTAMP.log`, and prints a compact highlight block with timing, seed,
+pass/fail count, failing example list, and SimpleCov coverage percentages.
+
+```console
+bundle exec kettle-test
+```
+
+For targeted runs, disable the hard coverage threshold to avoid false failures:
 
 ```console
 bin/rake coverage && bin/kettle-soup-cover -d
@@ -137,6 +145,10 @@ Notes:
   ```console
   bin/rake coverage && bin/kettle-soup-cover -d
   ```
+
+```console
+K_SOUP_COV_MIN_HARD=false bundle exec kettle-test spec/path/to/spec.rb
+```
 
 ### Spec organization (required)
 
