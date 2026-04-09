@@ -388,15 +388,12 @@ module Toml
       end
 
       def emit_removed_destination_node_comments(node, analysis)
+        emit_leading_region(node, analysis)
+        emit_removed_destination_node_inline_comments(node, analysis)
         if table_like_node?(node)
-          emit_leading_region(node, analysis)
-          emit_removed_destination_node_inline_comments(node, analysis)
           node.mergeable_children.each do |child|
             emit_removed_destination_node_comments(child, analysis)
           end
-        else
-          emit_leading_region(node, analysis)
-          emit_removed_destination_node_inline_comments(node, analysis)
         end
       end
 

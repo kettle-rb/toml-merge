@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# rubocop:disable RSpec/SpecFilePathFormat
+
 require "spec_helper"
 require "toml/merge"
 require "ast/merge/rspec/shared_examples"
@@ -115,3 +117,5 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
     end
   end
 end
+
+# rubocop:enable RSpec/SpecFilePathFormat

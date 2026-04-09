@@ -285,7 +285,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
         end
       end
 
-      include_examples "a layout-compliant TOML analysis"
+      it_behaves_like "a layout-compliant TOML analysis"
     end
 
     context "with citrus backend", :citrus_backend do
@@ -295,7 +295,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
         end
       end
 
-      include_examples "a layout-compliant TOML analysis"
+      it_behaves_like "a layout-compliant TOML analysis"
     end
 
     context "with parslet backend", :parslet_backend do
@@ -305,7 +305,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
         end
       end
 
-      include_examples "a layout-compliant TOML analysis"
+      it_behaves_like "a layout-compliant TOML analysis"
     end
   end
 
