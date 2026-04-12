@@ -81,5 +81,58 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
         expect(occurrences).to eq(1), "Expected 1 occurrence of '# Database configuration', got #{occurrences}.\nMerged output:\n#{merged}"
       end
     end
+
+    context "when a TOML file preamble should stay singular during destination-preference merging" do
+      let(:template) do
+        <<~TOML
+          # Shared development environment for this gem.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "76"
+          K_SOUP_COV_MIN_LINE = "92"
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          # Shared development environment for ast-merge.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "81"
+          K_SOUP_COV_MIN_LINE = "91"
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "keeps one preamble and one env table for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :destination,
+              add_template_only_nodes: true,
+            ).merge
+
+            expect(merged.scan(/^# Shared development environment/).size).to eq(1), <<~MSG
+              Expected a single file preamble for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^\[env\]/).size).to eq(1), <<~MSG
+              Expected a single [env] table for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^K_SOUP_COV_MIN_BRANCH = /).size).to eq(1), <<~MSG
+              Expected one K_SOUP_COV_MIN_BRANCH assignment for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^K_SOUP_COV_MIN_LINE = /).size).to eq(1), <<~MSG
+              Expected one K_SOUP_COV_MIN_LINE assignment for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
   end
 end

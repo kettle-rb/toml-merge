@@ -103,6 +103,29 @@ module Toml
         @comment_capability ||= build_comment_capability(owner_count: 0)
       end
 
+      # Describe how TOML merges currently own and emit comments.
+      #
+      # Native backends expose comment nodes, but TOML still emits comments
+      # through its synthetic merge layer. Source-only backends use the same
+      # synthetic ownership model with a source-augmented read path.
+      #
+      # @return [Ast::Merge::Comment::SupportStyle]
+      def comment_support_style
+        @comment_support_style ||= begin
+          details = {
+            source: native_comment_backend? ? @backend : :toml_source,
+            capability: comment_capability.level,
+            style: :hash_comment,
+          }
+
+          if native_comment_backend?
+            Ast::Merge::Comment::SupportStyle.native_read_synthetic_write(**details)
+          else
+            Ast::Merge::Comment::SupportStyle.source_augmented_synthetic(**details)
+          end
+        end
+      end
+
       # Get all comments converted to shared Ast::Merge comment nodes.
       #
       # @return [Array<Ast::Merge::Comment::Line>]
@@ -179,10 +202,11 @@ module Toml
         result = []
         root = @ast.root_node
         root.each do |child|
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
-          next unless NodeTypeNormalizer.table_type?(canonical_type)
+          wrapper = wrap_node(child, document_root: root)
+          next unless wrapper
+          next unless wrapper.table? || wrapper.array_of_tables?
 
-          result << wrap_node(child, document_root: root)
+          result << wrapper
         end
         result
       end
@@ -205,9 +229,11 @@ module Toml
         # Find the line number of the first table (if any)
         first_table_line = nil
         root.each do |child|
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
-          if NodeTypeNormalizer.table_type?(canonical_type)
-            child_line = child.respond_to?(:start_point) ? child.start_point.row + 1 : nil
+          wrapper = wrap_node(child, document_root: root)
+          next unless wrapper
+
+          if wrapper.table? || wrapper.array_of_tables?
+            child_line = wrapper.start_line
             if child_line && (first_table_line.nil? || child_line < first_table_line)
               first_table_line = child_line
             end
@@ -215,16 +241,16 @@ module Toml
         end
 
         root.each do |child|
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
-          next unless canonical_type == :pair
+          wrapper = wrap_node(child, document_root: root)
+          next unless wrapper&.pair?
 
           # For Citrus backend, only include pairs before the first table
           if first_table_line
-            child_line = child.respond_to?(:start_point) ? child.start_point.row + 1 : nil
+            child_line = wrapper.start_line
             next if child_line && child_line >= first_table_line
           end
 
-          result << wrap_node(child, document_root: root)
+          result << wrapper
         end
         result
       end
@@ -288,27 +314,9 @@ module Toml
 
       def integrate_nodes
         return [] unless valid?
-
-        result = []
-        root = @ast.root_node
-        return result unless root
-
-        # Return all root-level nodes (document children)
-        # For TOML, this includes tables, array_of_tables, and top-level pairs
-        # Pass document_root to enable Citrus backend normalization (pairs as siblings)
-        root.each do |child|
-          # Skip comments (handled separately)
-          canonical_type = NodeTypeNormalizer.canonical_type(child.type, @backend)
-          next if canonical_type == :comment
-
-          wrapper = wrap_node(child, document_root: root)
-          next unless wrapper.start_line && wrapper.end_line
-
-          result << wrapper
-        end
-
-        # Sort by start line
-        result.sort_by { |node| node.start_line || 0 }
+        (root_pairs + tables)
+          .select { |node| node.start_line && node.end_line }
+          .sort_by { |node| node.start_line || 0 }
       end
 
       def compute_node_signature(node)
@@ -526,6 +534,7 @@ module Toml
 
       def build_comment_entry(line:, column:, prefix:, raw:, source:)
         cleaned_raw = raw.sub(/\n\z/, "")
+        return if cleaned_raw.empty?
 
         {
           line: line,

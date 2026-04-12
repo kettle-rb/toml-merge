@@ -84,7 +84,10 @@ module Toml
       # Get the canonical (normalized) type for this node
       # @return [Symbol]
       def canonical_type
-        NodeTypeNormalizer.canonical_type(@node.type, @backend)
+        canonical = NodeTypeNormalizer.canonical_type(@node.type, @backend)
+        return canonical unless @backend == :parslet && @node.type.to_sym == :element
+
+        parslet_element_canonical_type || canonical
       end
 
       # Check if this node has a specific type (checks both raw and canonical)
@@ -174,7 +177,7 @@ module Toml
         return unless table? || array_of_tables?
 
         # Find the dotted_key or bare_key child that represents the table name
-        @node.each do |child|
+        table_name_container.each do |child|
           child_canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
           if NodeTypeNormalizer.key_type?(child_canonical)
             # Strip whitespace (Citrus backend includes trailing space in key nodes)
@@ -364,7 +367,7 @@ module Toml
       def compute_signature(node)
         # Use canonical type for signature generation
         # Pass @backend to ensure correct type mapping for Citrus vs tree-sitter
-        canonical = NodeTypeNormalizer.canonical_type(node.type, @backend)
+        canonical = node.equal?(@node) ? canonical_type : NodeTypeNormalizer.canonical_type(node.type, @backend)
 
         case canonical
         when :document
@@ -372,15 +375,15 @@ module Toml
           [:document]
         when :table
           # Tables identified by their header name
-          name = table_name
+          name = node.equal?(@node) ? table_name : node_text(node)&.strip
           [:table, name]
         when :array_of_tables
           # Array of tables identified by their header name
-          name = table_name
+          name = node.equal?(@node) ? table_name : node_text(node)&.strip
           [:array_of_tables, name]
         when :pair
           # Pairs identified by their key name
-          key = key_name
+          key = node.equal?(@node) ? key_name : node_text(node)&.strip
           [:pair, key]
         when :inline_table
           # Inline tables identified by their keys
@@ -417,6 +420,33 @@ module Toml
       end
 
       private
+
+      def table_name_container
+        return @node unless @backend == :parslet && @node.type.to_sym == :element
+
+        each_child(@node).find do |child|
+          canonical = NodeTypeNormalizer.canonical_type(child.type, @backend)
+          NodeTypeNormalizer.table_type?(canonical)
+        end || @node
+      end
+
+      def parslet_element_canonical_type
+        child_canonicals = each_child(@node).map { |child|
+          NodeTypeNormalizer.canonical_type(child.type, @backend)
+        }
+
+        return :table if child_canonicals.include?(:table)
+        return :array_of_tables if child_canonicals.include?(:array_of_tables)
+        return :pair if child_canonicals.any? { |type| NodeTypeNormalizer.key_type?(type) } && child_canonicals.include?(:value)
+
+        nil
+      end
+
+      def each_child(node)
+        children = []
+        node.each { |child| children << child }
+        children
+      end
 
       def extract_inline_table_keys(inline_table_node)
         keys = []
@@ -501,10 +531,10 @@ module Toml
 
         # Iterate through document children to find pairs in our range
         @document_root.each do |sibling|
-          sibling_canonical = NodeTypeNormalizer.canonical_type(sibling.type, @backend)
-          next unless sibling_canonical == :pair
+          sibling_wrapper = build_wrapped_node(sibling)
+          next unless sibling_wrapper.pair?
 
-          sibling_start = sibling.respond_to?(:start_point) ? sibling.start_point.row + 1 : nil
+          sibling_start = sibling_wrapper.start_line
           next unless sibling_start
 
           # Pair must be after our header
@@ -513,7 +543,7 @@ module Toml
           # Pair must be before the next table (if there is one)
           next if next_table_start && sibling_start >= next_table_start
 
-          result << build_wrapped_node(sibling)
+          result << sibling_wrapper
         end
 
         result
@@ -529,10 +559,10 @@ module Toml
         next_table_start = nil
 
         @document_root.each do |sibling|
-          sibling_canonical = NodeTypeNormalizer.canonical_type(sibling.type, @backend)
-          next unless NodeTypeNormalizer.table_type?(sibling_canonical)
+          sibling_wrapper = build_wrapped_node(sibling)
+          next unless sibling_wrapper.table? || sibling_wrapper.array_of_tables?
 
-          sibling_start = sibling.respond_to?(:start_point) ? sibling.start_point.row + 1 : nil
+          sibling_start = sibling_wrapper.start_line
           next unless sibling_start
           next if sibling_start <= my_start
 
