@@ -6,7 +6,7 @@
 <title>
   File: CHANGELOG
   
-    &mdash; Documentation by YARD 0.9.38
+    &mdash; Documentation by YARD 0.9.39
   
 </title>
 
@@ -72,13 +72,42 @@ Please file a bug if you notice a violation of semantic versioning.</p>
 
 <h3 id="added">Added</h3>
 
+<ul>
+  <li>Added shared comment capability and augmenter adoption across file analysis, wrappers, and comment-only document emission, including backend-aware native-partial vs source-augmented reporting</li>
+  <li>Added <code>sort_keys</code> option to <code>SmartMerger</code> for alphabetical key ordering within TOML sections</li>
+</ul>
+
 <h3 id="changed">Changed</h3>
+
+<ul>
+  <li>Adopted the shared <code>Ast::Merge::Layout</code> contract for TOML document gaps, including shared layout compliance coverage for top-level keys and tables across supported backends</li>
+  <li>Preserved table-leading docs, inline table-header comments, matched-key fallback, and adjacent <code>[[array_of_tables]]</code> comment ownership through recursive TOML merges and reproducible fixtures</li>
+  <li>Preserved or promoted comments for removed destination-only keys, duplicate nodes, and tables when <code>remove_template_missing_nodes: true</code> is enabled, without keeping the removed TOML bodies</li>
+  <li>Adopted <code>Ast::Merge::TrailingGroups::DestIterate</code> for position-aware template-only key, table, and <code>[[array_of_tables]]</code> insertion while keeping TOML gap emission and destination-relative table ordering intact</li>
+  <li>Reused the shared emitter comment-region helpers for matched-node TOML comment<br>
+replay while keeping TOML-local document-boundary, removed-node promotion, and<br>
+backend-specific comment extraction behavior local</li>
+</ul>
 
 <h3 id="deprecated">Deprecated</h3>
 
 <h3 id="removed">Removed</h3>
 
 <h3 id="fixed">Fixed</h3>
+
+<ul>
+  <li>Fixed multi-byte character corruption in local <code>node_text</code> — replaced <code>byteslice</code> with <code>slice</code> to prevent splitting multi-byte characters (e.g. emoji) at byte boundaries</li>
+  <li>ConflictResolver no longer collapses nodes that share the same signature.<br>
+Multiple nodes with identical signatures are now matched 1:1 in order via<br>
+cursor-based positional matching, instead of being treated as a single node.<br>
+This is especially important for TOML because <code>[[array_of_tables]]</code> headers<br>
+can legitimately repeat, and the old approach would collapse them into a<br>
+single entry.</li>
+  <li>Template-preferred merges now preserve same-source separator blank lines<br>
+between emitted TOML nodes, including qlty-style top-level arrays and table<br>
+groups, without double-emitting blanks in front of borrowed destination<br>
+comment regions.</li>
+</ul>
 
 <h3 id="security">Security</h3>
 
@@ -509,9 +538,9 @@ are nested in <code>array_elements -&gt; repeat -&gt; indent -&gt; decimal_integ
 </div></div>
 
       <div id="footer">
-  Generated on Thu Feb 19 09:35:12 2026 by
+  Generated on Sun Apr 12 11:49:48 2026 by
   <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.9.38 (ruby-4.0.1).
+  0.9.39 (ruby-4.0.2).
 </div>
 
     </div>

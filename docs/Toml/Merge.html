@@ -6,7 +6,7 @@
 <title>
   Module: Toml::Merge
   
-    &mdash; Documentation by YARD 0.9.38
+    &mdash; Documentation by YARD 0.9.39
   
 </title>
 
@@ -79,7 +79,7 @@
   <dl>
     <dt>Defined in:</dt>
     <dd>lib/toml/merge.rb<span class="defines">,<br />
-  lib/toml/merge/emitter.rb,<br /> lib/toml/merge/version.rb,<br /> lib/toml/merge/debug_logger.rb,<br /> lib/toml/merge/merge_result.rb,<br /> lib/toml/merge/node_wrapper.rb,<br /> lib/toml/merge/smart_merger.rb,<br /> lib/toml/merge/file_analysis.rb,<br /> lib/toml/merge/conflict_resolver.rb,<br /> lib/toml/merge/table_match_refiner.rb,<br /> lib/toml/merge/node_type_normalizer.rb</span>
+  lib/toml/merge/emitter.rb,<br /> lib/toml/merge/version.rb,<br /> lib/toml/merge/key_sorter.rb,<br /> lib/toml/merge/debug_logger.rb,<br /> lib/toml/merge/merge_result.rb,<br /> lib/toml/merge/node_wrapper.rb,<br /> lib/toml/merge/smart_merger.rb,<br /> lib/toml/merge/file_analysis.rb,<br /> lib/toml/merge/comment_tracker.rb,<br /> lib/toml/merge/conflict_resolver.rb,<br /> lib/toml/merge/table_match_refiner.rb,<br /> lib/toml/merge/node_type_normalizer.rb</span>
 </dd>
   </dl>
   
@@ -116,7 +116,7 @@ rather than treating files as plain text.</p>
     
   
     
-      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Merge/ConflictResolver.html" title="Toml::Merge::ConflictResolver (class)">ConflictResolver</a></span>, <span class='object_link'><a href="Merge/DestinationParseError.html" title="Toml::Merge::DestinationParseError (class)">DestinationParseError</a></span>, <span class='object_link'><a href="Merge/Emitter.html" title="Toml::Merge::Emitter (class)">Emitter</a></span>, <span class='object_link'><a href="Merge/Error.html" title="Toml::Merge::Error (class)">Error</a></span>, <span class='object_link'><a href="Merge/FileAnalysis.html" title="Toml::Merge::FileAnalysis (class)">FileAnalysis</a></span>, <span class='object_link'><a href="Merge/MergeResult.html" title="Toml::Merge::MergeResult (class)">MergeResult</a></span>, <span class='object_link'><a href="Merge/NodeWrapper.html" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span>, <span class='object_link'><a href="Merge/ParseError.html" title="Toml::Merge::ParseError (class)">ParseError</a></span>, <span class='object_link'><a href="Merge/SmartMerger.html" title="Toml::Merge::SmartMerger (class)">SmartMerger</a></span>, <span class='object_link'><a href="Merge/TableMatchRefiner.html" title="Toml::Merge::TableMatchRefiner (class)">TableMatchRefiner</a></span>, <span class='object_link'><a href="Merge/TemplateParseError.html" title="Toml::Merge::TemplateParseError (class)">TemplateParseError</a></span>
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Merge/CommentTracker.html" title="Toml::Merge::CommentTracker (class)">CommentTracker</a></span>, <span class='object_link'><a href="Merge/ConflictResolver.html" title="Toml::Merge::ConflictResolver (class)">ConflictResolver</a></span>, <span class='object_link'><a href="Merge/DestinationParseError.html" title="Toml::Merge::DestinationParseError (class)">DestinationParseError</a></span>, <span class='object_link'><a href="Merge/Emitter.html" title="Toml::Merge::Emitter (class)">Emitter</a></span>, <span class='object_link'><a href="Merge/Error.html" title="Toml::Merge::Error (class)">Error</a></span>, <span class='object_link'><a href="Merge/FileAnalysis.html" title="Toml::Merge::FileAnalysis (class)">FileAnalysis</a></span>, <span class='object_link'><a href="Merge/KeySorter.html" title="Toml::Merge::KeySorter (class)">KeySorter</a></span>, <span class='object_link'><a href="Merge/MergeResult.html" title="Toml::Merge::MergeResult (class)">MergeResult</a></span>, <span class='object_link'><a href="Merge/NodeWrapper.html" title="Toml::Merge::NodeWrapper (class)">NodeWrapper</a></span>, <span class='object_link'><a href="Merge/ParseError.html" title="Toml::Merge::ParseError (class)">ParseError</a></span>, <span class='object_link'><a href="Merge/SmartMerger.html" title="Toml::Merge::SmartMerger (class)">SmartMerger</a></span>, <span class='object_link'><a href="Merge/TableMatchRefiner.html" title="Toml::Merge::TableMatchRefiner (class)">TableMatchRefiner</a></span>, <span class='object_link'><a href="Merge/TemplateParseError.html" title="Toml::Merge::TemplateParseError (class)">TemplateParseError</a></span>
     
   
 </p>
@@ -132,7 +132,7 @@ rather than treating files as plain text.</p>
         <dt id="VERSION-constant" class="">VERSION =
           <div class="docstring">
   <div class="discussion">
-    <p>traditional location</p>
+    <p>Traditional Constant Location</p>
 
 
   </div>
@@ -173,9 +173,9 @@ rather than treating files as plain text.</p>
 </div>
 
       <div id="footer">
-  Generated on Thu Feb 19 09:35:12 2026 by
+  Generated on Sun Apr 12 11:49:48 2026 by
   <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.9.38 (ruby-4.0.1).
+  0.9.39 (ruby-4.0.2).
 </div>
 
     </div>
