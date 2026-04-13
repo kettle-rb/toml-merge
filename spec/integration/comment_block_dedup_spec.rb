@@ -241,6 +241,54 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
       end
     end
 
+    context "when destination keeps a template preamble but also carries a destination-owned variant on the first statement" do
+      let(:template) do
+        <<~TOML
+          # Shared development environment for this gem.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "76"
+          K_SOUP_COV_MIN_LINE = "92"
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          # Shared development environment for this gem.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+          # Shared development environment for tree_haver.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "76"
+          K_SOUP_COV_MIN_LINE = "92"
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "keeps the preamble singular for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :destination,
+              add_template_only_nodes: true,
+            ).merge
+
+            expect(merged.scan(/^# Shared development environment/).size).to eq(1), <<~MSG
+              Expected a single shared development preamble for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^# Local overrides belong in \.env\.local \(loaded via dotenvy through mise\)\.$/).size).to eq(1), <<~MSG
+              Expected a single local-overrides line for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
+
     context "when a floating comment block loses its separating gap under template preference" do
       let(:template) do
         <<~TOML

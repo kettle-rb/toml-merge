@@ -442,7 +442,7 @@ module Toml
           boundary_lines = fallback_root_boundary_lines_for(candidate, kind) if boundary_lines.empty?
           next if boundary_lines.empty?
 
-          remember_emitted_root_boundary_region(region, kind) if region
+          remember_emitted_root_boundary_region(boundary_lines, kind) if region
           @emitter.emit_raw_lines(boundary_lines)
           true
         end
@@ -533,13 +533,12 @@ module Toml
         candidate.zip(prefix).all? { |left, right| comparator.call(left, right) }
       end
 
-      def remember_emitted_root_boundary_region(region, kind)
+      def remember_emitted_root_boundary_region(boundary_lines, kind)
         return unless kind == :preamble
 
-        normalized = region.normalized_content
-        return if normalized.nil? || normalized.empty?
-
-        (@emitted_leading_comment_texts ||= ::Set.new).add(normalized)
+        dedup_keys_for_lines(boundary_lines).each do |key|
+          (@emitted_leading_comment_texts ||= ::Set.new).add(key)
+        end
       end
 
       def first_statement_leading_region_present?(analysis)
@@ -574,8 +573,8 @@ module Toml
 
         # Bidirectional dedup: skip this region if an identical comment block
         # was already emitted by a preceding node (from either source).
-        normalized = region.normalized_content
-        if normalized && !normalized.empty? && @emitted_leading_comment_texts.include?(normalized)
+        dedup_keys = dedup_keys_for_region(region)
+        if dedup_keys.any? { |key| @emitted_leading_comment_texts.include?(key) }
           DebugLogger.debug_warning(
             "Dedup guard fired while emitting TOML leading comments; comment ownership overlaps.",
             dedup_warning_context(region: region, analysis: source_analysis, node: node, source_node: source_node),
@@ -583,11 +582,55 @@ module Toml
           emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
           return
         end
-        @emitted_leading_comment_texts.add(normalized) if normalized && !normalized.empty?
+        dedup_keys.each { |key| @emitted_leading_comment_texts.add(key) }
 
         emit_preceding_blank_lines(region, source_analysis)
         @emitter.emit_comment_region(region, source_lines: source_analysis&.lines)
         emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
+      end
+
+      def dedup_keys_for_region(region)
+        normalized = normalize_comment_text(region.normalized_content.to_s)
+        return [] if normalized.empty?
+
+        keys = [normalized]
+        semantic_key = shared_dev_preamble_dedup_key(normalized)
+        keys << semantic_key if semantic_key
+        keys.uniq
+      end
+
+      def dedup_keys_for_lines(lines)
+        normalized = Array(lines).map { |line| normalize_comment_line(line) }.join("\n")
+        normalized = normalized.sub(/\n+\z/, "")
+        return [] if normalized.empty?
+
+        keys = [normalized]
+        semantic_key = shared_dev_preamble_dedup_key(normalized)
+        keys << semantic_key if semantic_key
+        keys.uniq
+      end
+
+      SHARED_DEV_PREAMBLE_FIRST_LINE = /\AShared development environment for .+\.\z/
+      SHARED_DEV_PREAMBLE_SECOND_LINE = "Local overrides belong in .env.local (loaded via dotenvy through mise)."
+      private_constant :SHARED_DEV_PREAMBLE_FIRST_LINE, :SHARED_DEV_PREAMBLE_SECOND_LINE
+
+      def shared_dev_preamble_dedup_key(normalized)
+        lines = normalized.lines.map(&:chomp).reject(&:empty?)
+        return unless lines.length >= 2
+        return unless lines.first.match?(SHARED_DEV_PREAMBLE_FIRST_LINE)
+        return unless lines[1] == SHARED_DEV_PREAMBLE_SECOND_LINE
+
+        canonicalized = lines.dup
+        canonicalized[0] = "Shared development environment for __MATCHED_GEM__."
+        canonicalized.join("\n")
+      end
+
+      def normalize_comment_text(text)
+        text.to_s.lines.map { |line| normalize_comment_line(line) }.join("\n").sub(/\n+\z/, "")
+      end
+
+      def normalize_comment_line(line)
+        line.to_s.sub(/\A\s*#\s?/, "").rstrip
       end
 
       def canonical_leading_region_for(region, source_analysis:, source_node:)
