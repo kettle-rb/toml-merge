@@ -440,8 +440,67 @@ module Toml
         return unless region
 
         remember_emitted_root_boundary_region(region, kind)
-        boundary_lines = root_boundary_lines_for(region, analysis, kind)
+        boundary_lines = canonical_root_boundary_lines_for(region, analysis, kind)
         @emitter.emit_raw_lines(boundary_lines) if boundary_lines.any?
+      end
+
+      def canonical_root_boundary_lines_for(region, analysis, kind)
+        boundary_lines = root_boundary_lines_for(region, analysis, kind)
+        return boundary_lines unless kind == :preamble
+
+        collapse_template_preamble_prefix(boundary_lines, preferred_analysis: analysis)
+      end
+
+      def collapse_template_preamble_prefix(boundary_lines, preferred_analysis:)
+        return boundary_lines unless preferred_analysis.equal?(@dest_analysis)
+        return boundary_lines if boundary_lines.empty?
+
+        template_lines = alternate_template_preamble_lines_for(preferred_analysis)
+        return boundary_lines if template_lines.empty?
+
+        repeat_count = leading_repeat_count(boundary_lines, template_lines)
+        return boundary_lines if repeat_count.zero?
+
+        remainder = boundary_lines.drop(repeat_count * template_lines.length)
+        return template_lines if remainder.empty?
+
+        DebugLogger.debug_warning(
+          "Collapsed duplicated TOML template preamble prefix while preserving destination-specific preamble content.",
+          {
+            repeated_lines: repeat_count * template_lines.length,
+            remaining_lines: remainder.length,
+          },
+        )
+        remainder
+      end
+
+      def alternate_template_preamble_lines_for(preferred_analysis)
+        alternate_analysis = preferred_analysis.equal?(@template_analysis) ? @dest_analysis : @template_analysis
+        return [] unless alternate_analysis
+
+        alternate_augmenter = alternate_analysis.comment_augmenter(owners: alternate_analysis.statements)
+        alternate_region = alternate_augmenter.preamble_region
+        return [] unless alternate_region
+
+        root_boundary_lines_for(alternate_region, alternate_analysis, :preamble)
+      end
+
+      def leading_repeat_count(lines, prefix, &comparator)
+        return 0 if prefix.empty? || lines.length < prefix.length
+
+        comparator ||= ->(left, right) { left == right }
+
+        count = 0
+        while prefix_match?(lines.drop(count * prefix.length).first(prefix.length), prefix, comparator)
+          count += 1
+        end
+        count
+      end
+
+      def prefix_match?(candidate, prefix, comparator)
+        return false unless candidate && candidate.length == prefix.length
+
+        candidate.zip(prefix).all? { |left, right| comparator.call(left, right) }
       end
 
       def remember_emitted_root_boundary_region(region, kind)
@@ -463,10 +522,20 @@ module Toml
         )
         return unless region
 
+        region = canonical_leading_region_for(
+          region,
+          source_analysis: source_analysis,
+          source_node: source_node,
+        )
+
         # Bidirectional dedup: skip this region if an identical comment block
         # was already emitted by a preceding node (from either source).
         normalized = region.normalized_content
         if normalized && !normalized.empty? && @emitted_leading_comment_texts.include?(normalized)
+          DebugLogger.debug_warning(
+            "Dedup guard fired while emitting TOML leading comments; comment ownership overlaps.",
+            dedup_warning_context(region: region, analysis: source_analysis, node: node, source_node: source_node),
+          )
           emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
           return
         end
@@ -475,6 +544,52 @@ module Toml
         emit_preceding_blank_lines(region, source_analysis)
         @emitter.emit_comment_region(region, source_lines: source_analysis&.lines)
         emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
+      end
+
+      def canonical_leading_region_for(region, source_analysis:, source_node:)
+        return region unless source_analysis.equal?(@dest_analysis)
+        return region unless source_node
+        return region unless source_analysis.statements.first.equal?(source_node)
+        return region unless region.respond_to?(:start_line) && region.start_line == 1
+
+        template_region = template_preamble_region
+        return region unless template_region
+
+        collapse_template_preamble_prefix_region(region, template_region)
+      end
+
+      def template_preamble_region
+        augmenter = @template_analysis.comment_augmenter(owners: @template_analysis.statements)
+        augmenter.preamble_region
+      end
+
+      def collapse_template_preamble_prefix_region(region, template_region)
+        template_nodes = Array(template_region.nodes)
+        region_nodes = Array(region.nodes)
+        return region if template_nodes.empty? || region_nodes.length < template_nodes.length
+
+        repeat_count = leading_repeat_count(region_nodes, template_nodes) do |left, right|
+          left.respond_to?(:normalized_content) && right.respond_to?(:normalized_content) &&
+            left.normalized_content == right.normalized_content
+        end
+        return region if repeat_count.zero?
+
+        remainder_nodes = region_nodes.drop(repeat_count * template_nodes.length)
+        return region if remainder_nodes.empty?
+
+        DebugLogger.debug_warning(
+          "Collapsed duplicated TOML template preamble prefix from the first-node leading region.",
+          {
+            repeated_nodes: repeat_count * template_nodes.length,
+            remaining_nodes: remainder_nodes.length,
+          },
+        )
+
+        ::Ast::Merge::Comment::Region.new(
+          kind: region.kind,
+          nodes: remainder_nodes,
+          metadata: region.metadata,
+        )
       end
 
       def root_boundary_lines_for(region, analysis, kind)
@@ -491,6 +606,16 @@ module Toml
         return [] if start_line > last_comment_line
 
         (start_line..last_comment_line).filter_map { |line_num| analysis.line_at(line_num) }
+      end
+
+      def dedup_warning_context(region:, analysis:, node:, source_node:)
+        {
+          file: analysis.respond_to?(:path) ? analysis.path : nil,
+          owner_type: node&.respond_to?(:type) ? node.type : node.class.name.split("::").last,
+          source_owner_type: source_node&.respond_to?(:type) ? source_node.type : source_node&.class&.name&.split("::")&.last,
+          region_lines: [region.respond_to?(:start_line) ? region.start_line : nil, region.respond_to?(:end_line) ? region.end_line : nil],
+          normalized_content: region.normalized_content,
+        }.compact
       end
 
       def preferred_node_with_analysis(template_node, dest_node, template_analysis, dest_analysis)

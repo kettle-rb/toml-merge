@@ -191,5 +191,179 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
         end
       end
     end
+
+    context "when destination preamble begins with duplicated copies of the template preamble" do
+      let(:template) do
+        <<~TOML
+          # Shared development environment for this gem.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "76"
+          K_SOUP_COV_MIN_LINE = "92"
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          # Shared development environment for this gem.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          # Shared development environment for this gem.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          # Shared development environment for tree_haver.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "76"
+          K_SOUP_COV_MIN_LINE = "92"
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "removes the duplicated template preamble prefix for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :destination,
+              add_template_only_nodes: true,
+            ).merge
+
+            expect(merged.scan(/^# Shared development environment for this gem\.$/).size).to eq(0), <<~MSG
+              Expected duplicated template preambles to be removed for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^# Shared development environment for tree_haver\.$/).size).to eq(1), <<~MSG
+              Expected the destination-specific preamble to remain singular for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
+
+    context "when a floating comment block loses its separating gap under template preference" do
+      let(:template) do
+        <<~TOML
+          [server]
+          host = "localhost"
+          # NOTE: Development-only settings below.
+          debug = true
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          [server]
+          host = "localhost"
+
+          # NOTE: Development-only settings below.
+          debug = false
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "attaches the comment to the chosen node for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :template,
+              add_template_only_nodes: true,
+            ).merge
+
+            expect(merged).to include("# NOTE: Development-only settings below.\ndebug = true"), <<~MSG
+              Expected the floating comment block to become attached when the separating gap disappears for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged).not_to include("host = \"localhost\"\n\n# NOTE: Development-only settings below."), <<~MSG
+              Expected the blank-line gap before the comment block to collapse for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
+
+    context "when a floating comment block loses its owner but keeps its separating gap" do
+      let(:template) do
+        <<~TOML
+          [server]
+          host = "localhost"
+          port = 8080
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          [server]
+          host = "localhost"
+
+          # NOTE: Development-only settings below.
+          debug = false
+
+          port = 8080
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "keeps the comment block floating for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :destination,
+              add_template_only_nodes: true,
+              remove_template_missing_nodes: true,
+            ).merge
+
+            expect(merged).to include("host = \"localhost\"\n\n# NOTE: Development-only settings below.\n\nport = 8080"), <<~MSG
+              Expected the floating comment block to remain positional when its owner disappears but the gap remains for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
+
+    context "when a floating comment block loses its owner and the gap collapses" do
+      let(:template) do
+        <<~TOML
+          [server]
+          host = "localhost"
+          # NOTE: runtime port
+          port = 8080
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          [server]
+          host = "localhost"
+
+          # NOTE: Development-only settings below.
+          debug = false
+          port = 8080
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "reattaches the comment block to the surviving node for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :template,
+              add_template_only_nodes: true,
+              remove_template_missing_nodes: true,
+            ).merge
+
+            expect(merged).to include("# NOTE: Development-only settings below.\n# NOTE: runtime port\nport = 8080"), <<~MSG
+              Expected the floating comment block to reattach to the surviving node when the gap collapses for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
   end
 end

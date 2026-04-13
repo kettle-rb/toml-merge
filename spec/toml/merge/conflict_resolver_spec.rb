@@ -762,4 +762,28 @@ RSpec.describe Toml::Merge::ConflictResolver do
       end
     end
   end
+
+  describe "dedup debug warnings" do
+    it "logs when the TOML leading-comment dedup guard fires" do
+      resolver = described_class.allocate
+      resolver.instance_variable_set(:@emitted_leading_comment_texts, ::Set["duplicate"])
+      resolver.instance_variable_set(:@emitter, double("emitter"))
+
+      node = double("node")
+      source_node = double("source_node", start_line: 4)
+      region = double("region", normalized_content: "duplicate", start_line: 1, end_line: 2)
+      analysis = double("analysis", path: "mise.toml")
+
+      allow(resolver).to receive(:preferred_region_with_source).and_return([region, analysis, source_node])
+      allow(resolver).to receive(:emit_interstitial_blank_lines)
+      allow(Toml::Merge::DebugLogger).to receive(:debug_warning)
+
+      resolver.send(:emit_leading_region, node, analysis)
+
+      expect(Toml::Merge::DebugLogger).to have_received(:debug_warning).with(
+        /Dedup guard fired/,
+        hash_including(file: "mise.toml", normalized_content: "duplicate", region_lines: [1, 2]),
+      )
+    end
+  end
 end
