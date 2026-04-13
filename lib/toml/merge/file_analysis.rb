@@ -112,17 +112,11 @@ module Toml
       # @return [Ast::Merge::Comment::SupportStyle]
       def comment_support_style
         @comment_support_style ||= begin
-          details = {
+          shared_comment_support_style(
             source: native_comment_backend? ? @backend : :toml_source,
-            capability: comment_capability.level,
             style: :hash_comment,
-          }
-
-          if native_comment_backend?
-            Ast::Merge::Comment::SupportStyle.native_read_synthetic_write(**details)
-          else
-            Ast::Merge::Comment::SupportStyle.source_augmented_synthetic(**details)
-          end
+            read_strategy: native_comment_backend? ? :native_read_synthetic_write : :source_augmented_synthetic,
+          )
         end
       end
 
@@ -158,19 +152,19 @@ module Toml
       # @param options [Hash] Additional attachment metadata
       # @return [Ast::Merge::Comment::Attachment]
       def comment_attachment_for(owner, line_num: nil, **options)
-        merge_comment_attachment_with_layout(
+        shared_comment_attachment_for(
           owner,
-          comment_tracker.comment_attachment_for(owner, line_num: line_num, **options),
+          tracker_attachment: comment_tracker.comment_attachment_for(owner, line_num: line_num, **options),
           line_num: line_num,
           **options,
         )
       end
 
-      # Build a shared comment augmenter for this analysis.
-      #
-      # @param owners [Array<#start_line,#end_line>, nil] Owners used for attachment inference
-      # @param options [Hash] Additional augmenter options
-      # @return [CommentAugmenter]
+      # @return [Symbol]
+      def comment_attachment_strategy
+        :normalize_tracked_layout_merge
+      end
+
       def comment_augmenter(owners: nil, **options)
         CommentAugmenter.new(self, owners: owners || comment_augmenter_default_owners, **options)
       end
@@ -345,10 +339,6 @@ module Toml
         else
           Ast::Merge::Comment::Capability.source_augmented(**capability_details)
         end
-      end
-
-      def comment_augmenter_default_owners
-        statements.select { |statement| statement.respond_to?(:start_line) && statement.respond_to?(:end_line) }
       end
 
       def augmenter_delegate_owners(owners)

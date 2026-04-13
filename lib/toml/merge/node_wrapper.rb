@@ -79,6 +79,7 @@ module Toml
         @document_root = options[:document_root]
         @comment_entries = Array(options[:comment_entries])
         @comment_tracker = options[:comment_tracker]
+        @raw_text = options[:raw_text]
       end
 
       # Get the canonical (normalized) type for this node
@@ -216,6 +217,26 @@ module Toml
           next if NodeTypeNormalizer.key_type?(child_canonical)
           next if %i[equals whitespace unknown space].include?(child_canonical)
 
+          if @backend == :parslet && child_canonical == :value
+            scalar_child = each_child(child).find do |grandchild|
+              grandchild_canonical = NodeTypeNormalizer.canonical_type(grandchild.type, @backend)
+              !%i[whitespace unknown space].include?(grandchild_canonical)
+            end
+
+            if scalar_child
+              return NodeWrapper.new(
+                scalar_child,
+                lines: @lines,
+                source: @source,
+                backend: @backend,
+                document_root: @document_root,
+                comment_entries: @comment_entries,
+                comment_tracker: comment_tracker,
+                raw_text: raw_pair_value_text,
+              )
+            end
+          end
+
           return NodeWrapper.new(
             child,
             lines: @lines,
@@ -225,6 +246,12 @@ module Toml
           )
         end
         nil
+      end
+
+      def text
+        return @raw_text if @raw_text
+
+        super
       end
 
       # Get key-value pairs from a table or inline_table.
@@ -452,6 +479,21 @@ module Toml
         keys = []
         collect_inline_table_keys_recursive(inline_table_node, keys)
         keys
+      end
+
+      def raw_pair_value_text
+        return unless pair? && @start_line
+
+        line = @lines[@start_line - 1].to_s
+        return if line.empty?
+
+        equals_index = line.index("=")
+        return unless equals_index
+
+        inline_comment = comment_tracker&.inline_comment_for(@node, line_num: @start_line)
+        value_end = inline_comment ? inline_comment[:column] : line.bytesize
+        raw_value = line.byteslice((equals_index + 1)...value_end)
+        raw_value&.strip
       end
 
       # Recursively collect keys from inline table, handling both tree-sitter and Citrus structures.

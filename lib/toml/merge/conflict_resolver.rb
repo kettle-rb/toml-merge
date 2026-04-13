@@ -433,18 +433,33 @@ module Toml
       end
 
       def emit_root_boundary_region(analysis, kind)
-        return unless analysis
+        boundary_analysis_candidates(analysis).each do |candidate|
+          next unless candidate
 
-        augmenter = analysis.comment_augmenter(owners: analysis.statements)
-        region = (kind == :preamble) ? augmenter.preamble_region : augmenter.postlude_region
-        return unless region
+          augmenter = candidate.comment_augmenter(owners: candidate.statements)
+          region = (kind == :preamble) ? augmenter.preamble_region : augmenter.postlude_region
+          remember_emitted_root_boundary_region(region, kind) if region
+          boundary_lines = canonical_root_boundary_lines_for(region, candidate, kind)
+          boundary_lines = fallback_root_boundary_lines_for(candidate, kind) if boundary_lines.empty?
+          next if boundary_lines.empty?
 
-        remember_emitted_root_boundary_region(region, kind)
-        boundary_lines = canonical_root_boundary_lines_for(region, analysis, kind)
-        @emitter.emit_raw_lines(boundary_lines) if boundary_lines.any?
+          @emitter.emit_raw_lines(boundary_lines)
+          return
+        end
+      end
+
+      def boundary_analysis_candidates(preferred_analysis)
+        return [] unless preferred_analysis
+
+        fallback_analysis = preferred_analysis.equal?(@template_analysis) ? @dest_analysis : @template_analysis
+        analyses = [preferred_analysis]
+        analyses << fallback_analysis if @add_template_only_nodes
+        analyses.compact.uniq
       end
 
       def canonical_root_boundary_lines_for(region, analysis, kind)
+        return [] unless region
+
         boundary_lines = root_boundary_lines_for(region, analysis, kind)
         return boundary_lines unless kind == :preamble
 
@@ -596,16 +611,29 @@ module Toml
         return [] unless region.respond_to?(:nodes)
         return [] if region.nodes.empty?
 
-        last_comment_line = region.nodes.last.line_number
-        start_line = if kind == :preamble
-          1
+        case kind
+        when :preamble
+          end_line = first_structural_root_line_for(analysis) - 1
+          return [] if end_line < 1
+
+          (1..end_line).filter_map { |line_num| analysis.line_at(line_num) }
+        when :postlude
+          start_line = last_structural_root_line_for(analysis) + 1
+          return [] if start_line > analysis.lines.length
+
+          (start_line..analysis.lines.length).filter_map { |line_num| analysis.line_at(line_num) }
         else
-          last_structural_root_line_for(analysis) + 1
+          []
         end
+      end
 
-        return [] if start_line > last_comment_line
+      def fallback_root_boundary_lines_for(analysis, kind)
+        return [] unless kind == :postlude
 
-        (start_line..last_comment_line).filter_map { |line_num| analysis.line_at(line_num) }
+        start_line = last_structural_root_line_for(analysis) + 1
+        return [] if start_line > analysis.lines.length
+
+        (start_line..analysis.lines.length).filter_map { |line_num| analysis.line_at(line_num) }
       end
 
       def dedup_warning_context(region:, analysis:, node:, source_node:)
@@ -763,6 +791,10 @@ module Toml
 
       def last_structural_root_line_for(analysis)
         analysis.statements.map { |node| emitted_end_line_for(node) }.compact.max || 0
+      end
+
+      def first_structural_root_line_for(analysis)
+        analysis.statements.map(&:start_line).compact.min || 1
       end
 
       def table_like_without_children?(node)
