@@ -134,5 +134,62 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
         end
       end
     end
+
+    context "when template and destination disagree only about the blank line after a file preamble" do
+      let(:template) do
+        <<~TOML
+          # tsdl configuration - tree-sitter grammar versions
+          # https://github.com/stackmystack/tsdl
+          #
+          # Run: tsdl build --out-dir /usr/local/lib
+          # Or let .devcontainer/scripts/setup-tree-sitter.sh handle it.
+
+          out-dir = "/usr/local/lib"
+
+          [parsers]
+          json = "v0.24.8"
+        TOML
+      end
+
+      let(:destination) do
+        <<~TOML
+          # tsdl configuration - tree-sitter grammar versions
+          # https://github.com/stackmystack/tsdl
+          #
+          # Run: tsdl build --out-dir /usr/local/lib
+          # Or let .devcontainer/scripts/setup-tree-sitter.sh handle it.
+          out-dir = "/usr/local/lib"
+
+          [parsers]
+          json = "v0.24.8"
+        TOML
+      end
+
+      %i[mri citrus parslet].each do |backend|
+        it "keeps the preamble singular for #{backend}", :"#{backend}_backend" do
+          TreeHaver.with_backend(backend) do
+            merged = described_class.new(
+              template,
+              destination,
+              preference: :template,
+              add_template_only_nodes: true,
+            ).merge
+
+            expect(merged.scan(/^# tsdl configuration - tree-sitter grammar versions$/).size).to eq(1), <<~MSG
+              Expected a single file preamble for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^# https:\/\/github.com\/stackmystack\/tsdl$/).size).to eq(1), <<~MSG
+              Expected a single tsdl URL comment for #{backend}, got:
+              #{merged}
+            MSG
+            expect(merged.scan(/^out-dir = /).size).to eq(1), <<~MSG
+              Expected a single out-dir assignment for #{backend}, got:
+              #{merged}
+            MSG
+          end
+        end
+      end
+    end
   end
 end

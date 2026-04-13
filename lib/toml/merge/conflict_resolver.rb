@@ -439,8 +439,18 @@ module Toml
         region = (kind == :preamble) ? augmenter.preamble_region : augmenter.postlude_region
         return unless region
 
+        remember_emitted_root_boundary_region(region, kind)
         boundary_lines = root_boundary_lines_for(region, analysis, kind)
         @emitter.emit_raw_lines(boundary_lines) if boundary_lines.any?
+      end
+
+      def remember_emitted_root_boundary_region(region, kind)
+        return unless kind == :preamble
+
+        normalized = region.normalized_content
+        return if normalized.nil? || normalized.empty?
+
+        (@emitted_leading_comment_texts ||= ::Set.new).add(normalized)
       end
 
       def emit_leading_region(node, analysis, comment_source_node: nil, comment_analysis: analysis)
