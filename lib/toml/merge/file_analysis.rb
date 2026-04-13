@@ -111,13 +111,11 @@ module Toml
       #
       # @return [Ast::Merge::Comment::SupportStyle]
       def comment_support_style
-        @comment_support_style ||= begin
-          shared_comment_support_style(
-            source: native_comment_backend? ? @backend : :toml_source,
-            style: :hash_comment,
-            read_strategy: native_comment_backend? ? :native_read_synthetic_write : :source_augmented_synthetic,
-          )
-        end
+        @comment_support_style ||= shared_comment_support_style(
+          source: native_comment_backend? ? @backend : :toml_source,
+          style: :hash_comment,
+          read_strategy: native_comment_backend? ? :native_read_synthetic_write : :source_augmented_synthetic,
+        )
       end
 
       # Get all comments converted to shared Ast::Merge comment nodes.

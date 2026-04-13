@@ -433,26 +433,28 @@ module Toml
       end
 
       def emit_root_boundary_region(analysis, kind)
-        boundary_analysis_candidates(analysis).each do |candidate|
+        boundary_analysis_candidates(analysis, kind).each do |candidate|
           next unless candidate
 
           augmenter = candidate.comment_augmenter(owners: candidate.statements)
           region = (kind == :preamble) ? augmenter.preamble_region : augmenter.postlude_region
-          remember_emitted_root_boundary_region(region, kind) if region
           boundary_lines = canonical_root_boundary_lines_for(region, candidate, kind)
           boundary_lines = fallback_root_boundary_lines_for(candidate, kind) if boundary_lines.empty?
           next if boundary_lines.empty?
 
+          remember_emitted_root_boundary_region(region, kind) if region
           @emitter.emit_raw_lines(boundary_lines)
           return
         end
       end
 
-      def boundary_analysis_candidates(preferred_analysis)
+      def boundary_analysis_candidates(preferred_analysis, kind)
         return [] unless preferred_analysis
 
         fallback_analysis = preferred_analysis.equal?(@template_analysis) ? @dest_analysis : @template_analysis
         analyses = [preferred_analysis]
+        return analyses if kind == :preamble && first_statement_leading_region_present?(preferred_analysis)
+
         analyses << fallback_analysis if @add_template_only_nodes
         analyses.compact.uniq
       end
@@ -463,7 +465,8 @@ module Toml
         boundary_lines = root_boundary_lines_for(region, analysis, kind)
         return boundary_lines unless kind == :preamble
 
-        collapse_template_preamble_prefix(boundary_lines, preferred_analysis: analysis)
+        boundary_lines = collapse_template_preamble_prefix(boundary_lines, preferred_analysis: analysis)
+        prefer_attached_first_statement_preamble_lines(boundary_lines, region, preferred_analysis: analysis)
       end
 
       def collapse_template_preamble_prefix(boundary_lines, preferred_analysis:)
@@ -500,6 +503,18 @@ module Toml
         root_boundary_lines_for(alternate_region, alternate_analysis, :preamble)
       end
 
+      def prefer_attached_first_statement_preamble_lines(boundary_lines, region, preferred_analysis:)
+        return boundary_lines if boundary_lines.empty?
+        return boundary_lines unless region
+
+        alternate_analysis = preferred_analysis.equal?(@template_analysis) ? @dest_analysis : @template_analysis
+        alternate_region = first_statement_leading_region_for(alternate_analysis)
+        return boundary_lines unless alternate_region
+        return boundary_lines unless region.normalized_content == alternate_region.normalized_content
+
+        region_lines_for(alternate_region, alternate_analysis)
+      end
+
       def leading_repeat_count(lines, prefix, &comparator)
         return 0 if prefix.empty? || lines.length < prefix.length
 
@@ -525,6 +540,20 @@ module Toml
         return if normalized.nil? || normalized.empty?
 
         (@emitted_leading_comment_texts ||= ::Set.new).add(normalized)
+      end
+
+      def first_statement_leading_region_present?(analysis)
+        region = first_statement_leading_region_for(analysis)
+        region && (!region.respond_to?(:empty?) || !region.empty?)
+      end
+
+      def first_statement_leading_region_for(analysis)
+        return unless analysis
+
+        first_statement = Array(analysis.statements).first
+        return unless first_statement
+
+        attachment_region(first_statement, analysis, :leading_region)
       end
 
       def emit_leading_region(node, analysis, comment_source_node: nil, comment_analysis: analysis)
@@ -625,6 +654,14 @@ module Toml
         else
           []
         end
+      end
+
+      def region_lines_for(region, analysis)
+        return [] unless region && analysis
+        return [] unless region.respond_to?(:start_line) && region.respond_to?(:end_line)
+        return [] unless region.start_line && region.end_line
+
+        (region.start_line..region.end_line).filter_map { |line_num| analysis.line_at(line_num) }
       end
 
       def fallback_root_boundary_lines_for(analysis, kind)

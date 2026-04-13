@@ -244,6 +244,160 @@ RSpec.describe Toml::Merge::ConflictResolver do
       end
     end
 
+    it "keeps a destination-owned first-node preamble singular when the template models it as a root preamble", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        # Shared development environment for this gem.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+        [env]
+        K_SOUP_COV_MIN_BRANCH = "76"
+        K_SOUP_COV_MIN_LINE = "92"
+      TOML
+
+      dest_toml = <<~TOML
+        # Shared development environment for ast-merge.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+        [env]
+        K_SOUP_COV_MIN_BRANCH = "81"
+        K_SOUP_COV_MIN_LINE = "91"
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :destination,
+          add_template_only_nodes: true,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content).to eq(<<~TOML)
+          # Shared development environment for ast-merge.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          [env]
+          K_SOUP_COV_MIN_BRANCH = "81"
+          K_SOUP_COV_MIN_LINE = "91"
+        TOML
+      end
+    end
+
+    it "keeps a single TOML preamble when only blank-line ownership differs", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        # tsdl configuration - tree-sitter grammar versions
+        # https://github.com/stackmystack/tsdl
+        #
+        # Run: tsdl build --out-dir /usr/local/lib
+        # Or let .devcontainer/scripts/setup-tree-sitter.sh handle it.
+
+        out-dir = "/usr/local/lib"
+
+        [parsers]
+        json = "v0.24.8"
+      TOML
+
+      dest_toml = <<~TOML
+        # tsdl configuration - tree-sitter grammar versions
+        # https://github.com/stackmystack/tsdl
+        #
+        # Run: tsdl build --out-dir /usr/local/lib
+        # Or let .devcontainer/scripts/setup-tree-sitter.sh handle it.
+        out-dir = "/usr/local/lib"
+
+        [parsers]
+        json = "v0.24.8"
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :template,
+          add_template_only_nodes: true,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content).to eq(<<~TOML)
+          # tsdl configuration - tree-sitter grammar versions
+          # https://github.com/stackmystack/tsdl
+          #
+          # Run: tsdl build --out-dir /usr/local/lib
+          # Or let .devcontainer/scripts/setup-tree-sitter.sh handle it.
+          out-dir = "/usr/local/lib"
+
+          [parsers]
+          json = "v0.24.8"
+        TOML
+      end
+    end
+
+    it "collapses duplicated shared preamble prefixes back to the destination-specific first-node docs", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        # Shared development environment for this gem.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+        [env]
+        DEBUG = "false"
+        KETTLE_DEV_DEBUG = "false"
+        KETTLE_TEST_SILENT = "true"
+
+        [tools]
+        ruby = "4.0.2"
+      TOML
+
+      dest_toml = <<~TOML
+        # Shared development environment for this gem.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+        # Shared development environment for this gem.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+        # Shared development environment for tree_haver.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+        [env]
+        DEBUG = "false"
+        KETTLE_DEV_DEBUG = "false"
+        KETTLE_TEST_SILENT = "true"
+
+        [tools]
+        ruby = "4.0.2"
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :destination,
+          add_template_only_nodes: true,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content).to eq(<<~TOML)
+          # Shared development environment for tree_haver.
+          # Local overrides belong in .env.local (loaded via dotenvy through mise).
+          [env]
+          DEBUG = "false"
+          KETTLE_DEV_DEBUG = "false"
+          KETTLE_TEST_SILENT = "true"
+
+          [tools]
+          ruby = "4.0.2"
+        TOML
+      end
+    end
+
     it "handles add_template_only_nodes: true" do
       template_content_with_extra = <<~TOML
         [server]
@@ -766,7 +920,7 @@ RSpec.describe Toml::Merge::ConflictResolver do
   describe "dedup debug warnings" do
     it "logs when the TOML leading-comment dedup guard fires" do
       resolver = described_class.allocate
-      resolver.instance_variable_set(:@emitted_leading_comment_texts, ::Set["duplicate"])
+      resolver.instance_variable_set(:@emitted_leading_comment_texts, Set["duplicate"])
       resolver.instance_variable_set(:@emitter, double("emitter"))
 
       node = double("node")

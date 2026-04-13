@@ -7,7 +7,7 @@ RSpec.describe "toml comment behavior matrix" do
   extend Ast::Merge::RSpec::CommentBehaviorMatrixAdapters
 
   shared_examples "a TOML comment behavior matrix" do
-    include_examples "Ast::Merge::CommentBehaviorMatrix" do
+    it_behaves_like "Ast::Merge::CommentBehaviorMatrix" do
       hash_comment_line_based_comment_matrix_adapter(
         analysis_class: Toml::Merge::FileAnalysis,
         merger_class: Toml::Merge::SmartMerger,
@@ -28,7 +28,7 @@ RSpec.describe "toml comment behavior matrix" do
       end
     end
 
-    include_examples "a TOML comment behavior matrix"
+    it_behaves_like "a TOML comment behavior matrix"
   end
 
   context "with parslet backend", :parslet_backend do
@@ -38,6 +38,6 @@ RSpec.describe "toml comment behavior matrix" do
       end
     end
 
-    include_examples "a TOML comment behavior matrix"
+    it_behaves_like "a TOML comment behavior matrix"
   end
 end
