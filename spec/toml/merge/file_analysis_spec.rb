@@ -147,7 +147,7 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
-    describe "shared comment capability" do
+  describe "shared comment capability" do
     let(:commented_toml) do
       <<~TOML
         # preamble
@@ -162,15 +162,15 @@ RSpec.describe Toml::Merge::FileAnalysis do
       TOML
     end
 
-      context "with tree-sitter backend", :mri_backend, :toml_grammar do
+    context "with tree-sitter backend", :mri_backend, :toml_grammar do
       around do |example|
         TreeHaver.with_backend(:mri) do
           example.run
         end
       end
 
-        it "exposes native-backed shared comment metadata and attachments" do
-          analysis = described_class.new(commented_toml)
+      it "exposes native-backed shared comment metadata and attachments" do
+        analysis = described_class.new(commented_toml)
 
         expect(analysis.comment_capability.native_partial?).to be true
         expect(analysis.comment_nodes.map(&:line_number)).to eq([1, 3, 5, 6, 9])
@@ -185,20 +185,20 @@ RSpec.describe Toml::Merge::FileAnalysis do
 
         augmenter = analysis.comment_augmenter(owners: analysis.statements)
         expect(augmenter.preamble_region).not_to be_nil
-          expect(augmenter.preamble_region.nodes.map(&:line_number)).to eq([1])
-          expect(augmenter.postlude_region.nodes.map(&:line_number)).to eq([9])
-        end
+        expect(augmenter.preamble_region.nodes.map(&:line_number)).to eq([1])
+        expect(augmenter.postlude_region.nodes.map(&:line_number)).to eq([9])
+      end
 
-        it "reports a native-read synthetic-write support style" do
-          analysis = described_class.new(commented_toml)
+      it "reports a native-read synthetic-write support style" do
+        analysis = described_class.new(commented_toml)
 
-          expect(analysis.comment_support_style).to be_a(Ast::Merge::Comment::SupportStyle)
-          expect(analysis.comment_support_style.native_read_synthetic_write?).to be true
-          expect(analysis.comment_support_style.synthetic_write?).to be true
-          expect(analysis.comment_support_style.details[:capability]).to eq(:native_partial)
-        end
+        expect(analysis.comment_support_style).to be_a(Ast::Merge::Comment::SupportStyle)
+        expect(analysis.comment_support_style.native_read_synthetic_write?).to be true
+        expect(analysis.comment_support_style.synthetic_write?).to be true
+        expect(analysis.comment_support_style.details[:capability]).to eq(:native_partial)
+      end
 
-        it "resolves shared comment helper classes through the ast-merge namespace boundary" do
+      it "resolves shared comment helper classes through the ast-merge namespace boundary" do
         # FileAnalysis should rely on Ast::Merge::Comment constants, whether they are
         # still pending autoload or have already been loaded by earlier specs.
         expect(
@@ -223,32 +223,32 @@ RSpec.describe Toml::Merge::FileAnalysis do
       end
     end
 
-      context "with parslet backend", :parslet_backend do
+    context "with parslet backend", :parslet_backend do
       around do |example|
         TreeHaver.with_backend(:parslet) do
           example.run
         end
       end
 
-        it "falls back to source-scanned comments without treating # inside strings as comments" do
-          analysis = described_class.new(commented_toml)
+      it "falls back to source-scanned comments without treating # inside strings as comments" do
+        analysis = described_class.new(commented_toml)
 
         expect(analysis.comment_capability.source_augmented?).to be true
         expect(analysis.comment_nodes.map(&:line_number)).to eq([1, 3, 5, 6, 9])
         expect(analysis.comment_node_at(3)).not_to be_nil
-          expect(analysis.comment_node_at(3).text).to include("inline title")
-        end
+        expect(analysis.comment_node_at(3).text).to include("inline title")
+      end
 
-        it "reports a source-augmented synthetic support style" do
-          analysis = described_class.new(commented_toml)
+      it "reports a source-augmented synthetic support style" do
+        analysis = described_class.new(commented_toml)
 
-          expect(analysis.comment_support_style).to be_a(Ast::Merge::Comment::SupportStyle)
-          expect(analysis.comment_support_style.source_augmented_synthetic?).to be true
-          expect(analysis.comment_support_style.synthetic_write?).to be true
-          expect(analysis.comment_support_style.details[:capability]).to eq(:source_augmented)
-        end
+        expect(analysis.comment_support_style).to be_a(Ast::Merge::Comment::SupportStyle)
+        expect(analysis.comment_support_style.source_augmented_synthetic?).to be true
+        expect(analysis.comment_support_style.synthetic_write?).to be true
+        expect(analysis.comment_support_style.details[:capability]).to eq(:source_augmented)
       end
     end
+  end
 
   describe "shared layout compliance" do
     let(:layout_toml) do
