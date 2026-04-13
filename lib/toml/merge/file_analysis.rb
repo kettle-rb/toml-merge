@@ -158,7 +158,12 @@ module Toml
       # @param options [Hash] Additional attachment metadata
       # @return [Ast::Merge::Comment::Attachment]
       def comment_attachment_for(owner, line_num: nil, **options)
-        comment_tracker.comment_attachment_for(owner, line_num: line_num, **options)
+        merge_comment_attachment_with_layout(
+          owner,
+          comment_tracker.comment_attachment_for(owner, line_num: line_num, **options),
+          line_num: line_num,
+          **options,
+        )
       end
 
       # Build a shared comment augmenter for this analysis.

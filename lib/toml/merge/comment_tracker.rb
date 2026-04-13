@@ -29,16 +29,20 @@ module Toml
         owner_line = line_num || owner_start_line(owner)
         return Ast::Merge::Comment::Attachment.new(owner: owner, metadata: options) unless owner_line
 
+        owner_last_line = owner_end_line(owner) || owner_line
         leading_region = build_toml_region(:leading, leading_comments_before(owner_line))
         inline_region = build_toml_region(:inline, owner_inline_comment_entries(owner, line_num: owner_line))
+        trailing_region = build_toml_region(:trailing, trailing_comments_after(owner_last_line))
 
         Ast::Merge::Comment::Attachment.new(
           owner: owner,
           leading_region: leading_region,
           inline_region: inline_region,
+          trailing_region: trailing_region,
           metadata: {
             source: native_comment_backend? ? :toml_native : :toml_source,
             line_num: owner_line,
+            end_line: owner_last_line,
           }.merge(options),
         )
       end

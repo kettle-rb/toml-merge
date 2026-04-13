@@ -294,6 +294,15 @@ RSpec.describe Toml::Merge::FileAnalysis do
         let(:expected_owner_leading_gap_kind) { :preamble }
         let(:expected_owner_trailing_gap_kind) { :interstitial }
       end
+
+      it "surfaces inferred layout gaps on comment attachments" do
+        attachment = analysis.comment_attachment_for(first_owner)
+
+        expect(attachment.leading_gap).not_to be_nil
+        expect(attachment.leading_gap.kind).to eq(:preamble)
+        expect(attachment.trailing_gap).not_to be_nil
+        expect(attachment.trailing_gap.kind).to eq(:interstitial)
+      end
     end
 
     context "with tree-sitter backend", :mri_backend, :toml_grammar do
