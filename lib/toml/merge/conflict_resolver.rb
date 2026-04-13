@@ -433,7 +433,7 @@ module Toml
       end
 
       def emit_root_boundary_region(analysis, kind)
-        boundary_analysis_candidates(analysis, kind).each do |candidate|
+        boundary_analysis_candidates(analysis, kind).find do |candidate|
           next unless candidate
 
           augmenter = candidate.comment_augmenter(owners: candidate.statements)
@@ -444,7 +444,7 @@ module Toml
 
           remember_emitted_root_boundary_region(region, kind) if region
           @emitter.emit_raw_lines(boundary_lines)
-          return
+          true
         end
       end
 

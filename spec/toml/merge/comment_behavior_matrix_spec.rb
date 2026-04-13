@@ -3,7 +3,7 @@
 require "spec_helper"
 require "ast/merge/rspec/shared_examples"
 
-RSpec.describe "toml comment behavior matrix" do
+RSpec.describe Toml::Merge::SmartMerger, "comment behavior matrix" do
   extend Ast::Merge::RSpec::CommentBehaviorMatrixAdapters
 
   shared_examples "a TOML comment behavior matrix" do
