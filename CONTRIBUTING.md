@@ -10,11 +10,7 @@ Remember to [![Keep A Changelog][📗keep-changelog-img]][📗keep-changelog] if
 
 ## Help out!
 
-## Developer Certificate of Origin
-
-In order to protect users of this project, we require all contributors to comply with the
-[Developer Certificate of Origin](https://developercertificate.org/).
-This ensures that all contributions are properly licensed and attributed.
+Take a look at the open issues and pull requests, or use the gem and find something to improve.
 
 Follow these instructions:
 
@@ -27,6 +23,12 @@ Follow these instructions:
 7. Make sure to add tests for it. This is important, so it doesn't break in a future release.
 8. Create new Pull Request.
 9. Announce it in the channel for this org in the [Discord][✉️discord-invite]!
+
+## Developer Certificate of Origin
+
+In order to protect users of this project, we require all contributors to comply with the
+[Developer Certificate of Origin](https://developercertificate.org/).
+This ensures that all contributions are properly licensed and attributed.
 
 ## Executables vs Rake tasks
 
@@ -123,19 +125,8 @@ bundle exec rake test
 
 ### Coverage-focused workflow (recommended when improving tests)
 
-Run tests via `kettle-test` (provided by `kettle-test`). It runs RSpec, writes the full log to
-`tmp/kettle-test/rspec-TIMESTAMP.log`, and prints a compact highlight block with timing, seed,
-pass/fail count, failing example list, and SimpleCov coverage percentages.
-
-```console
-bundle exec kettle-test
-```
-
-For targeted runs, disable the hard coverage threshold to avoid false failures:
-
-```console
-bin/rake coverage && bin/kettle-soup-cover -d
-```
+After the standard `kettle-test` workflow above passes, use the coverage commands below when you
+want deeper coverage inspection or you are intentionally iterating on coverage-sensitive changes.
 
 Notes:
 - For focused or single-file runs during development, disable hard coverage thresholds to avoid failing the run on partial coverage:
@@ -158,6 +149,20 @@ K_SOUP_COV_MIN_HARD=false bundle exec kettle-test spec/path/to/spec.rb
 
 - One spec file per class/module. For each class or module under `lib/`, keep all of its unit tests in a single spec file under `spec/` that mirrors the path and file name exactly: `lib/toml/merge/my_class.rb` -> `spec/toml/merge/my_class_spec.rb`.
 - Exception: Integration specs that intentionally span multiple classes. Place these under `spec/integration/` (or a clearly named integration folder), and do not directly mirror a single class. Name them after the scenario, not a class.
+
+Run tests via `kettle-test` (provided by `kettle-test`). It runs RSpec, writes the full log to
+`tmp/kettle-test/rspec-TIMESTAMP.log`, and prints a compact highlight block with timing, seed,
+pass/fail count, failing example list, and SimpleCov coverage percentages.
+
+```console
+bundle exec kettle-test
+```
+
+For targeted runs, disable the hard coverage threshold to avoid false failures:
+
+```console
+K_SOUP_COV_MIN_HARD=false bundle exec kettle-test spec/path/to/spec.rb
+```
 
 ## Lint It
 
