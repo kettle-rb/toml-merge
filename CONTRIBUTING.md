@@ -123,6 +123,20 @@ To run all tests
 bundle exec rake test
 ```
 
+Run tests via `kettle-test` (provided by `kettle-test`). It runs RSpec, writes the full log to
+`tmp/kettle-test/rspec-TIMESTAMP.log`, and prints a compact highlight block with timing, seed,
+pass/fail count, failing example list, and SimpleCov coverage percentages.
+
+```console
+bundle exec kettle-test
+```
+
+For targeted runs, disable the hard coverage threshold to avoid false failures:
+
+```console
+K_SOUP_COV_MIN_HARD=false bundle exec kettle-test spec/path/to/spec.rb
+```
+
 ### Coverage-focused workflow (recommended when improving tests)
 
 After the standard `kettle-test` workflow above passes, use the coverage commands below when you
@@ -141,28 +155,10 @@ Notes:
   bin/rake coverage && bin/kettle-soup-cover -d
   ```
 
-```console
-K_SOUP_COV_MIN_HARD=false bundle exec kettle-test spec/path/to/spec.rb
-```
-
 ### Spec organization (required)
 
 - One spec file per class/module. For each class or module under `lib/`, keep all of its unit tests in a single spec file under `spec/` that mirrors the path and file name exactly: `lib/toml/merge/my_class.rb` -> `spec/toml/merge/my_class_spec.rb`.
 - Exception: Integration specs that intentionally span multiple classes. Place these under `spec/integration/` (or a clearly named integration folder), and do not directly mirror a single class. Name them after the scenario, not a class.
-
-Run tests via `kettle-test` (provided by `kettle-test`). It runs RSpec, writes the full log to
-`tmp/kettle-test/rspec-TIMESTAMP.log`, and prints a compact highlight block with timing, seed,
-pass/fail count, failing example list, and SimpleCov coverage percentages.
-
-```console
-bundle exec kettle-test
-```
-
-For targeted runs, disable the hard coverage threshold to avoid false failures:
-
-```console
-K_SOUP_COV_MIN_HARD=false bundle exec kettle-test spec/path/to/spec.rb
-```
 
 ## Lint It
 
