@@ -465,8 +465,6 @@ RSpec.describe Toml::Merge::NodeTypeNormalizer do
 
       it "wraps a parsed node with canonical merge_type" do
         tables = analysis.tables
-        skip "No tables parsed (parser may not support array of tables)" if tables.empty?
-
         table_node = tables.first.node
         # Pass the backend from analysis to get correct type mapping
         wrapped = described_class.wrap(table_node, analysis.backend)
