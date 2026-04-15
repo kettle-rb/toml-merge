@@ -201,6 +201,35 @@ RSpec.describe Toml::Merge::ConflictResolver do
       end
     end
 
+    it "raises when an inline comment exists but the shared inline region is missing", :mri_backend, :toml_grammar do
+      analysis = Toml::Merge::FileAnalysis.new(<<~TOML)
+        [database] # keep inline
+      TOML
+
+      skip "FileAnalysis not valid" unless analysis.valid?
+
+      resolver = described_class.new(analysis, analysis, preference: :template)
+      node = analysis.tables.first
+
+      allow(resolver).to receive(:attachment_region).and_call_original
+      allow(resolver).to receive(:attachment_region)
+        .with(node, analysis, :inline_region)
+        .and_return(nil)
+
+      expect {
+        resolver.send(
+          :preferred_inline_comment_text,
+          node,
+          analysis,
+          comment_source_node: nil,
+          comment_analysis: analysis,
+        )
+      }.to raise_error(
+        Toml::Merge::ConflictResolver::MissingSharedInlineRegionError,
+        /Expected shared inline region/,
+      )
+    end
+
     it "preserves destination docs for adjacent matched tables under template preference", :mri_backend, :toml_grammar do
       template_toml = <<~TOML
         [one]

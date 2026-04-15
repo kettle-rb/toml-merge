@@ -9,6 +9,8 @@ module Toml
     #   resolver = ConflictResolver.new(template_analysis, dest_analysis)
     #   resolver.resolve(result)
     class ConflictResolver < Ast::Merge::ConflictResolverBase
+      class MissingSharedInlineRegionError < Toml::Merge::Error; end
+
       include ::Ast::Merge::TrailingGroups::DestIterate
 
       # Creates a new ConflictResolver
@@ -749,12 +751,24 @@ module Toml
           comment_source_node: comment_source_node,
           comment_analysis: comment_analysis,
         )
-        return unless region && !region.empty?
+        unless region && !region.empty?
+          inline_comment =
+            inline_comment_text_for(node) ||
+            inline_comment_text_for(comment_source_node)
+
+          if inline_comment
+            raise MissingSharedInlineRegionError,
+              "Expected shared inline region for owner with inline comment"
+          end
+
+          return
+        end
 
         tracked = Array(region.metadata[:tracked_hashes]).first
         return tracked[:text] if tracked && tracked[:text]
 
-        inline_comment_text_for(node)
+        raise MissingSharedInlineRegionError,
+          "Expected tracked inline comment metadata for shared inline region"
       end
 
       def emit_node_lines(lines, node, analysis, comment_source_node: nil, comment_analysis: analysis)
