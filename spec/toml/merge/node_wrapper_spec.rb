@@ -542,16 +542,13 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
     it "returns opening line for table with skip guard" do
       table = analysis.tables.first
-      skip "No table found" unless table
       opening = table.opening_line
       expect(opening).to include("[server]") if opening
     end
 
     it "returns nil for non-container nodes" do
       pair = root_pairs_analysis.root_pairs.first
-      skip "No pair found" unless pair
       value = pair.value_node
-      skip "No value node" unless value
       expect(value.opening_line).to be_nil if value.leaf?
     end
   end
@@ -790,7 +787,6 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
     it "returns empty array for non-array nodes" do
       pair = analysis.root_pairs.first
-      skip "No pair found" unless pair
       expect(pair.elements).to eq([])
     end
   end
@@ -810,14 +806,12 @@ RSpec.describe Toml::Merge::NodeWrapper do
 
     it "returns pairs for tables" do
       table = analysis.tables.first
-      skip "No table found" unless table
       children = table.mergeable_children
       expect(children).to all(satisfy { |c| c.pair? })
     end
 
     it "returns empty array for leaf nodes" do
       pair = analysis.root_pairs.first
-      skip "No pair found" unless pair
       value = pair.value_node
       if value&.leaf?
         expect(value.mergeable_children).to eq([])
