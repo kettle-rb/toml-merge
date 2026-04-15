@@ -94,6 +94,25 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
       TOML
     end
 
+    it "preserves owned inline separator spacing and trailing spaces when template-preferred key content wins" do
+      template = <<~TOML
+        [database]
+
+        title = "template"
+      TOML
+
+      destination = <<~TOML
+        [database]
+
+        title = "destination"   # keep this inline note  
+      TOML
+
+      merged = described_class.new(template, destination, preference: :template).merge
+      merged_line = merged.lines.find { |line| line.include?('title = "template"') }
+
+      expect(merged_line).to eq("title = \"template\"   # keep this inline note  \n")
+    end
+
     it "keeps template inline comments when the template already owns the matched key comment" do
       template = <<~TOML
         [database]

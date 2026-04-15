@@ -774,7 +774,7 @@ module Toml
       def emit_node_lines(lines, node, analysis, comment_source_node: nil, comment_analysis: analysis)
         return if lines.empty?
 
-        inline_region, = preferred_region_with_source(
+        inline_region, inline_source_analysis, = preferred_region_with_source(
           node,
           analysis,
           :inline_region,
@@ -789,9 +789,9 @@ module Toml
 
         existing_inline_region = attachment_region(node, analysis, :inline_region)
         first_line = strip_inline_region_from_line(lines.first, existing_inline_region)
+        first_line = attach_inline_region_to_line(first_line, inline_region, source_lines: inline_source_analysis&.lines)
 
         @emitter.emit_raw_lines([first_line])
-        @emitter.emit_comment_region(inline_region, inline: true, source_lines: comment_analysis&.lines)
         @emitter.emit_raw_lines(lines.drop(1)) if lines.length > 1
       end
 
@@ -823,6 +823,36 @@ module Toml
         return line unless column
 
         line.byteslice(0...column).to_s.rstrip
+      end
+
+      def attach_inline_region_to_line(line, inline_region, source_lines: nil)
+        return line unless line
+        return line unless inline_region && !inline_region.empty?
+
+        raw_inline = inline_region.text.to_s
+        return line if raw_inline.empty?
+
+        base_line = line.to_s
+        separator = inline_region_separator(inline_region, source_lines: source_lines, base_line: base_line, raw_inline: raw_inline)
+
+        base_line + separator + raw_inline
+      end
+
+      def inline_region_separator(inline_region, source_lines:, base_line:, raw_inline:)
+        tracked = Array(inline_region.metadata[:tracked_hashes]).first
+        if tracked && source_lines
+          line_number = tracked[:line]
+          column = tracked[:column]
+          if line_number && column
+            source_line = source_lines[line_number - 1].to_s
+            source_prefix = source_line.byteslice(0...column).to_s
+            return source_prefix[/[ \t]*\z/].to_s
+          end
+        end
+
+        return "" if base_line.empty? || base_line.end_with?(" ", "\t") || !raw_inline.lstrip.start_with?("#")
+
+        " "
       end
 
       def emit_interstitial_blank_lines(start_line, end_line, analysis)
