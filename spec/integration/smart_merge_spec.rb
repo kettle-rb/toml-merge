@@ -138,12 +138,13 @@ RSpec.describe "TOML Smart Merge Integration" do
     end
 
     # Test error handling with explicit Parslet backend
-    # NOTE: Parslet error detection may need additional work - the toml gem's
-    # Parslet grammar may not properly detect all invalid TOML cases.
-    # The grammar uses `repeat` which stops matching on failure, and `all_space`
-    # at the end can match zero characters. Parslet should fail on unconsumed
-    # input, but this needs more investigation.
-    context "with explicit Parslet backend", :parslet_backend, skip: "Parslet backend parse error detection needs investigation" do
+    context "with explicit Parslet backend", :parslet_backend do
+      # Parslet reliably rejects malformed values such as an unterminated array,
+      # but the current grammar still accepts an unterminated table header like
+      # "[server" as valid input. Keep the broader parse-error contract active
+      # here while documenting that narrower table-header gap separately below.
+      let(:invalid_toml) { "invalid = [" }
+
       around do |example|
         TreeHaver.with_backend(:parslet) do
           example.run
@@ -152,6 +153,15 @@ RSpec.describe "TOML Smart Merge Integration" do
 
       it_behaves_like "raises TemplateParseError for invalid template"
       it_behaves_like "raises DestinationParseError for invalid destination"
+
+      it "does not currently reject an unterminated table header fixture" do
+        pending "Parslet backend still accepts `[server` without a closing `]` as valid input"
+
+        malformed_table_header = File.read(File.join(fixtures_path, "invalid.toml"))
+        expect {
+          Toml::Merge::SmartMerger.new(malformed_table_header, valid_toml)
+        }.to raise_error(Toml::Merge::TemplateParseError)
+      end
     end
   end
 end
