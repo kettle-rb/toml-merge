@@ -206,8 +206,6 @@ RSpec.describe Toml::Merge::ConflictResolver do
         [database] # keep inline
       TOML
 
-      skip "FileAnalysis not valid" unless analysis.valid?
-
       resolver = described_class.new(analysis, analysis, preference: :template)
       node = analysis.tables.first
 

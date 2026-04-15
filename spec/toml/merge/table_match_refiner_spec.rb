@@ -116,8 +116,6 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       let(:dest_tables) { dest_analysis.tables }
 
       it "matches tables with similar names" do
-        skip "No tables available" if template_tables.empty? || dest_tables.empty?
-
         result = refiner.call(template_tables, dest_tables)
         expect(result).to be_an(Array)
         # Should find at least one match (server/servers are similar)
@@ -125,8 +123,6 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       end
 
       it "returns match results with proper structure" do
-        skip "No tables available" if template_tables.empty? || dest_tables.empty?
-
         result = refiner.call(template_tables, dest_tables)
         next if result.empty?
 
@@ -158,8 +154,6 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       let(:dest_analysis) { Toml::Merge::FileAnalysis.new(dest_toml) }
 
       it "does not match tables below threshold" do
-        skip "No tables available" if template_analysis.tables.empty? || dest_analysis.tables.empty?
-
         # With high threshold and very different names + keys, should not match
         high_threshold_refiner = described_class.new(threshold: 0.9)
         result = high_threshold_refiner.call(template_analysis.tables, dest_analysis.tables)
@@ -204,8 +198,6 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     it "considers 'server' and 'servers' as similar enough to match" do
       template_analysis = Toml::Merge::FileAnalysis.new(similar_template)
       dest_analysis = Toml::Merge::FileAnalysis.new(similar_dest)
-
-      skip "No tables available" if template_analysis.tables.empty? || dest_analysis.tables.empty?
 
       result = refiner.call(template_analysis.tables, dest_analysis.tables)
       # With low threshold, similar names should match
@@ -299,8 +291,6 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
       analysis1 = Toml::Merge::FileAnalysis.new(table_with_keys)
       analysis2 = Toml::Merge::FileAnalysis.new(table_with_same_keys)
 
-      skip "No tables available" if analysis1.tables.empty? || analysis2.tables.empty?
-
       table1 = analysis1.tables.first
       table2 = analysis2.tables.first
 
@@ -311,8 +301,6 @@ RSpec.describe Toml::Merge::TableMatchRefiner do
     it "returns low overlap for tables with different keys" do
       analysis1 = Toml::Merge::FileAnalysis.new(table_with_keys)
       analysis2 = Toml::Merge::FileAnalysis.new(table_with_different_keys)
-
-      skip "No tables available" if analysis1.tables.empty? || analysis2.tables.empty?
 
       table1 = analysis1.tables.first
       table2 = analysis2.tables.first
