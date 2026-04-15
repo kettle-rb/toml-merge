@@ -129,6 +129,28 @@ RSpec.describe Toml::Merge::FileAnalysis do
     end
   end
 
+  describe "#feature_profile" do
+    context "with tree-sitter backend", :mri_backend, :toml_grammar do
+      around do |example|
+        TreeHaver.with_backend(:mri) do
+          example.run
+        end
+      end
+
+      it "advertises the TOML ruleset shape" do
+        analysis = described_class.new(simple_toml)
+        profile = analysis.feature_profile
+
+        expect(profile.owner_selector).to eq(:line_bound_statements)
+        expect(profile.match_key).to eq(:signature)
+        expect(profile.read_strategy).to eq(:native_read_portable_write)
+        expect(profile.attachment_strategy).to eq(:normalize_tracked_layout_merge)
+        expect(profile.comment_style).to eq(:hash_comment)
+        expect(profile.render_family).to eq(:toml_pairs_and_tables)
+      end
+    end
+  end
+
   describe "#root_node" do
     context "with valid source", :toml_parsing do
       it "returns a NodeWrapper" do

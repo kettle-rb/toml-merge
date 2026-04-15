@@ -163,6 +163,14 @@ module Toml
         :normalize_tracked_layout_merge
       end
 
+      def ruleset_owner_selector
+        :line_bound_statements
+      end
+
+      def ruleset_render_family
+        :toml_pairs_and_tables
+      end
+
       def comment_augmenter(owners: nil, **options)
         CommentAugmenter.new(self, owners: owners || comment_augmenter_default_owners, **options)
       end
