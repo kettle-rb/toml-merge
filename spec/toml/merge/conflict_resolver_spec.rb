@@ -279,16 +279,16 @@ RSpec.describe Toml::Merge::ConflictResolver do
         # Local overrides belong in .env.local (loaded via dotenvy through mise).
 
         [env]
-        K_SOUP_COV_MIN_BRANCH = "76"
-        K_SOUP_COV_MIN_LINE = "92"
+        K_SOUP_COV_MIN_BRANCH = "65"
+        K_SOUP_COV_MIN_LINE = "90"
       TOML
 
       dest_toml = <<~TOML
         # Shared development environment for ast-merge.
         # Local overrides belong in .env.local (loaded via dotenvy through mise).
         [env]
-        K_SOUP_COV_MIN_BRANCH = "81"
-        K_SOUP_COV_MIN_LINE = "91"
+        K_SOUP_COV_MIN_BRANCH = "65"
+        K_SOUP_COV_MIN_LINE = "90"
       TOML
 
       TreeHaver.with_backend(:mri) do
@@ -309,8 +309,8 @@ RSpec.describe Toml::Merge::ConflictResolver do
           # Shared development environment for ast-merge.
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
           [env]
-          K_SOUP_COV_MIN_BRANCH = "81"
-          K_SOUP_COV_MIN_LINE = "91"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
     end

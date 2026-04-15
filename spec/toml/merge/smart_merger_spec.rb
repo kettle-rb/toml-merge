@@ -1,9 +1,71 @@
 require "spec_helper"
+require "ast/merge/rspec/shared_examples"
 
 RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
   around do |example|
     TreeHaver.with_backend(:mri) do
       example.run
+    end
+  end
+
+  describe "#merge_with_debug" do
+    let(:runtime_debug_merger) do
+      described_class.new(
+        <<~TOML,
+          [database]
+          server = "template"
+        TOML
+        <<~TOML
+          [database]
+          server = "destination"
+        TOML
+      )
+    end
+
+    it_behaves_like "Ast::Merge::RuntimeDebugContract"
+
+    it "returns runtime-aware debug information" do
+      debug_result = runtime_debug_merger.merge_with_debug
+
+      expect(debug_result).to include(
+        :content,
+        :debug,
+        :runtime,
+        :statistics,
+        :decisions,
+        :template_analysis,
+        :dest_analysis,
+      )
+      expect(debug_result.dig(:debug, :backend)).to eq(runtime_debug_merger.backend)
+      expect(debug_result.dig(:runtime, :summary, :operation_count)).to eq(1)
+      expect(debug_result.dig(:runtime, :operation_trees, 0, :surface, :surface_kind)).to eq(:toml_document)
+      expect(debug_result.dig(:runtime, :operation_trees, 0, :delegate_name)).to eq("toml-runtime")
+    end
+
+    it "memoizes merge_result and exposes sort_keys in debug output" do
+      merger = described_class.new(
+        <<~TOML,
+          [database]
+          zebra = "template"
+          alpha = "template"
+        TOML
+        <<~TOML,
+          [database]
+          zebra = "destination"
+          alpha = "destination"
+        TOML
+        sort_keys: true,
+      )
+
+      first_result = merger.merge_result
+      second_result = merger.merge_result
+      debug_result = merger.merge_with_debug
+      alpha_index = debug_result[:content].lines.index { |line| line.include?('alpha = "destination"') }
+      zebra_index = debug_result[:content].lines.index { |line| line.include?('zebra = "destination"') }
+
+      expect(second_result).to be(first_result)
+      expect(debug_result.dig(:debug, :sort_keys)).to be(true)
+      expect(alpha_index).to be < zebra_index
     end
   end
 

@@ -37,6 +37,10 @@ module Toml
     #   merger = SmartMerger.new(template, dest,
     #     regions: [{ detector: SomeDetector.new, merger_class: SomeMerger }])
     class SmartMerger < ::Ast::Merge::SmartMergerBase
+      include ::Ast::Merge::Runtime::RootSessionSupport
+
+      attr_reader :runtime_session
+
       # @return [Symbol] The AST format being used (:tree_sitter or :citrus)
       attr_reader :backend
 
@@ -114,6 +118,57 @@ module Toml
         }
       end
 
+      # Perform the merge operation and return the full MergeResult object.
+      #
+      # @return [MergeResult] The merge result containing merged TOML content and metadata
+      def merge_result
+        return @merge_result if @merge_result
+
+        root_operation = start_runtime_session!
+        @merge_result = super
+        complete_runtime_session!(root_operation, @merge_result)
+        @merge_result
+      rescue StandardError => e
+        fail_runtime_session!(root_operation, e)
+        raise
+      end
+
+      # Perform the merge and return detailed runtime-aware debug information.
+      #
+      # @return [Hash] Hash containing :content, :debug, :runtime, :statistics, and :decisions
+      def merge_with_debug
+        result_obj = merge_result
+        template_analysis_debug = {
+          valid: @template_analysis.valid?,
+          statements: @template_analysis.statements.size,
+        }
+        dest_analysis_debug = {
+          valid: @dest_analysis.valid?,
+          statements: @dest_analysis.statements.size,
+        }
+
+        {
+          content: result_obj.to_toml,
+          debug: {
+            template_statements: template_analysis_debug[:statements],
+            dest_statements: dest_analysis_debug[:statements],
+            preference: @preference,
+            add_template_only_nodes: @add_template_only_nodes,
+            remove_template_missing_nodes: @remove_template_missing_nodes,
+            freeze_token: @freeze_token,
+            sort_keys: @sort_keys,
+            backend: @backend,
+            runtime_operation_count: runtime_session&.operations&.size || 0,
+            runtime_diagnostic_count: runtime_session&.diagnostics&.size || 0,
+          },
+          runtime: runtime_session&.to_h,
+          statistics: result_obj.statistics,
+          decisions: result_obj.decision_summary,
+          template_analysis: template_analysis_debug,
+          dest_analysis: dest_analysis_debug,
+        }
+      end
+
       protected
 
       # @return [Class] The analysis class for TOML files
@@ -180,6 +235,52 @@ module Toml
       end
 
       private
+
+      def start_runtime_session!
+        start_runtime_root_session!(
+          surface_kind: :toml_document,
+          declared_language: :toml,
+          effective_language: :toml,
+          operation_id: "toml-document-root",
+          delegate_name: "toml-runtime",
+          policy_context: {
+            preference: @preference,
+            add_template_only_nodes: @add_template_only_nodes,
+            remove_template_missing_nodes: @remove_template_missing_nodes,
+            sort_keys: @sort_keys,
+          },
+          metadata: {merger: self.class.name, backend: @backend},
+          options: {
+            preference: @preference,
+            add_template_only_nodes: @add_template_only_nodes,
+            remove_template_missing_nodes: @remove_template_missing_nodes,
+            sort_keys: @sort_keys,
+          },
+          language_chain: [:toml],
+          delegate_metadata: {merger: self.class.name, backend: @backend},
+        )
+      end
+
+      def complete_runtime_session!(root_operation, merge_result)
+        complete_runtime_root_session!(
+          root_operation: root_operation,
+          replacement_text: merge_result.to_toml,
+          metadata: {
+            stats: merge_result.statistics,
+            decisions: merge_result.decision_summary,
+            backend: @backend,
+          },
+        )
+      end
+
+      def fail_runtime_session!(root_operation, error)
+        fail_runtime_root_session!(
+          root_operation: root_operation,
+          error: error,
+          kind: :merge_failed,
+          metadata: {backend: @backend},
+        )
+      end
 
       # TOML FileAnalysis accepts signature_generator
       def build_full_analysis_options

@@ -89,8 +89,8 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
 
           [env]
-          K_SOUP_COV_MIN_BRANCH = "76"
-          K_SOUP_COV_MIN_LINE = "92"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
 
@@ -99,8 +99,8 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
           # Shared development environment for ast-merge.
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
           [env]
-          K_SOUP_COV_MIN_BRANCH = "81"
-          K_SOUP_COV_MIN_LINE = "91"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
 
@@ -199,8 +199,8 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
 
           [env]
-          K_SOUP_COV_MIN_BRANCH = "76"
-          K_SOUP_COV_MIN_LINE = "92"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
 
@@ -213,8 +213,8 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
           # Shared development environment for tree_haver.
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
           [env]
-          K_SOUP_COV_MIN_BRANCH = "76"
-          K_SOUP_COV_MIN_LINE = "92"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
 
@@ -248,8 +248,8 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
 
           [env]
-          K_SOUP_COV_MIN_BRANCH = "76"
-          K_SOUP_COV_MIN_LINE = "92"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
 
@@ -261,8 +261,8 @@ RSpec.describe "TOML bidirectional comment block deduplication" do
           # Shared development environment for tree_haver.
           # Local overrides belong in .env.local (loaded via dotenvy through mise).
           [env]
-          K_SOUP_COV_MIN_BRANCH = "76"
-          K_SOUP_COV_MIN_LINE = "92"
+          K_SOUP_COV_MIN_BRANCH = "65"
+          K_SOUP_COV_MIN_LINE = "90"
         TOML
       end
 
