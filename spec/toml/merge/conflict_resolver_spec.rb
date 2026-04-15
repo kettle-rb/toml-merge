@@ -427,6 +427,45 @@ RSpec.describe Toml::Merge::ConflictResolver do
       end
     end
 
+    it "preserves the duplicated shared preamble prefix when healing is skipped", :mri_backend, :toml_grammar do
+      template_toml = <<~TOML
+        # Shared development environment for this gem.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+
+        [env]
+        DEBUG = "false"
+      TOML
+
+      dest_toml = <<~TOML
+        # Shared development environment for this gem.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+        # Shared development environment for tree_haver.
+        # Local overrides belong in .env.local (loaded via dotenvy through mise).
+        [env]
+        DEBUG = "false"
+      TOML
+
+      TreeHaver.with_backend(:mri) do
+        template_analysis = Toml::Merge::FileAnalysis.new(template_toml)
+        dest_analysis = Toml::Merge::FileAnalysis.new(dest_toml)
+        result = Toml::Merge::MergeResult.new
+
+        resolver = described_class.new(
+          template_analysis,
+          dest_analysis,
+          preference: :destination,
+          add_template_only_nodes: true,
+          corruption_handling: :skip,
+        )
+
+        resolver.resolve(result)
+
+        expect(result.content.scan(/^# Shared development environment/).size).to eq(2)
+        expect(result.content).to include("# Shared development environment for this gem.")
+        expect(result.content).to include("# Shared development environment for tree_haver.")
+      end
+    end
+
     it "handles add_template_only_nodes: true" do
       template_content_with_extra = <<~TOML
         [server]
@@ -949,8 +988,34 @@ RSpec.describe Toml::Merge::ConflictResolver do
   describe "dedup debug warnings" do
     it "logs when the TOML leading-comment dedup guard fires" do
       resolver = described_class.allocate
+      emitter = double("emitter")
+      resolver.instance_variable_set(:@emitted_leading_comment_texts, Set["duplicate"])
+      resolver.instance_variable_set(:@emitter, emitter)
+      resolver.instance_variable_set(:@corruption_handling, :warn)
+
+      node = double("node")
+      source_node = double("source_node", start_line: 4)
+      region = double("region", normalized_content: "duplicate", start_line: 1, end_line: 2)
+      analysis = double("analysis", path: "mise.toml", lines: [])
+
+      allow(resolver).to receive(:preferred_region_with_source).and_return([region, analysis, source_node])
+      allow(resolver).to receive(:emit_interstitial_blank_lines)
+      allow(emitter).to receive(:emit_comment_region)
+      allow(Toml::Merge::DebugLogger).to receive(:debug_warning)
+
+      resolver.send(:emit_leading_region, node, analysis)
+
+      expect(Toml::Merge::DebugLogger).to have_received(:debug_warning).with(
+        /Suspected corruption \(comment_ownership_overlap\)/,
+        hash_including(file: "mise.toml", normalized_content: "duplicate", region_lines: [1, 2]),
+      )
+    end
+
+    it "raises when the TOML leading-comment dedup guard fires in error mode" do
+      resolver = described_class.allocate
       resolver.instance_variable_set(:@emitted_leading_comment_texts, Set["duplicate"])
       resolver.instance_variable_set(:@emitter, double("emitter"))
+      resolver.instance_variable_set(:@corruption_handling, :error)
 
       node = double("node")
       source_node = double("source_node", start_line: 4)
@@ -959,14 +1024,10 @@ RSpec.describe Toml::Merge::ConflictResolver do
 
       allow(resolver).to receive(:preferred_region_with_source).and_return([region, analysis, source_node])
       allow(resolver).to receive(:emit_interstitial_blank_lines)
-      allow(Toml::Merge::DebugLogger).to receive(:debug_warning)
 
-      resolver.send(:emit_leading_region, node, analysis)
-
-      expect(Toml::Merge::DebugLogger).to have_received(:debug_warning).with(
-        /Dedup guard fired/,
-        hash_including(file: "mise.toml", normalized_content: "duplicate", region_lines: [1, 2]),
-      )
+      expect {
+        resolver.send(:emit_leading_region, node, analysis)
+      }.to raise_error(Toml::Merge::CorruptionDetectedError, /comment_ownership_overlap/)
     end
   end
 end

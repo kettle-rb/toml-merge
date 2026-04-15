@@ -12,6 +12,7 @@ module Toml
       class MissingSharedInlineRegionError < Toml::Merge::Error; end
 
       include ::Ast::Merge::TrailingGroups::DestIterate
+      attr_reader :corruption_handling
 
       # Creates a new ConflictResolver
       #
@@ -24,7 +25,7 @@ module Toml
       # @param add_template_only_nodes [Boolean] Whether to add nodes only in template
       # @param match_refiner [#call, nil] Optional match refiner for fuzzy matching
       # @param options [Hash] Additional options for forward compatibility
-      def initialize(template_analysis, dest_analysis, preference: :destination, add_template_only_nodes: false, remove_template_missing_nodes: false, match_refiner: nil, **options)
+      def initialize(template_analysis, dest_analysis, preference: :destination, add_template_only_nodes: false, remove_template_missing_nodes: false, corruption_handling: :heal, match_refiner: nil, **options)
         super(
           strategy: :batch,
           preference: preference,
@@ -35,6 +36,7 @@ module Toml
           match_refiner: match_refiner,
           **options
         )
+        @corruption_handling = ::Ast::Merge::Healer.normalize_mode(corruption_handling)
         @emitter = Emitter.new
       end
 
@@ -489,14 +491,15 @@ module Toml
         remainder = boundary_lines.drop(repeat_count * template_lines.length)
         return template_lines if remainder.empty?
 
-        DebugLogger.debug_warning(
-          "Collapsed duplicated TOML template preamble prefix while preserving destination-specific preamble content.",
-          {
+        should_heal = handle_suspected_corruption(
+          kind: :duplicate_template_preamble_prefix,
+          message: "document preamble begins with duplicated template-owned TOML preamble lines",
+          context: {
             repeated_lines: repeat_count * template_lines.length,
             remaining_lines: remainder.length,
           },
         )
-        remainder
+        should_heal ? remainder : boundary_lines
       end
 
       def alternate_template_preamble_lines_for(preferred_analysis)
@@ -582,12 +585,15 @@ module Toml
         # was already emitted by a preceding node (from either source).
         dedup_keys = dedup_keys_for_region(region)
         if dedup_keys.any? { |key| @emitted_leading_comment_texts.include?(key) }
-          DebugLogger.debug_warning(
-            "Dedup guard fired while emitting TOML leading comments; comment ownership overlaps.",
-            dedup_warning_context(region: region, analysis: source_analysis, node: node, source_node: source_node),
+          should_heal = handle_suspected_corruption(
+            kind: :comment_ownership_overlap,
+            message: "leading comment region overlaps previously emitted TOML comment ownership",
+            context: dedup_warning_context(region: region, analysis: source_analysis, node: node, source_node: source_node),
           )
-          emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
-          return
+          if should_heal
+            emit_interstitial_blank_lines((region.end_line || source_node&.start_line).to_i + 1, source_node&.start_line.to_i - 1, source_analysis)
+            return
+          end
         end
         dedup_keys.each { |key| @emitted_leading_comment_texts.add(key) }
 
@@ -671,13 +677,15 @@ module Toml
         remainder_nodes = region_nodes.drop(repeat_count * template_nodes.length)
         return region if remainder_nodes.empty?
 
-        DebugLogger.debug_warning(
-          "Collapsed duplicated TOML template preamble prefix from the first-node leading region.",
-          {
+        should_heal = handle_suspected_corruption(
+          kind: :duplicate_template_preamble_prefix,
+          message: "first-node leading region begins with duplicated template-owned TOML preamble comments",
+          context: {
             repeated_nodes: repeat_count * template_nodes.length,
             remaining_nodes: remainder_nodes.length,
           },
         )
+        return region unless should_heal
 
         ::Ast::Merge::Comment::Region.new(
           kind: region.kind,
@@ -731,6 +739,17 @@ module Toml
           region_lines: [region.respond_to?(:start_line) ? region.start_line : nil, region.respond_to?(:end_line) ? region.end_line : nil],
           normalized_content: region.normalized_content,
         }.compact
+      end
+
+      def handle_suspected_corruption(kind:, message:, context:)
+        ::Ast::Merge::Healer.handle(
+          mode: corruption_handling,
+          kind: kind,
+          message: message,
+          prefix: "[toml-merge]",
+          error_class: Toml::Merge::CorruptionDetectedError,
+          warner: ->(formatted) { DebugLogger.debug_warning(formatted, context) },
+        )
       end
 
       def preferred_node_with_analysis(template_node, dest_node, template_analysis, dest_analysis)

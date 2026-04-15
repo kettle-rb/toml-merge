@@ -37,9 +37,11 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         :dest_analysis,
       )
       expect(debug_result.dig(:debug, :backend)).to eq(runtime_debug_merger.backend)
+      expect(debug_result.dig(:debug, :corruption_handling)).to eq(:heal)
       expect(debug_result.dig(:runtime, :summary, :operation_count)).to eq(1)
       expect(debug_result.dig(:runtime, :operation_trees, 0, :surface, :surface_kind)).to eq(:toml_document)
       expect(debug_result.dig(:runtime, :operation_trees, 0, :delegate_name)).to eq("toml-runtime")
+      expect(runtime_debug_merger.options[:corruption_handling]).to eq(:heal)
     end
 
     it "memoizes merge_result and exposes sort_keys in debug output" do

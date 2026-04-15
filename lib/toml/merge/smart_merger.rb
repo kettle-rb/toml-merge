@@ -47,6 +47,7 @@ module Toml
       # @return [Boolean] Whether destination-only nodes should be removed while
       #   promoting their attached comments
       attr_reader :remove_template_missing_nodes
+      attr_reader :corruption_handling
 
       # Creates a new SmartMerger
       #
@@ -76,6 +77,7 @@ module Toml
         preference: :destination,
         add_template_only_nodes: false,
         remove_template_missing_nodes: false,
+        corruption_handling: :heal,
         freeze_token: nil,
         match_refiner: nil,
         regions: nil,
@@ -85,6 +87,7 @@ module Toml
         **options
       )
         @remove_template_missing_nodes = remove_template_missing_nodes
+        @corruption_handling = ::Ast::Merge::Healer.normalize_mode(corruption_handling)
         @sort_keys = sort_keys
 
         super(
@@ -114,6 +117,7 @@ module Toml
           preference: @preference,
           add_template_only_nodes: @add_template_only_nodes,
           remove_template_missing_nodes: @remove_template_missing_nodes,
+          corruption_handling: @corruption_handling,
           match_refiner: @match_refiner,
         }
       end
@@ -155,6 +159,7 @@ module Toml
             preference: @preference,
             add_template_only_nodes: @add_template_only_nodes,
             remove_template_missing_nodes: @remove_template_missing_nodes,
+            corruption_handling: @corruption_handling,
             freeze_token: @freeze_token,
             sort_keys: @sort_keys,
             backend: @backend,
@@ -215,6 +220,7 @@ module Toml
           preference: @preference,
           add_template_only_nodes: @add_template_only_nodes,
           remove_template_missing_nodes: @remove_template_missing_nodes,
+          corruption_handling: @corruption_handling,
           match_refiner: @match_refiner,
         )
       end
