@@ -281,6 +281,41 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
         name = "alpha"
       TOML
     end
+
+    it "preserves a floating comment block with a single owned gap when its destination owner is removed" do
+      template = <<~TOML
+        [server]
+        host = "localhost"
+        port = 8080
+      TOML
+
+      destination = <<~TOML
+        [server]
+        host = "localhost"
+
+        # NOTE: Development-only settings below.
+        debug = false
+
+        port = 8080
+      TOML
+
+      merged = described_class.new(
+        template,
+        destination,
+        preference: :destination,
+        add_template_only_nodes: true,
+        remove_template_missing_nodes: true,
+      ).merge
+
+      expect(merged).to eq(<<~TOML)
+        [server]
+        host = "localhost"
+
+        # NOTE: Development-only settings below.
+
+        port = 8080
+      TOML
+    end
   end
 
   describe "multi-byte character (emoji) handling" do

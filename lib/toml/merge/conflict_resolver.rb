@@ -70,9 +70,6 @@ module Toml
           emit_root_boundary_region(preferred_boundary_analysis(@template_analysis, @dest_analysis), :postlude)
           emit_comment_only_document(preferred_comment_only_analysis(@template_analysis, @dest_analysis)) if @emitter.to_s.empty?
 
-          # Normalize consecutive blank lines left behind by comment dedup or node removal
-          @emitter.normalize_consecutive_blank_lines!
-
           # Transfer emitter output to result
           transfer_emitter_output(result)
 
@@ -180,7 +177,10 @@ module Toml
               sig_cursor[dest_sig] = cursor + 1
             elsif @remove_template_missing_nodes
               # All template copies consumed — treat the extra destination copy as destination-only.
-              emit_removed_destination_node_comments(dest_node, dest_analysis)
+              if emit_removed_destination_node_comments(dest_node, dest_analysis)
+                prev_emitted_end_line = emitted_end_line_for(dest_node)
+                prev_emitted_analysis = dest_analysis
+              end
             else
               emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
               emit_node(dest_node, dest_analysis)
@@ -221,7 +221,10 @@ module Toml
             prev_emitted_analysis = selected_analysis
           elsif @remove_template_missing_nodes
             # Destination-only node
-            emit_removed_destination_node_comments(dest_node, dest_analysis)
+            if emit_removed_destination_node_comments(dest_node, dest_analysis)
+              prev_emitted_end_line = emitted_end_line_for(dest_node)
+              prev_emitted_analysis = dest_analysis
+            end
           else
             emit_gap_before_node(dest_node, dest_analysis, prev_emitted_end_line, prev_emitted_analysis)
             emit_node(dest_node, dest_analysis)
@@ -390,6 +393,7 @@ module Toml
       end
 
       def emit_removed_destination_node_comments(node, analysis)
+        emitted_line_count = @emitter.lines.length
         emit_leading_region(node, analysis)
         emit_removed_destination_node_inline_comments(node, analysis)
         if table_like_node?(node)
@@ -397,6 +401,7 @@ module Toml
             emit_removed_destination_node_comments(child, analysis)
           end
         end
+        @emitter.lines.length > emitted_line_count
       end
 
       def emit_removed_destination_node_inline_comments(node, analysis)
