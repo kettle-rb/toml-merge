@@ -23,21 +23,10 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
     end
 
     it_behaves_like "Ast::Merge::RuntimeDebugContract"
-
     it "returns runtime-aware debug information" do
       debug_result = runtime_debug_merger.merge_with_debug
 
-      expect(debug_result).to include(
-        :content,
-        :debug,
-        :runtime,
-        :statistics,
-        :decisions,
-        :template_analysis,
-        :dest_analysis,
-      )
       expect(debug_result.dig(:debug, :backend)).to eq(runtime_debug_merger.backend)
-      expect(debug_result.dig(:debug, :corruption_handling)).to eq(:heal)
       expect(debug_result.dig(:runtime, :summary, :operation_count)).to eq(1)
       expect(debug_result.dig(:runtime, :operation_trees, 0, :surface, :surface_kind)).to eq(:toml_document)
       expect(debug_result.dig(:runtime, :operation_trees, 0, :delegate_name)).to eq("toml-runtime")
@@ -69,6 +58,46 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
       expect(debug_result.dig(:debug, :sort_keys)).to be(true)
       expect(alpha_index).to be < zebra_index
     end
+  end
+
+  describe "unresolved runtime flow" do
+    let(:template_content) do
+      <<~TOML
+        [database]
+        server = "template"
+      TOML
+    end
+
+    let(:destination_content) do
+      <<~TOML
+        [database]
+        server = "destination"
+      TOML
+    end
+
+    let(:unresolved_runtime_merger) do
+      described_class.new(
+        template_content,
+        destination_content,
+        resolution_mode: :unresolved,
+      )
+    end
+    let(:expected_unresolved_surface_path) { 'document[0] > table["database"] > pair["server"]' }
+    let(:expected_unresolved_output_fragment) { 'server = "destination"' }
+    let(:build_fresh_unresolved_merge_result) do
+      -> do
+        described_class.new(
+          template_content,
+          destination_content,
+          resolution_mode: :unresolved,
+        ).merge_result
+      end
+    end
+    let(:expected_replayed_output_fragment) { 'server = "template"' }
+
+    it_behaves_like "Ast::Merge::UnresolvedRuntimeContract"
+    it_behaves_like "Ast::Merge::UnresolvedRuntimeDebugContract"
+    it_behaves_like "Ast::Merge::UnresolvedReviewStateTransportContract"
   end
 
   describe "comment-preserving Slice 1 behavior" do

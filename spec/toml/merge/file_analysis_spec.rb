@@ -137,17 +137,24 @@ RSpec.describe Toml::Merge::FileAnalysis do
         end
       end
 
-      it "advertises the TOML ruleset shape" do
-        analysis = described_class.new(simple_toml)
-        profile = analysis.feature_profile
-
-        expect(profile.owner_selector).to eq(:line_bound_statements)
-        expect(profile.match_key).to eq(:signature)
-        expect(profile.read_strategy).to eq(:native_read_portable_write)
-        expect(profile.attachment_strategy).to eq(:normalize_tracked_layout_merge)
-        expect(profile.comment_style).to eq(:hash_comment)
-        expect(profile.render_family).to eq(:toml_pairs_and_tables)
+      let(:feature_profile) { described_class.new(simple_toml).feature_profile }
+      let(:expected_feature_profile) do
+        {
+          owner_selector: :line_bound_statements,
+          match_key: :signature,
+          read_strategy: :native_read_portable_write,
+          attachment_strategy: :normalize_tracked_layout_merge,
+          comment_style: :hash_comment,
+          render_family: :toml_pairs_and_tables,
+          capabilities: {layout_aware: true, logical_owner: false},
+          logical_owners: {},
+          repair_policies: [],
+          surfaces: [],
+          delegation_policies: [],
+        }
       end
+
+      it_behaves_like "Ast::Merge::Ruleset::FeatureProfile"
     end
   end
 

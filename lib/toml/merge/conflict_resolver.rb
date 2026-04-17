@@ -12,6 +12,7 @@ module Toml
       class MissingSharedInlineRegionError < Toml::Merge::Error; end
 
       include ::Ast::Merge::TrailingGroups::DestIterate
+      include ::Ast::Merge::StructuredEmitterProvenanceSupport
       attr_reader :corruption_handling
 
       # Creates a new ConflictResolver
@@ -25,7 +26,7 @@ module Toml
       # @param add_template_only_nodes [Boolean] Whether to add nodes only in template
       # @param match_refiner [#call, nil] Optional match refiner for fuzzy matching
       # @param options [Hash] Additional options for forward compatibility
-      def initialize(template_analysis, dest_analysis, preference: :destination, add_template_only_nodes: false, remove_template_missing_nodes: false, corruption_handling: :heal, match_refiner: nil, **options)
+      def initialize(template_analysis, dest_analysis, preference: :destination, add_template_only_nodes: false, remove_template_missing_nodes: false, resolution_mode: :eager, corruption_handling: :heal, match_refiner: nil, **options)
         super(
           strategy: :batch,
           preference: preference,
@@ -36,6 +37,7 @@ module Toml
           match_refiner: match_refiner,
           **options
         )
+        @resolution_mode = resolution_mode
         @corruption_handling = ::Ast::Merge::Healer.normalize_mode(corruption_handling)
         @emitter = Emitter.new
       end
@@ -47,6 +49,7 @@ module Toml
       # @param result [MergeResult] Result object to populate
       def resolve_batch(result)
         DebugLogger.time("ConflictResolver#resolve") do
+          @result = result
           template_statements = @template_analysis.statements
           dest_statements = @dest_analysis.statements
 
@@ -267,50 +270,54 @@ module Toml
       def merge_matched_nodes_to_emitter(template_node, dest_node, template_analysis, dest_analysis)
         # For TOML, tables can be merged recursively
         if dest_node.table? && template_node.table?
-          selected_node, selected_analysis = preferred_node_with_analysis(
-            template_node,
-            dest_node,
-            template_analysis,
-            dest_analysis,
-          )
+          with_resolution_path_segment(dest_node, template_node) do
+            selected_node, selected_analysis = preferred_node_with_analysis(
+              template_node,
+              dest_node,
+              template_analysis,
+              dest_analysis,
+            )
 
-          comment_source_node, comment_source_analysis = if @preference == :template
-            [dest_node, dest_analysis]
-          else
-            [nil, selected_analysis]
-          end
+            comment_source_node, comment_source_analysis = if @preference == :template
+              [dest_node, dest_analysis]
+            else
+              [nil, selected_analysis]
+            end
 
-          emit_leading_region(
-            selected_node,
-            selected_analysis,
-            comment_source_node: comment_source_node,
-            comment_analysis: comment_source_analysis,
-          )
-
-          # Emit table header and merge children
-          @emitter.emit_table_header(
-            selected_node.table_name || dest_node.table_name || template_node.table_name,
-            inline_comment: preferred_inline_comment_text(
+            emit_leading_region(
               selected_node,
               selected_analysis,
               comment_source_node: comment_source_node,
               comment_analysis: comment_source_analysis,
-            ),
-          )
+            )
 
-          template_children = template_node.mergeable_children
-          dest_children = dest_node.mergeable_children
+            # Emit table header and merge children
+            @emitter.emit_table_header(
+              selected_node.table_name || dest_node.table_name || template_node.table_name,
+              inline_comment: preferred_inline_comment_text(
+                selected_node,
+                selected_analysis,
+                comment_source_node: comment_source_node,
+                comment_analysis: comment_source_analysis,
+              ),
+            )
 
-          merge_node_lists_to_emitter(
-            template_children,
-            dest_children,
-            template_analysis,
-            dest_analysis,
-          )
+            template_children = template_node.mergeable_children
+            dest_children = dest_node.mergeable_children
+
+            merge_node_lists_to_emitter(
+              template_children,
+              dest_children,
+              template_analysis,
+              dest_analysis,
+            )
+          end
         elsif @preference == :destination
           # Leaf nodes or mismatched types - use preference
+          record_unresolved_choice(template_node: template_node, dest_node: dest_node, provisional_winner: :destination)
           emit_node(dest_node, dest_analysis)
         else
+          record_unresolved_choice(template_node: template_node, dest_node: dest_node, provisional_winner: :template)
           emit_node(
             template_node,
             template_analysis,
@@ -382,15 +389,6 @@ module Toml
         # Build result map: template node -> dest node
         matches.each_with_object({}) do |match, h|
           h[match.template_node] = match.dest_node
-        end
-      end
-
-      def transfer_emitter_output(result)
-        emitted_content = @emitter.to_s
-        return if emitted_content.empty?
-
-        emitted_content.lines.each do |line|
-          result.add_line(line.chomp, decision: MergeResult::DECISION_MERGED, source: :merged)
         end
       end
 
@@ -760,6 +758,65 @@ module Toml
         end
       end
 
+      def record_unresolved_choice(template_node:, dest_node:, provisional_winner:)
+        return unless unresolved_mode?
+        return unless template_node && dest_node
+        return if template_node.table? && dest_node.table?
+
+        template_text = template_node.text
+        dest_text = dest_node.text
+
+        identifier = resolution_identifier(template_node, dest_node)
+        surface_path = resolution_surface_path(dest_node, identifier)
+        record_unresolved_node_choice(
+          result: @result,
+          template_node: template_node,
+          destination_node: dest_node,
+          template_text: template_text,
+          destination_text: dest_text,
+          provisional_winner: provisional_winner,
+          case_prefix: "toml",
+          case_parts: [dest_node.type, identifier],
+          surface_path: surface_path,
+          metadata: {
+            node_type: dest_node.type,
+            identifier: identifier,
+            review_identity: review_identity_for_unresolved_choice(
+              template_text: template_text,
+              destination_text: dest_text,
+              provisional_winner: provisional_winner,
+              surface_path: surface_path,
+              node_type: dest_node.type,
+              identifier: identifier,
+            ),
+          },
+          conflict_fields: {
+            node_type: dest_node.type,
+            identifier: identifier,
+          },
+        )
+      end
+
+      def resolution_identifier(template_node, dest_node)
+        unresolved_identifier_for_nodes(dest_node, template_node, methods: %i[key_name table_name])
+      end
+
+      def resolution_surface_path(node, identifier)
+        segment = resolution_path_segment_for(node, identifier)
+        unresolved_surface_path_for(segment)
+      end
+
+      def resolution_path_segment_for(node, identifier)
+        unresolved_typed_path_segment(node.type, identifier: identifier, node: node, fallback: node.type)
+      end
+
+      def with_resolution_path_segment(*nodes)
+        with_first_unresolved_path_segment(
+          *nodes,
+          segment_builder: ->(node) { resolution_path_segment_for(node, resolution_identifier(node, node)) }
+        ) { yield }
+      end
+
       def inline_comment_text_for(node)
         inline_comment = node.respond_to?(:inline_comment) ? node.inline_comment : nil
         return unless inline_comment
@@ -797,6 +854,7 @@ module Toml
 
       def emit_node_lines(lines, node, analysis, comment_source_node: nil, comment_analysis: analysis)
         return if lines.empty?
+        metadata = emitter_block_metadata(analysis, node.start_line)
 
         inline_region, inline_source_analysis, = preferred_region_with_source(
           node,
@@ -807,7 +865,7 @@ module Toml
         )
 
         unless inline_region && !inline_region.empty?
-          @emitter.emit_raw_lines(lines)
+          @emitter.emit_raw_lines(lines, metadata: metadata)
           return
         end
 
@@ -815,8 +873,8 @@ module Toml
         first_line = strip_inline_region_from_line(lines.first, existing_inline_region)
         first_line = attach_inline_region_to_line(first_line, inline_region, source_lines: inline_source_analysis&.lines)
 
-        @emitter.emit_raw_lines([first_line])
-        @emitter.emit_raw_lines(lines.drop(1)) if lines.length > 1
+        @emitter.emit_raw_lines([first_line], metadata: emitter_line_metadata(analysis, line_number: node.start_line))
+        @emitter.emit_raw_lines(lines.drop(1), metadata: emitter_block_metadata(analysis, node.start_line + 1)) if lines.length > 1
       end
 
       def preferred_region_with_source(node, analysis, region_kind, comment_source_node: nil, comment_analysis: analysis)
@@ -888,7 +946,7 @@ module Toml
           line = analysis.line_at(line_num)
           lines << line if line && line.strip.empty?
         end
-        @emitter.emit_raw_lines(lines) if lines.any?
+        @emitter.emit_raw_lines(lines, metadata: emitter_block_metadata(analysis, start_line)) if lines.any?
       end
 
       def emit_gap_before_node(node, analysis, prev_end_line, prev_analysis, skip_for_borrowed_leading_region: false)
@@ -923,7 +981,7 @@ module Toml
           line_num -= 1
         end
 
-        @emitter.emit_raw_lines(lines) if lines.any?
+        @emitter.emit_raw_lines(lines, metadata: emitter_block_metadata(analysis, line_num + 1)) if lines.any?
       end
 
       def emitted_end_line_for(node)
