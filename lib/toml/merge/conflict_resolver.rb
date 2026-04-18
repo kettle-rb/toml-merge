@@ -13,6 +13,7 @@ module Toml
 
       include ::Ast::Merge::TrailingGroups::DestIterate
       include ::Ast::Merge::StructuredEmitterProvenanceSupport
+
       attr_reader :corruption_handling
 
       # Creates a new ConflictResolver
@@ -813,7 +814,7 @@ module Toml
       def with_resolution_path_segment(*nodes)
         with_first_unresolved_path_segment(
           *nodes,
-          segment_builder: ->(node) { resolution_path_segment_for(node, resolution_identifier(node, node)) }
+          segment_builder: ->(node) { resolution_path_segment_for(node, resolution_identifier(node, node)) },
         ) { yield }
       end
 

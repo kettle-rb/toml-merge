@@ -135,7 +135,6 @@ module Toml
       end
 
       private
-
     end
   end
 end

@@ -1,6 +1,6 @@
 {
-  "lib/toml/merge/conflict_resolver.rb:2950132827": [
-    [619, 9, 31, "Style/InvertibleUnlessCondition: Prefer `if lines.length < 2` over `unless lines.length >= 2`.", 1782706499]
+  "lib/toml/merge/conflict_resolver.rb:4030259368": [
+    [631, 9, 31, "Style/InvertibleUnlessCondition: Prefer `if lines.length < 2` over `unless lines.length >= 2`.", 1782706499]
   ],
   "spec/toml/merge/comment_behavior_matrix_spec.rb:1381770246": [
     [6, 1, 66, "RSpec/SpecFilePathFormat: Spec path should end with `toml/merge/smart_merger*comment_behavior_matrix*_spec.rb`.", 1346026760],

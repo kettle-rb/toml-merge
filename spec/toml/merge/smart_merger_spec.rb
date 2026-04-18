@@ -15,7 +15,7 @@ RSpec.describe Toml::Merge::SmartMerger, :mri_backend, :toml_grammar do
           [database]
           server = "template"
         TOML
-        <<~TOML
+        <<~TOML,
           [database]
           server = "destination"
         TOML
