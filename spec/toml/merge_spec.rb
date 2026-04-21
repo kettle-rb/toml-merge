@@ -81,4 +81,13 @@ RSpec.describe Toml::Merge do
       expect(Toml::Merge::TableMatchRefiner).to be_a(Class)
     end
   end
+
+  describe ".register_backend!" do
+    it "registers TOML backends with TreeHaver" do
+      registrations = TreeHaver.registered_language(:toml)
+
+      expect(registrations).to be_a(Hash)
+      expect(registrations.keys & %i[tree_sitter citrus parslet]).not_to be_empty
+    end
+  end
 end

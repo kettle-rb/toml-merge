@@ -5,8 +5,8 @@ require "set"
 
 # External gems
 # TreeHaver provides a unified cross-Ruby interface to tree-sitter.
-# It handles grammar discovery, backend selection, Citrus and Parslet fallbacks, automatically
-# via parser_for(:toml). No manual registration needed.
+# Toml::Merge registers TOML-specific backends with TreeHaver when loaded so
+# parser_for(:toml) can resolve registered grammars and backends consistently.
 require "tree_haver"
 require "version_gem"
 
@@ -40,6 +40,8 @@ module Toml
   # @see FileAnalysis Analyzes TOML structure
   # @see ConflictResolver Resolves content conflicts
   module Merge
+    BACKEND_REGISTRY = Struct.new(:registered, :mutex).new(false, Mutex.new)
+
     # Base error class for Toml::Merge
     # Inherits from Ast::Merge::Error for consistency across merge gems.
     class Error < Ast::Merge::Error; end
@@ -104,8 +106,57 @@ module Toml
     autoload :ConflictResolver, "toml/merge/conflict_resolver"
     autoload :SmartMerger, "toml/merge/smart_merger"
     autoload :TableMatchRefiner, "toml/merge/table_match_refiner"
+
+    class << self
+      def register_backend!
+        BACKEND_REGISTRY.mutex.synchronize do
+          return if BACKEND_REGISTRY.registered
+
+          register_tree_sitter_backend!
+          register_citrus_backend!
+          register_parslet_backend!
+
+          BACKEND_REGISTRY.registered = true
+        end
+      end
+
+      private
+
+      def register_tree_sitter_backend!
+        grammar_finder = TreeHaver::GrammarFinder.new(:toml)
+        grammar_finder.register! if grammar_finder.available?
+      end
+
+      def register_citrus_backend!
+        require "toml-rb"
+        return unless defined?(TomlRB::Document)
+
+        TreeHaver.register_language(
+          :toml,
+          grammar_module: TomlRB::Document,
+          gem_name: "toml-rb",
+        )
+      rescue LoadError, NameError
+        nil
+      end
+
+      def register_parslet_backend!
+        require "toml"
+        return unless defined?(TOML::Parslet)
+
+        TreeHaver.register_language(
+          :toml,
+          grammar_class: TOML::Parslet,
+          gem_name: "toml",
+        )
+      rescue LoadError, NameError
+        nil
+      end
+    end
   end
 end
+
+Toml::Merge.register_backend!
 
 # Register with ast-merge's MergeGemRegistry for RSpec dependency tags
 # Only register if MergeGemRegistry is loaded (i.e., in test environment)

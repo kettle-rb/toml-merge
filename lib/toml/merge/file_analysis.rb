@@ -265,9 +265,8 @@ module Toml
       def parse_toml
         # TreeHaver handles everything:
         # - Backend selection (via TREE_HAVER_BACKEND env or TreeHaver.backend)
-        # - Grammar auto-discovery
-        # - Fallback to Citrus or Parslet if tree-sitter unavailable
-        # - CITRUS_DEFAULTS and PARSLET_DEFAULTS include toml configuration
+        # - Registered tree-sitter grammar lookup / provisioning
+        # - Registered Citrus or Parslet TOML backends from Toml::Merge
         parser_options = {}
         parser_options[:library_path] = @parser_path if @parser_path
 
